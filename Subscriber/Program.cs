@@ -4,14 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-//namespace Publisher
-//{
-    class Publisher
+namespace Subscriber
+{
+    class Subscriber
     {
-
         static void Main(string[] args)
         {
-            //so um comentario de teste
+
         }
     }
-//}
+}
