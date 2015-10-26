@@ -26,7 +26,7 @@ namespace PuppetMaster
         }
 
         private void bt_Command_Click(object sender, EventArgs e)
-        {/*
+        {
             String[] lines = tb_Command.Lines;
             try {
                 if (lines[0] == "") {
@@ -35,13 +35,13 @@ namespace PuppetMaster
             } catch (IndexOutOfRangeException) {
                 return;
             }
-            String nextSept = lines[0];
+            String singleCommand = lines[0];
 
-            lines = lines.Where((val, idx) => idx != 0).ToArray();
-            tb_Command.Lines = lines;
-
+            //erases command after clicking the button
+            tb_Command.Clear();
+/*
             String[] p = {" "};
-            string[] parsed = nextSept.Split(p, StringSplitOptions.None);
+            string[] parsed = singleCommand.Split(p, StringSplitOptions.None);
 
             switch (parsed[0])
             {
