@@ -33,9 +33,9 @@
             this.tb_Script = new System.Windows.Forms.TextBox();
             this.bt_Script = new System.Windows.Forms.Button();
             this.tb_Log = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
+            this.lb_Command = new System.Windows.Forms.Label();
+            this.lb_Script = new System.Windows.Forms.Label();
+            this.lb_Log = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // tb_Command
@@ -53,6 +53,7 @@
             this.bt_Command.TabIndex = 1;
             this.bt_Command.Text = "Run";
             this.bt_Command.UseVisualStyleBackColor = true;
+            this.bt_Command.Click += new System.EventHandler(this.bt_Command_Click);
             // 
             // tb_Script
             // 
@@ -70,6 +71,7 @@
             this.bt_Script.TabIndex = 3;
             this.bt_Script.Text = "Run Script";
             this.bt_Script.UseVisualStyleBackColor = true;
+            this.bt_Script.Click += new System.EventHandler(this.bt_Script_Click);
             // 
             // tb_Log
             // 
@@ -81,41 +83,41 @@
             this.tb_Log.Size = new System.Drawing.Size(222, 248);
             this.tb_Log.TabIndex = 4;
             // 
-            // label1
+            // lb_Command
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(20, 23);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(86, 13);
-            this.label1.TabIndex = 5;
-            this.label1.Text = "Single Command";
+            this.lb_Command.AutoSize = true;
+            this.lb_Command.Location = new System.Drawing.Point(20, 23);
+            this.lb_Command.Name = "lb_Command";
+            this.lb_Command.Size = new System.Drawing.Size(86, 13);
+            this.lb_Command.TabIndex = 5;
+            this.lb_Command.Text = "Single Command";
             // 
-            // label2
+            // lb_Script
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(20, 101);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(55, 13);
-            this.label2.TabIndex = 6;
-            this.label2.Text = "Script Box";
+            this.lb_Script.AutoSize = true;
+            this.lb_Script.Location = new System.Drawing.Point(20, 101);
+            this.lb_Script.Name = "lb_Script";
+            this.lb_Script.Size = new System.Drawing.Size(55, 13);
+            this.lb_Script.TabIndex = 6;
+            this.lb_Script.Text = "Script Box";
             // 
-            // label3
+            // lb_Log
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(264, 101);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(62, 13);
-            this.label3.TabIndex = 7;
-            this.label3.Text = "System Log";
+            this.lb_Log.AutoSize = true;
+            this.lb_Log.Location = new System.Drawing.Point(264, 101);
+            this.lb_Log.Name = "lb_Log";
+            this.lb_Log.Size = new System.Drawing.Size(62, 13);
+            this.lb_Log.TabIndex = 7;
+            this.lb_Log.Text = "System Log";
             // 
             // PuppetMasterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(512, 419);
-            this.Controls.Add(this.label3);
-            this.Controls.Add(this.label2);
-            this.Controls.Add(this.label1);
+            this.Controls.Add(this.lb_Log);
+            this.Controls.Add(this.lb_Script);
+            this.Controls.Add(this.lb_Command);
             this.Controls.Add(this.tb_Log);
             this.Controls.Add(this.bt_Script);
             this.Controls.Add(this.tb_Script);
@@ -135,9 +137,9 @@
         private System.Windows.Forms.TextBox tb_Script;
         private System.Windows.Forms.Button bt_Script;
         private System.Windows.Forms.TextBox tb_Log;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label lb_Command;
+        private System.Windows.Forms.Label lb_Script;
+        private System.Windows.Forms.Label lb_Log;
     }
 }
 
