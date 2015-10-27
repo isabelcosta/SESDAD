@@ -27,21 +27,52 @@ namespace PuppetMaster
 
         private void bt_Command_Click(object sender, EventArgs e)
         {
-            String[] lines = tb_Command.Lines;
+            String singleCommand = tb_Command.Text;
+            
+            if (singleCommand == "") {
+                    return;
+            }
+            
+            //testing input
+            //MessageBox.Show(singleCommand);
+
+            //erases command after clicking the button
+            tb_Command.Clear();
+
+            processCommand(singleCommand);
+        }
+
+        //use a single function to read every line
+        private void bt_Script_Click(object sender, EventArgs e)
+        {
+            String[] scriptLines = tb_Script.Lines;
+
             try {
-                if (lines[0] == "") {
+                if (scriptLines[0] == "")
+                {
                     return;
                 }
             } catch (IndexOutOfRangeException) {
                 return;
             }
-            String singleCommand = lines[0];
 
+            String singleLine = scriptLines[0];
+
+            //testing input
+            //MessageBox.Show(singleLine);
+                    
             //erases command after clicking the button
-            tb_Command.Clear();
-/*
-            String[] p = {" "};
-            string[] parsed = singleCommand.Split(p, StringSplitOptions.None);
+            tb_Script.Clear();
+
+            foreach (String line in scriptLines) {
+                processCommand(line);
+            }
+        }
+
+        private void processCommand(String line) {
+
+            /*String[] p = {" "};
+            string[] parsed = line.Split(p, StringSplitOptions.None);
 
             switch (parsed[0])
             {
@@ -63,10 +94,7 @@ namespace PuppetMaster
                 case "Freeze": freeze(parsed[1]); break;
                 case "Unfreeze": unfreeze(parsed[1]); break;
             }*/
-        }
 
-        private void bt_Script_Click(object sender, EventArgs e)
-        {
 
         }
 
