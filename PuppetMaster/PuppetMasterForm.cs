@@ -23,8 +23,10 @@ namespace PuppetMaster
         public PuppetMasterForm()
         {
             InitializeComponent();
+            //readConfigFile();
         }
 
+        //Button Run Single Command method - runs a single command and cleans the text box
         private void bt_Command_Click(object sender, EventArgs e)
         {
             String singleCommand = tb_Command.Text;
@@ -32,17 +34,17 @@ namespace PuppetMaster
             if (singleCommand == "") {
                     return;
             }
-            
-            //testing input
-            //MessageBox.Show(singleCommand);
 
             //erases command after clicking the button
             tb_Command.Clear();
 
-            processCommand(singleCommand);
+            String[] blankSpace = { " " };
+            String[] parsedLine = singleCommand.Split(blankSpace, StringSplitOptions.None);
+
+            processCommand(parsedLine);
         }
 
-        //use a single function to read every line
+        //Button Run Script method - run every line of script and cleans the text box
         private void bt_Script_Click(object sender, EventArgs e)
         {
             String[] scriptLines = tb_Script.Lines;
@@ -55,63 +57,115 @@ namespace PuppetMaster
             } catch (IndexOutOfRangeException) {
                 return;
             }
-
-            String singleLine = scriptLines[0];
-
-            //testing input
-            //MessageBox.Show(singleLine);
-                    
+            
             //erases command after clicking the button
             tb_Script.Clear();
 
+            String[] blankSpace = { " " };
+            String[] parsedLine = null;
+            
             foreach (String line in scriptLines) {
-                processCommand(line);
+                parsedLine = line.Split(blankSpace, StringSplitOptions.None);
+                switch (parsedLine[0]) {
+                    case "Wait":
+                        //parsedLine[1].Sleep(2000); //process to wait == sleep
+                        //MessageBox.Show("Waiting");
+                        break;
+                    default:
+                        processCommand(parsedLine);
+                        break;
+                }
             }
         }
 
-        private void processCommand(String line) {
-
-            /*String[] p = {" "};
-            string[] parsed = line.Split(p, StringSplitOptions.None);
-
-            switch (parsed[0])
+        private void processCommand(String[] parsedLine)
+        {
+            switch (parsedLine[0])
             {
                 case "Subscriber":
-                    if (parsed[2] == "Subscribe")
+                    if (parsedLine[2] == "Subscribe")
                     {
-                        subscribe(parsed[1], parsed[3]);//1 - process; 3 - topic
+                        //MessageBox.Show(parsedLine[1] + " sub " + parsedLine[3]);
+                        //subscribe(parsed[1], parsed[3]);//1 - process; 3 - topic
                     }
-                    else if (parsed[2] == "Unsubscribe")
+                    else if (parsedLine[2] == "Unsubscribe")
                     {
-                        unsubscribe(parsed[1], parsed[3]);
+                        //MessageBox.Show(parsed[1] + " unsub " + parsed[3]);
+                        //unsubscribe(parsed[1], parsed[3]);
                     }
                     break;
                 case "Publisher":
-                    publish(parsed[1], parsed[3], parsed[5], parsed[7]); //1 - process; 3 - nEvents; 5 - topic; 7 - interval;
+                    //publish(parsed[1], parsed[3], parsed[5], parsed[7]); //1 - process; 3 - nEvents; 5 - topic; 7 - interval;
                     break;
                 case "Status": status(); break;
-                case "Crash": crash(parsed[1]); break;
-                case "Freeze": freeze(parsed[1]); break;
-                case "Unfreeze": unfreeze(parsed[1]); break;
-            }*/
-
-
+                case "Crash": crash(parsedLine[1]); break;
+                case "Freeze": freeze(parsedLine[1]); break;
+                case "Unfreeze": unfreeze(parsedLine[1]); break;
+                default: break;
+            }
         }
 
-        //private void readConfigFile(File file) { }
+        //Reads and process the configFile.txt
+        private void readConfigFile() {
+            //change to file destination
+            String[] lines = System.IO.File.ReadAllLines(@"C:\Users\Isabel\Source\Repos\SESDAD\PuppetMaster\configFile.txt");
+            
+            foreach (String line in lines)
+            {
+                processConfigFileLines(line);
+            }
+            //MessageBox.Show(RoutingPolicy + " " + Ordering + " " + LoggingLevel);
+        }
 
-        private void startSystemFromConfigFile() {
-            /*switch (parsed[0])
+        private void processConfigFileLines(String line) {
+            String[] blankSpace = { " " };
+            String[] parsed = line.Split(blankSpace, StringSplitOptions.None);
+
+            switch (parsed[0])
             {
                 case "Site":
                     break;
                 case "Process":
-                    publish(parsed[1], parsed[3], parsed[5], parsed[7]); //1 - process; 3 - nEvents; 5 - topic; 7 - interval;
+                    //publish(parsed[1], parsed[3], parsed[5], parsed[7]); //1 - process; 3 - nEvents; 5 - topic; 7 - interval;
                     break;
-                case "RoutingPolicy": status(); break;
-                case "Ordering": crash(parsed[1]); break;
-                case "LoggingLevel": freeze(parsed[1]); break;
-            }*/
+                case "RoutingPolicy":
+                    this.RoutingPolicy = parsed[1]; break;
+                case "Ordering":
+                    this.Ordering = parsed[1]; break;
+                case "LoggingLevel":
+                    this.LoggingLevel = parsed[1]; break;
+                default:
+                    break;
+            }
+        }
+
+        private void crash(String processName) {
+            /*
+            Process[] processes = null;
+			processes = Process.GetProcessesByName(processName);
+
+			foreach (Process process in processes)
+			{
+				process.Kill();
+			}
+
+            //System.Diagnostics.Process.GetProcessesByName("csrss")[0].Kill();
+            */
+        }
+
+        private void status()
+        {
+
+        }
+
+        private void freeze(String processName)
+        {
+
+        }
+
+        private void unfreeze(String processName)
+        {
+
         }
     }
 

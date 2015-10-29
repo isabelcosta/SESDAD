@@ -5,6 +5,6 @@ Process broker0 Is broker On site0 URL tcp://1.2.3.4:3333/broker
 Process publisher0 Is publisher On site0 URL tcp://1.2.3.4:3334/pub
 Process subscriber0 Is subscriber On site0 URL tcp://1.2.3.4:3335/sub
 Process subscriber1 Is subscriber On site0 URL tcp://1.2.3.4:3336/sub
-RoutingPolicy flooding|filter
-Ordering NO|FIFO|TOTAL
-LoggingLevel full|light
+RoutingPolicy flooding
+Ordering FIFO
+LoggingLevel full

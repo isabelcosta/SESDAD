@@ -18,7 +18,7 @@ namespace PuppetMaster
             //Read config file
             //TextReader tr = new StreamReader(@"\obj.txt");
             //MessageBox.Show(Environment.CurrentDirectory);
-
+            
             //Initialize PuppetMaster GUI
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
