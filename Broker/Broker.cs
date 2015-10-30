@@ -7,10 +7,11 @@ using System.Threading;
 using System.Collections.Generic;
 
 using SESDADInterfaces;
+using System.Runtime.Serialization.Formatters;
 
 namespace SESDAD
 {
-    
+
     class Broker
     {
         [STAThread]
@@ -18,26 +19,53 @@ namespace SESDAD
         {
             string brokerName = "Broker";
 
-            TcpChannel channel = new TcpChannel(8088);
+            BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
+            provider.TypeFilterLevel = TypeFilterLevel.Full;
+            IDictionary props = new Hashtable();
+            props["port"] = 8088;
+            TcpChannel channel = new TcpChannel(props, null, provider);
+
+
+            // TcpChannel channel = new TcpChannel(8088);
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(
                 typeof(PublishserServices), brokerName,
                 WellKnownObjectMode.Singleton);
 
-            
+
 
             System.Console.WriteLine("Press <enter> to terminate Broker...");
             System.Console.ReadLine();
         }
     }
 
+ 
+    /*
+    public class Subscribed
+    {
+        public void Callback(object sender, MessageArgs m)
+        {
+            Console.WriteLine("Fired {0} : {1}", m.Topic, m.Body);
+        }
+    }
+    */
 
     class PublishserServices : MarshalByRefObject, BrokerInterface
     {
-        List<SubscriberInterface> subscribers = new List<SubscriberInterface>();
+
+        public delegate void MySubs(object sender, MessageArgs m);
+
+        public Dictionary<string, MySubs> delegates = new Dictionary<string, MySubs>();
+
+        //public event MySubs E;
+
+
+        
+        Dictionary<Tuple<string, string>, SubscriberInterface> subscribers = new Dictionary<Tuple<string, string>,SubscriberInterface>();
         List<PublisherInterface> publishers = new List<PublisherInterface>();
         List<BrokerInterface> brokers = new List<BrokerInterface>();
         Dictionary<SubscriberInterface, List<string>> subscribersTopics = new Dictionary<SubscriberInterface, List<string>>();
+
 
 
         //used for the PuppetMaster to request a broker to flood a message
@@ -49,68 +77,43 @@ namespace SESDAD
                 broker.recieveOrderToFlood(topic, message);
             }
 
-            if (subscribers.Count == 1)
-            {
-                subscribers[0].recieveMessage(topic, message);
-                Console.WriteLine("sent message");
-            }
-            else
-            {
-                Console.WriteLine("No subs");
-            }
+            //callback
             /*
-            // percorre a lista de subscribers que o broker conhece, e verifica quais os brokers que estao subscritos ao topico
-            foreach(SubscriberInterface sub in subscribers)
+            
+            aqui faz o callback para que o subscriber receba a mensagem
+
+            if (E != null)
+                E(this, new MessageArgs(topic, message));
+
+            */
+            
+            foreach (string subTopic in delegates.Keys)
             {
-                
-                if (subscribersTopics.ContainsKey(sub)) //entra se o subscriber ja' existir na lista
+                if (String.Compare(subTopic,topic)==0)
                 {
-                    //verifica se subscriber esta subscrito ao topico
-                   if(subscribersTopics[sub].Contains(topic))
-                    {
-                        //envia a mensagem ao subscriber
-                        Console.WriteLine("Sent message to subscriber..");
-                        sub.recieveMessage(topic, message);
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Not subscribed..");
+                    delegates[subTopic](this, new MessageArgs(topic, message));
+
                 }
             }
-            */
-                Console.WriteLine("Flooded: " + message);
+
+            Console.WriteLine("Flooded: " + message);
 
         }
 
         public void subscribeRequest(string topic, string subscriberName, int port)
         {
 
+           
+            //subscrito ao evento
 
-            SubscriberInterface subscriber =
-               (SubscriberInterface)Activator.GetObject(
-                      typeof(SubscriberInterface), "tcp://localhost:"+ port + "/" + subscriberName);
+            Tuple<string, string> nameAndPort = new Tuple<string, string>(subscriberName, port.ToString());
 
-            Console.WriteLine("Added subscriber at : " + "tcp://localhost:" + port + "/" + subscriberName);
-            subscribers.Add(subscriber);
-            /*
+            SubscriberInterface subscriber = subscribers[nameAndPort];
+            if (!delegates.ContainsKey(topic))
+                delegates.Add(topic, null);
+            delegates[topic] += new MySubs(subscriber.Callback);
+            Console.WriteLine("Added subscriber {1} at port {0} to the topic {2}", port, subscriberName, topic);
             
-                    FALTA IMPLEMENTAR COM CALLBACK
-            
-            */
-            if (subscribersTopics.ContainsKey(subscriber)) //entra se o subscriber ja' existir na lista
-            {
-                subscribersTopics[subscriber].Add(topic); // adiciona 'a lista do subscriber, o novo topico subscrito (com um Del facilmente se faz unsubscribe)
-                Console.WriteLine("Added Topic to the subscriber list");
-            }else
-            {
-                List <string> topicsList = new List<string>();
-                topicsList.Add(topic);
-
-                subscribersTopics.Add(subscriber, topicsList);
-
-                Console.WriteLine("Added subscriber to the dictionary: " + topicsList[0]);
-            }
 
         }
 
@@ -120,7 +123,9 @@ namespace SESDAD
             Console.WriteLine("Subscriber adicionado " + name + " " + port);
             SubscriberInterface subscriber = (SubscriberInterface)Activator.GetObject(typeof(SubscriberInterface), "tcp://localhost:" + port + "/" + name);
             //subscriber.registerLocalBroker(name, port);
-            //subscribers.Add(subscriber);
+            Tuple<string,string> nameAndPort = new Tuple<string, string>(name, port.ToString());
+
+            subscribers.Add(nameAndPort, subscriber);
         }
 
         public void addPublisher(string name, int port)

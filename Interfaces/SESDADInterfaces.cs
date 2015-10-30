@@ -8,6 +8,22 @@ namespace SESDADInterfaces
     {
         // penso que nao seja necessario, pois ninguem fala com o PuppetMaster
     }
+    [Serializable]
+    public class MessageArgs : EventArgs
+    {
+        private string body;
+        private string topic;
+
+        public MessageArgs(string topic, string body)
+        {
+            this.body = body;
+            this.topic = topic;
+        }
+
+        public string Body { get { return body; } }
+        public string Topic { get { return topic; } }
+    }
+
     public interface PublisherInterface
     {
         void recieveOrderToPublish(string topic, string message);
@@ -18,12 +34,13 @@ namespace SESDADInterfaces
     {
         void recieveOrderToSubscribe(string topic, string subName, int subPort);
 
-        void recieveMessage(string topic, string message);
+       
 
         void registerLocalBroker(string BrokerName, int Brokerport);
 
         void printRecievedMessages();
-       
+        void Callback(object sender, MessageArgs m);
+
     }
     public interface BrokerInterface
     {

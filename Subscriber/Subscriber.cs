@@ -7,6 +7,7 @@ using System.Threading;
 using System.Collections.Generic;
 
 using SESDADInterfaces;
+using System.Runtime.Serialization.Formatters;
 
 namespace SESDAD
 {
@@ -15,7 +16,14 @@ namespace SESDAD
         [STAThread]
         static void Main(string[] args)
         {
-            TcpChannel channel = new TcpChannel(8087);
+
+            BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
+            provider.TypeFilterLevel = TypeFilterLevel.Full;
+            IDictionary props = new Hashtable();
+            props["port"] = 8087;
+            TcpChannel channel = new TcpChannel(props, null, provider);
+
+          //  TcpChannel channel = new TcpChannel(8087);
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(
                 typeof(PublisherServices), "Subscriber",
@@ -46,12 +54,13 @@ namespace SESDAD
 
             Console.WriteLine("Subscribed to: " + topic);
         }
-
-        public void recieveMessage(string topic, string message)
+        public void Callback(object sender, MessageArgs m)
         {
-            Console.WriteLine("Recieved "+topic + ":" + message);
-            messages.Add(new Tuple<string,string>(topic, message));
+            Console.WriteLine("Recieved " + m.Topic+ ":" + m.Body);
+            messages.Add(new Tuple<string, string>(m.Topic, m.Body));
+
         }
+        
 
 
         //  invocado pelo PuppetMaster para registar o broker local 
