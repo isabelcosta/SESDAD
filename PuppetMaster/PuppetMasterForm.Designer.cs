@@ -1,4 +1,4 @@
-﻿namespace PuppetMaster
+﻿namespace SESDAD
 {
     partial class PuppetMasterForm
     {
