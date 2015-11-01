@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Threading;
 using SESDADInterfaces;
 
 namespace SESDAD
@@ -48,7 +49,7 @@ namespace SESDAD
         public PuppetMasterForm()
         {
             InitializeComponent();
-            //readConfigFile();
+            readConfigFile();
         }
 
         //Button Run Single Command method - runs a single command and cleans the text box
@@ -91,11 +92,17 @@ namespace SESDAD
             
             foreach (String line in scriptLines) {
                 parsedLine = line.Split(blankSpace, StringSplitOptions.None);
+
                 switch (parsedLine[0]) {
                     case "Wait":
-                        //parsedLine[1].Sleep(2000); //process to wait == sleep
-                        //MessageBox.Show("Waiting");
+                        int msToSleep = 0;
+                        try {
+                            msToSleep = Int32.Parse(parsedLine[1]);
+                        }
+                        catch (FormatException) { break; }
+                        Thread.Sleep(msToSleep);
                         break;
+
                     default:
                         processCommand(parsedLine);
                         break;
@@ -122,24 +129,35 @@ namespace SESDAD
                 case "Publisher":
                     //publish(parsed[1], parsed[3], parsed[5], parsed[7]); //1 - process; 3 - nEvents; 5 - topic; 7 - interval;
                     break;
-                case "Status": status(); break;
-                case "Crash": crash(parsedLine[1]); break;
-                case "Freeze": freeze(parsedLine[1]); break;
-                case "Unfreeze": unfreeze(parsedLine[1]); break;
+                case "Status":
+                    status();
+                    //send to all nodes status request
+                    break;
+                case "Crash":
+                    crash(parsedLine[1]);
+                    addMessageToLog("Crash " + parsedLine[1]);
+                    break;
+                case "Freeze":
+                    freeze(parsedLine[1]);
+                    addMessageToLog("Freeze " + parsedLine[1]);
+                    break;
+                case "Unfreeze":
+                    unfreeze(parsedLine[1]);
+                    addMessageToLog("Unfreeze " + parsedLine[1]);
+                    break;
                 default: break;
             }
         }
 
         //Reads and process the configFile.txt
         private void readConfigFile() {
-            //change to file destination
+            //change to relative file destination
             String[] lines = System.IO.File.ReadAllLines(@"C:\Users\Isabel\Source\Repos\SESDAD\PuppetMaster\configFile.txt");
             
             foreach (String line in lines)
             {
                 processConfigFileLines(line);
             }
-            //MessageBox.Show(RoutingPolicy + " " + Ordering + " " + LoggingLevel);
         }
 
         private void processConfigFileLines(String line) {
@@ -148,36 +166,42 @@ namespace SESDAD
 
             switch (parsed[0])
             {
-                case "Site":
+                case "Site": //Site sitename Parent sitename|none
                     break;
-                case "Process":
 
+                case "Process": //Process processname Is publisher|subscriber|broker On sitename URL process-url
                     string[] portAndProcess = processURL(parsed[7]);
                     string ProcessURL = "tcp://localhost:" + portAndProcess[0] + "/" + portAndProcess[1];
-                    addMessageToLog("Publisher acessivel em: " + ProcessURL);
-
+                    
                     if (String.Compare(parsed[3], ProcessType.BROKER) == 0) {
                         BrokerInterface broker =
                             (BrokerInterface)Activator.GetObject(
                                 typeof(BrokerInterface), ProcessURL);
-                    } else if (String.Compare(parsed[3], ProcessType.PUBLISHER) == 0) {
+                        addMessageToLog("Broker " + parsed[1] + " at " + ProcessURL);
 
+                    } else if (String.Compare(parsed[3], ProcessType.PUBLISHER) == 0) {
                         PublisherInterface publisher =
                             (PublisherInterface)Activator.GetObject(
                                 typeof(PublisherInterface), ProcessURL);
+                        addMessageToLog("Publisher " + parsed[1] + " at " + ProcessURL);
 
                     } else if (String.Compare(parsed[3], ProcessType.SUBSCRIBER) == 0) {
                         SubscriberInterface subscriber =
                             (SubscriberInterface)Activator.GetObject(
                                 typeof(SubscriberInterface), ProcessURL);
+                        addMessageToLog("Subscriber " + parsed[1] + " at " + ProcessURL);
                     }
                     break;
-                case "RoutingPolicy":
+
+                case "RoutingPolicy": //RoutingPolicy flooding|filter
                     this.RoutingPolicy = parsed[1]; break;
-                case "Ordering":
+
+                case "Ordering": //Ordering NO|FIFO|TOTAL
                     this.Ordering = parsed[1]; break;
-                case "LoggingLevel":
+
+                case "LoggingLevel"://LoggingLevel full|light
                     this.LoggingLevel = parsed[1]; break;
+
                 default:
                     break;
             }
@@ -204,7 +228,7 @@ namespace SESDAD
 
         private void freeze(string processName)
         {
-
+            //send a sleep threa request to process or tells responsible puppetmaster slave to do it
         }
 
         private void unfreeze(string processName)
@@ -218,11 +242,11 @@ namespace SESDAD
             tb_Log.AppendText(Environment.NewLine);
         }
 
-        private String[] processURL(string url) {
+        private String[] processURL(string url) { //melhorar codigo
             String[] spliter = { ":" };
 
             String[] portAndProcess = url.Split(spliter, StringSplitOptions.None);
-            String [] spliter2 = { @"/" };
+            String[] spliter2 = { @"/" };
 
             return portAndProcess[2].Split(spliter2, StringSplitOptions.None);
         }

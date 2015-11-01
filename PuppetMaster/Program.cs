@@ -21,44 +21,12 @@ namespace SESDAD
         [STAThread]
         static void Main()
         {
-            //Read config file
-            //TextReader tr = new StreamReader(@"\obj.txt");
-            //MessageBox.Show(Environment.CurrentDirectory);
-
-            
-            string pubName = "Publisher";
-            int pubPort = 8086;
-
-            string broName = "Broker";
-            int broPort = 8088;
-
-            string subName = "Subscriber";
-            int subPort = 8087;
-
+            /*
             string message = "Existem 7 notas musicais";
             string topic = "Musica";
 
             string messageTwo = "As ovelhas têm lã";
             string topicTwo = "Ovelhas";
-
-
-            Console.WriteLine("Publisher acessivel em: " + "tcp://localhost:" + pubPort + "/" + pubName);
-            PublisherInterface publisher =
-               (PublisherInterface)Activator.GetObject(
-                      typeof(PublisherInterface), "tcp://localhost:" + pubPort + "/" + pubName);
-
-
-            Console.WriteLine("Subscriber acessivel em: " + "tcp://localhost:" + subPort + "/" + subName);
-            SubscriberInterface subscriber =
-               (SubscriberInterface)Activator.GetObject(
-                      typeof(SubscriberInterface), "tcp://localhost:" + subPort + "/" + subName);
-
-
-            Console.WriteLine("Broker acessivel em: " + "tcp://localhost:" + broPort + "/" + broName);
-            BrokerInterface broker =
-               (BrokerInterface)Activator.GetObject(
-                      typeof(BrokerInterface), "tcp://localhost:" + broPort + "/" + broName);
-
 
             // 1. establecer as ligacoes entre os varios elementos do no'
             publisher.registerLocalBroker(broName, broPort);
@@ -97,7 +65,7 @@ namespace SESDAD
             Console.WriteLine("Press <enter> to exit..");
             Console.ReadLine();
 
-            
+            */
 
             //Initialize PuppetMaster GUI
             Application.EnableVisualStyles();
