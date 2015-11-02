@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Threading;
+using System.Diagnostics;
 using SESDADInterfaces;
 
 namespace SESDAD
@@ -177,18 +178,24 @@ namespace SESDAD
                         BrokerInterface broker =
                             (BrokerInterface)Activator.GetObject(
                                 typeof(BrokerInterface), ProcessURL);
+                        
+                        startProcess(ProcessType.BROKER, "ID PORT"); //have to give bro, pub and sub arguments
                         addMessageToLog("Broker " + parsed[1] + " at " + ProcessURL);
 
                     } else if (String.Compare(parsed[3], ProcessType.PUBLISHER) == 0) {
                         PublisherInterface publisher =
                             (PublisherInterface)Activator.GetObject(
                                 typeof(PublisherInterface), ProcessURL);
+
+                        startProcess(ProcessType.PUBLISHER, "ID PORT"); //have to give bro, pub and sub arguments
                         addMessageToLog("Publisher " + parsed[1] + " at " + ProcessURL);
 
                     } else if (String.Compare(parsed[3], ProcessType.SUBSCRIBER) == 0) {
                         SubscriberInterface subscriber =
                             (SubscriberInterface)Activator.GetObject(
                                 typeof(SubscriberInterface), ProcessURL);
+
+                        startProcess(ProcessType.SUBSCRIBER, "ID PORT"); //have to give bro, pub and sub arguments
                         addMessageToLog("Subscriber " + parsed[1] + " at " + ProcessURL);
                     }
                     break;
@@ -250,6 +257,31 @@ namespace SESDAD
 
             return portAndProcess[2].Split(spliter2, StringSplitOptions.None);
         }
+
+        private int startProcess(string processType, string args) {
+
+            string processTypeDirectory = processType.First().ToString().ToUpper() + processType.Substring(1);
+            string processPath = Environment.CurrentDirectory.Replace("PuppetMaster", processTypeDirectory); //Broker | Subscriber | Publisher
+            
+            processPath += @"\" + processType + ".exe";
+
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.FileName = processPath;
+            startInfo.Arguments = args;
+
+            try
+            {
+                Process.Start(startInfo);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(startInfo.FileName);
+                MessageBox.Show(e.Message);
+                return -1;
+            }
+
+            return 0;
+        } 
     }
 
 }
