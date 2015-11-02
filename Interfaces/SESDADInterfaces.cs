@@ -34,7 +34,7 @@ namespace SESDADInterfaces
     {
         void recieveOrderToSubscribe(string topic, string subName, int subPort);
 
-       
+        void recieveOrderToUnSubscribe(string topic, string subName, int subPort);
 
         void registerLocalBroker(string BrokerName, int Brokerport);
 
@@ -44,14 +44,16 @@ namespace SESDADInterfaces
     }
     public interface BrokerInterface
     {
-        void recieveOrderToFlood(string topic, string message);
+        void recieveOrderToFlood(string topic, string message, object source);
 
         void subscribeRequest(string topic, string subscriberName, int port);
+
+        void unSubscribeRequest(string topic, string subscriberName, int port);
 
         void addSubscriber(string name, int port);
 
         void addPublisher(string name, int port);
 
-        void addBroker(string name, int port);
+        void addBroker(string name, int port, string relation);
     }
 }

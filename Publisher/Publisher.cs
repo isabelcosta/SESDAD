@@ -16,17 +16,22 @@ namespace SESDAD
 
         static void Main(string[] args)
         {
+
+            string publisherName = args[0];
+            int publisherPort = Int32.Parse(args[1]);
+
+
             BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
             provider.TypeFilterLevel = TypeFilterLevel.Full;
             IDictionary props = new Hashtable();
-            props["port"] = 8086;
+            props["port"] = publisherPort;
             TcpChannel channel = new TcpChannel(props, null, provider);
 
 
             //TcpChannel channel = new TcpChannel(8086);
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(PublisherServices), "Publisher",
+                typeof(PublisherServices), publisherName,
                 WellKnownObjectMode.Singleton);
             System.Console.WriteLine("Press <enter> to terminate Publisher...");
             System.Console.ReadLine();
@@ -42,9 +47,12 @@ namespace SESDAD
         {
            // while(true)
             //{
-                localBroker.recieveOrderToFlood(topic, message);
-           
+                
+                localBroker.recieveOrderToFlood(topic, message, this); //(PublisherInterface)this
+            Console.WriteLine();
                 Console.WriteLine(topic+ ":"+ message);
+                Console.WriteLine();
+                
                 //Thread.Sleep(4000);
             //}
         }

@@ -16,17 +16,19 @@ namespace SESDAD
         [STAThread]
         static void Main(string[] args)
         {
+            string subscriberName = args[0];
+            int subscriberPort = Int32.Parse(args[1]);
 
             BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
             provider.TypeFilterLevel = TypeFilterLevel.Full;
             IDictionary props = new Hashtable();
-            props["port"] = 8087;
+            props["port"] = subscriberPort;
             TcpChannel channel = new TcpChannel(props, null, provider);
 
           //  TcpChannel channel = new TcpChannel(8087);
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(PublisherServices), "Subscriber",
+                typeof(PublisherServices), subscriberName,
                 WellKnownObjectMode.Singleton);
             System.Console.WriteLine("Press <enter> to terminate Subscriber...");
             System.Console.ReadLine();
@@ -51,16 +53,36 @@ namespace SESDAD
 
             //informar o local broker que subscreveu
             localBroker.subscribeRequest(topic, subName, subPort);
-
+            Console.WriteLine();
             Console.WriteLine("Subscribed to: " + topic);
+            Console.WriteLine();
+
         }
+
+        public void recieveOrderToUnSubscribe(string topic, string subName, int subPort)
+        {
+            if (topic == null || topic.Equals(""))
+                throw new Exception("topic is empty");
+            //adicionar as subscricoes a lista
+            subscriptions.Remove(topic);
+
+            //informar o local broker que subscreveu
+            localBroker.unSubscribeRequest(topic, subName, subPort);
+            Console.WriteLine();
+            Console.WriteLine("Unsubscribed to: " + topic);
+            Console.WriteLine();
+        }
+
         public void Callback(object sender, MessageArgs m)
         {
+            Console.WriteLine();
             Console.WriteLine("Recieved " + m.Topic+ ":" + m.Body);
+            Console.WriteLine();
+
             messages.Add(new Tuple<string, string>(m.Topic, m.Body));
 
         }
-        
+
 
 
         //  invocado pelo PuppetMaster para registar o broker local 
@@ -76,11 +98,13 @@ namespace SESDAD
 
         public void printRecievedMessages()
         {
-            
-            foreach (Tuple<string,string> msg in messages) {
-                Console.WriteLine("Topic " + msg.Item1 + " - " + msg.Item2);
-                
+
+            foreach (Tuple<string, string> msg in messages) {
+                Console.WriteLine("--");
+                Console.WriteLine("Topic: {0}", msg.Item1);
+                Console.WriteLine("Message: {0}", msg.Item2);
             }
+                Console.WriteLine("--");
         }
 
     }
