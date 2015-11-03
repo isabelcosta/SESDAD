@@ -19,7 +19,7 @@ namespace SESDAD
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(String[] args)
         {
             /*
             string message = "Existem 7 notas musicais";
@@ -70,7 +70,7 @@ namespace SESDAD
             //Initialize PuppetMaster GUI
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new PuppetMasterForm());
+            Application.Run(new PuppetMasterForm(args));
         }
     }
 }

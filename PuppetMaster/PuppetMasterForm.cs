@@ -25,8 +25,8 @@ namespace SESDAD
     }
 
     public class LoggingLevelType {
-        public const string FULL = "FULL";
-        public const string LIGHT = "LIGHT";
+        public const string FULL = "full";
+        public const string LIGHT = "light";
     }
 
     public class ProcessType
@@ -40,18 +40,34 @@ namespace SESDAD
     {
 
         //***************** Attributes **********************
-        String RoutingPolicy = RoutingPolicyType.FLOODING;
-        String Ordering = null;
-        String LoggingLevel = null;
+        String routingPolicy = RoutingPolicyType.FLOODING;
+        String ordering = OrderingType.FIFO;
+        String loggingLevel = LoggingLevelType.LIGHT;
+        bool singlePuppetMode = false;
+        String puppetMasterURL = null; //tcp://localhost:30000/puppet
+        int puppetID = 0;
 
- 
         //Array with processes
 
-        public PuppetMasterForm()
+        public PuppetMasterForm(String[] args)
         {
-            InitializeComponent();
-            readConfigFile();
+            //InitializeComponent();
+            //readConfigFile();
+            this.puppetID = Int32.Parse(args[0]);
+            int puppetPort = 30000 + puppetID;
+            this.puppetMasterURL = "tcp://localhost:" + puppetPort + "/puppet";
+            //MessageBox.Show(puppetMasterURL);
+
+            if (String.Compare("-singlepuppet", args[1].ToLower()) == 0) {
+                try { singlePuppetMode = true; } catch (Exception) { }
+            }
+
+            MessageBox.Show("This is " + (singlePuppetMode ? "single" : "multiple") + " PuppetMaster mode");
+            //MessageBox.Show(singlePuppetMode.ToString());
         }
+        //************************************************************************************
+        //************************************************************************************
+        //************************************************************************************
 
         //Button Run Single Command method - runs a single command and cleans the text box
         private void bt_Command_Click(object sender, EventArgs e)
@@ -101,7 +117,7 @@ namespace SESDAD
                             msToSleep = Int32.Parse(parsedLine[1]);
                         }
                         catch (FormatException) { break; }
-                        Thread.Sleep(msToSleep);
+                        //Thread.Sleep(msToSleep);
                         break;
 
                     default:
@@ -201,13 +217,13 @@ namespace SESDAD
                     break;
 
                 case "RoutingPolicy": //RoutingPolicy flooding|filter
-                    this.RoutingPolicy = parsed[1]; break;
+                    this.routingPolicy = parsed[1]; break;
 
                 case "Ordering": //Ordering NO|FIFO|TOTAL
-                    this.Ordering = parsed[1]; break;
+                    this.ordering = parsed[1]; break;
 
                 case "LoggingLevel"://LoggingLevel full|light
-                    this.LoggingLevel = parsed[1]; break;
+                    this.loggingLevel = parsed[1]; break;
 
                 default:
                     break;
@@ -235,7 +251,7 @@ namespace SESDAD
 
         private void freeze(string processName)
         {
-            //send a sleep threa request to process or tells responsible puppetmaster slave to do it
+            //send a sleep thread request to process or tells responsible puppetmaster slave to do it
         }
 
         private void unfreeze(string processName)
