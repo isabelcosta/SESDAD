@@ -175,11 +175,11 @@ namespace SESDAD
             
             broker2.addBroker(broName1, broPort1, "parent");
 
-            
             // Publisher -> Basics/chords
             publisher1.recieveOrderToPublish(topicBasicsChords, messageBasicsChords, numbOfMsgs1, frequence);
             Thread.Sleep(2000); //2 seconds wait
 
+            /*
 
             // Subscriber -> Basics/chords
             subscriber1.recieveOrderToSubscribe(topicBasicsChords + "*", subName1, subPort1);
@@ -214,6 +214,8 @@ namespace SESDAD
             // Publisher -> topic Basics\Scales
             publisher1.recieveOrderToPublish(topicBasicsScales, messageBasicsScales, numbOfMsgs1, frequence);
             Thread.Sleep(2000);
+            */
+
 
             /*
             publisher2.recieveOrderToPublish(topicBasicsScales, messageBasicsScales, numbOfMsgs1, frequence);
