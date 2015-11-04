@@ -26,7 +26,7 @@ namespace SESDADInterfaces
 
     public interface PublisherInterface
     {
-        void recieveOrderToPublish(string topic, string message);
+        void recieveOrderToPublish(string topic, string message, int numeberOfEvents, int interval_x_ms);
 
         void registerLocalBroker(string BrokerName, int Brokerport);
     }
@@ -34,7 +34,7 @@ namespace SESDADInterfaces
     {
         void recieveOrderToSubscribe(string topic, string subName, int subPort);
 
-        void recieveOrderToUnSubscribe(string topic, string subName, int subPort);
+        void recieveOrderToUnSubscribe(string topic, int subPort);
 
         void registerLocalBroker(string BrokerName, int Brokerport);
 
@@ -48,7 +48,7 @@ namespace SESDADInterfaces
 
         void subscribeRequest(string topic, string subscriberName, int port);
 
-        void unSubscribeRequest(string topic, string subscriberName, int port);
+        void unSubscribeRequest(string topic, int port);
 
         void addSubscriber(string name, int port);
 

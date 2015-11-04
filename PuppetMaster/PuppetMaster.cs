@@ -167,7 +167,7 @@ namespace SESDAD
             
             broker2.addBroker(broName1, broPort1, "parent");
 
-            /*
+            
             // Publisher -> MUSIC
             publisher1.recieveOrderToPublish(topic, message);
             Thread.Sleep(2000); //2 seconds wait
@@ -203,18 +203,20 @@ namespace SESDAD
             Thread.Sleep(2000);
 
 
-            // Subscriber -unsub-> SHEEP
-            //subscriber.recieveOrderToUnSubscribe(topicTwo, subName, subPort);
-            //Thread.Sleep(2000);
+            //Subscriber - unsub->SHEEP
+            subscriber1.recieveOrderToUnSubscribe(topicTwo, subPort1);
+            Thread.Sleep(2000);
 
             // Publisher -> SHEEP
             publisher1.recieveOrderToPublish(topicTwo, messageTwo);
             Thread.Sleep(2000);
 
-            
-            subscriber1.printRecievedMessages();
-           */
+            publisher1.recieveOrderToPublish(topic, message);
+            Thread.Sleep(2000);
 
+            subscriber1.printRecievedMessages();
+           
+           /*
 
             publisher1.recieveOrderToPublish(topic, message);
             Thread.Sleep(2000);
@@ -230,7 +232,7 @@ namespace SESDAD
             
             publisher1.recieveOrderToPublish(topic, message);
             Thread.Sleep(2000);
-
+            */
            
            /*
             publisher1.recieveOrderToPublish(topic, message);
@@ -242,6 +244,11 @@ namespace SESDAD
             publisher1.recieveOrderToPublish(topic, message);
             Thread.Sleep(2000);
             */
+
+
+
+
+
 
             Console.WriteLine("Press <enter> to exit..");
             Console.ReadLine();

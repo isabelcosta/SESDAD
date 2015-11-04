@@ -59,7 +59,7 @@ namespace SESDAD
 
         }
 
-        public void recieveOrderToUnSubscribe(string topic, string subName, int subPort)
+        public void recieveOrderToUnSubscribe(string topic, int subPort)
         {
             if (topic == null || topic.Equals(""))
                 throw new Exception("topic is empty");
@@ -67,7 +67,7 @@ namespace SESDAD
             subscriptions.Remove(topic);
 
             //informar o local broker que subscreveu
-            localBroker.unSubscribeRequest(topic, subName, subPort);
+            localBroker.unSubscribeRequest(topic, subPort);
             Console.WriteLine();
             Console.WriteLine("Unsubscribed to: " + topic);
             Console.WriteLine();

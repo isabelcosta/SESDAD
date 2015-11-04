@@ -43,17 +43,19 @@ namespace SESDAD
     {
 
         BrokerInterface localBroker;
-        public void recieveOrderToPublish(string topic, string message)
+        public void recieveOrderToPublish(string topic, string message, int numberOfEvents, int interval_x_ms)
         {
-           // while(true)
-            //{
-                
-                localBroker.recieveOrderToFlood(topic, message, this); //(PublisherInterface)this
-            Console.WriteLine();
+            /*
+            for (int i = 0; i < numberOfEvents; i++)
+            {
+            */
+
+                localBroker.recieveOrderToFlood(topic, message, this);
+                Console.WriteLine();
                 Console.WriteLine(topic+ ":"+ message);
                 Console.WriteLine();
-                
-                //Thread.Sleep(4000);
+
+                Thread.Sleep(interval_x_ms);
             //}
         }
 
