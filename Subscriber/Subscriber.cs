@@ -107,6 +107,10 @@ namespace SESDAD
                 Console.WriteLine("--");
         }
 
+        public void status()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

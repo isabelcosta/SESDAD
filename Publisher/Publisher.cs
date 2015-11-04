@@ -66,6 +66,11 @@ namespace SESDAD
                (BrokerInterface)Activator.GetObject(
                       typeof(BrokerInterface), "tcp://localhost:" + BrokerPort + "/" + BrokerName);
         }
+
+        public void status()
+        {
+            throw new NotImplementedException();
+        }
     }
 
 

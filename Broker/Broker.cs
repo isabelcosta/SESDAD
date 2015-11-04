@@ -329,5 +329,10 @@ namespace SESDAD
                     break;
             }
         }
+
+        public void status()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
