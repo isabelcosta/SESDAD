@@ -111,6 +111,16 @@ namespace SESDAD
         {
             throw new NotImplementedException();
         }
+
+        public void addPupperMaster(string name, int port)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void policies(string routing, string ordering, string logging)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

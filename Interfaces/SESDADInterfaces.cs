@@ -35,6 +35,10 @@ namespace SESDADInterfaces
 
         void registerLocalBroker(string BrokerName, int Brokerport);
 
+        void addPupperMaster(string name, int port);
+
+        void policies(string routing, string ordering, string logging);
+
         void status();
     }
     public interface SubscriberInterface
@@ -48,6 +52,10 @@ namespace SESDADInterfaces
         void printRecievedMessages();
 
         void Callback(object sender, MessageArgs m);
+
+        void addPupperMaster(string name, int port);
+
+        void policies(string routing, string ordering, string logging);
 
         void status();
     }
@@ -64,6 +72,10 @@ namespace SESDADInterfaces
         void addPublisher(string name, int port);
 
         void addBroker(string name, int port, string relation);
+
+        void addPupperMaster(string name, int port);
+
+        void policies(string routing, string ordering, string logging);
 
         void status();
     }
