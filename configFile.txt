@@ -4,7 +4,7 @@ Site site2 Parent site0
 Process broker0 Is broker On site0 URL tcp://1.2.3.4:8088/broker
 Process publisher0 Is publisher On site0 URL tcp://1.2.3.4:8086/pub
 Process subscriber0 Is subscriber On site0 URL tcp://1.2.3.4:8087/sub
-//Process subscriber1 Is subscriber On site0 URL tcp://1.2.3.4:8089/sub
+Process subscriber1 Is subscriber On site1 URL tcp://1.2.3.4:8089/sub
 RoutingPolicy flooding
 Ordering FIFO
 LoggingLevel full

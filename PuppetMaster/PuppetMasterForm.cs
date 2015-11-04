@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
@@ -10,63 +9,86 @@ using System.Windows.Forms;
 using System.Threading;
 using System.Diagnostics;
 using SESDADInterfaces;
+using System.Collections.Generic;
+using System.Collections;
+using System.Runtime.Remoting;
+using System.Runtime.Remoting.Channels;
+using System.Runtime.Remoting.Channels.Tcp;
+using System.Runtime.Serialization.Formatters;
 
 namespace SESDAD
 {
-    public class RoutingPolicyType {
-        public const string FILTER = "filter";
-        public const string FLOODING = "flooding";
-    }
-
-    public class OrderingType {
-        public const string NO = "NO";
-        public const string TOTAL = "TOTAL";
-        public const string FIFO = "FIFO";
-    }
-
-    public class LoggingLevelType {
-        public const string FULL = "full";
-        public const string LIGHT = "light";
-    }
-
-    public class ProcessType
-    {
-        public const string BROKER = "broker";
-        public const string PUBLISHER = "publisher";
-        public const string SUBSCRIBER = "subscriber";
-    }
 
     public partial class PuppetMasterForm : Form
     {
 
-        //***************** Attributes **********************
-        String routingPolicy = RoutingPolicyType.FLOODING;
-        String ordering = OrderingType.FIFO;
-        String loggingLevel = LoggingLevelType.LIGHT;
-        bool singlePuppetMode = false;
-        String puppetMasterURL = null; //tcp://localhost:30000/puppet
-        int puppetID = 0;
+        //*********************************************************************
+        //                              ATTRIBUTES
+        //*********************************************************************
+        private String routingPolicy = RoutingPolicyType.FLOODING;
+        private String ordering = OrderingType.FIFO;
+        private String loggingLevel = LoggingLevelType.LIGHT;
 
-        //Array with processes
+        private bool singlePuppetMode = false;
 
+        private String puppetURL = null; //tcp://localhost:30000/puppet
+        private int puppetID = 0; //indexes the URLs in configPuppet
+
+        private IDictionary<string, Process> LocalProcesses = new Dictionary<string, Process>(); //Array with processes <processName, process>
+        private IDictionary<string, string> myBrokerinfo = new Dictionary<string, string>();
+
+        //Only PuppetMaster's use, to access the Puppet Master Slaves
+        private IDictionary<string, int> slavesProcesses  = new Dictionary<string, int>(); //Hashtable please <processName, slaveURL>
+        private IDictionary<int, string> slavesRemoteObjects = new Dictionary<int, string>(); //Hashtable please <processName, slaveURL>
+
+
+
+
+        /// <summary>
+        /// Puppet Master Constructor
+        /// </summary>
+        /// <param name="args"></param>
         public PuppetMasterForm(String[] args)
         {
-            //InitializeComponent();
-            //readConfigFile();
+            //Builds the Puppet Master GUI
+            InitializeComponent();
+            
+            //Check if the system should run with a single Puppet Master for testing purposes
+            try { 
+                if (String.Compare("-singlepuppet", args[1].ToLower()) == 0) {
+                    singlePuppetMode = true; 
+                }
+            } catch (Exception) { }
+            //MessageBox.Show("This is " + (singlePuppetMode ? "single" : "multiple") + " PuppetMaster mode");
+            
+            String configPuppetPath = Environment.CurrentDirectory + @"\..\..\..\configPuppet.txt";
+            
             this.puppetID = Int32.Parse(args[0]);
+            //MessageBox.Show(configPuppetPath);
+            this.puppetURL = System.IO.File.ReadAllLines(configPuppetPath)[puppetID];
+
             int puppetPort = 30000 + puppetID;
-            this.puppetMasterURL = "tcp://localhost:" + puppetPort + "/puppet";
-            //MessageBox.Show(puppetMasterURL);
+            
+            //Single Mode: PuppetMaster reads and processes all processes
+            //Multiple Mode: Each Puppet Master/Slave processes its processes 
+            readConfigFile();
+            
+            //regista o servico de puppet
+            BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
+            provider.TypeFilterLevel = TypeFilterLevel.Full;
+            IDictionary props = new Hashtable();
+            props["port"] = puppetPort;
+            TcpChannel channel = new TcpChannel(props, null, provider);
+            ChannelServices.RegisterChannel(channel, false);
 
-            if (String.Compare("-singlepuppet", args[1].ToLower()) == 0) {
-                try { singlePuppetMode = true; } catch (Exception) { }
-            }
-
-            MessageBox.Show("This is " + (singlePuppetMode ? "single" : "multiple") + " PuppetMaster mode");
-            //MessageBox.Show(singlePuppetMode.ToString());
+            /*
+            PuppetServices servicos = new PuppetServices();
+            RemotingServices.Marshal(servicos, "Puppet - " + puppetID,
+                typeof(PuppetServices));*/
         }
+
         //************************************************************************************
-        //************************************************************************************
+        //***********************          Handle buttons        *****************************
         //************************************************************************************
 
         //Button Run Single Command method - runs a single command and cleans the text box
@@ -166,12 +188,18 @@ namespace SESDAD
             }
         }
 
+        //************************************************************************************
+        //***************          Initial configuration functions        ********************
+        //************************************************************************************
+
         //Reads and process the configFile.txt
         private void readConfigFile() {
-            //change to relative file destination
-            String[] lines = System.IO.File.ReadAllLines(@"C:\Users\Isabel\Source\Repos\SESDAD\PuppetMaster\configFile.txt");
+
+            String configFilePath = Environment.CurrentDirectory + @"\..\..\..\configFile.txt";
             
-            foreach (String line in lines)
+            String[] lines = System.IO.File.ReadAllLines(configFilePath);
+            
+            foreach (string line in lines)
             {
                 processConfigFileLines(line);
             }
@@ -184,35 +212,62 @@ namespace SESDAD
             switch (parsed[0])
             {
                 case "Site": //Site sitename Parent sitename|none
+                    if (String.Compare("site" + this.puppetID, parsed[1]) == 0)
+                    { //se eu for um filho logo tenho o pai do meu broker
+                        myBrokerinfo[BrokerNeighbours.PARENT] = parsed[3];
+                    }
+           
+                    else if (String.Compare("site" + this.puppetID, parsed[3]) == 0) { //primeiro defino o filho SonL depois o SonR
+                        if (myBrokerinfo.ContainsKey(BrokerNeighbours.SONL)) {
+                            myBrokerinfo.Add(BrokerNeighbours.SONR, parsed[1]);
+                        }
+                        else {
+                            myBrokerinfo.Add(BrokerNeighbours.SONL, parsed[1]);
+                        }
+                    }
                     break;
 
-                case "Process": //Process processname Is publisher|subscriber|broker On sitename URL process-url
-                    string[] portAndProcess = processURL(parsed[7]);
-                    string ProcessURL = "tcp://localhost:" + portAndProcess[0] + "/" + portAndProcess[1];
+                case "Process": //Process processname Is publisher|subscriber|broker On sitename URL process-url REFATORIZAR REFATORIZAR REFATORIZAR
                     
+                    string URL = parsed[7];
+                    Process process = null;
+
+                    if (String.Compare("site" + this.puppetID, parsed[5]) != 0) { //se não pertence ao meu site nao me interessa
+                        break;
+                    }
+
                     if (String.Compare(parsed[3], ProcessType.BROKER) == 0) {
-                        BrokerInterface broker =
+                        /*BrokerInterface broker =
                             (BrokerInterface)Activator.GetObject(
-                                typeof(BrokerInterface), ProcessURL);
-                        
-                        startProcess(ProcessType.BROKER, "ID PORT"); //have to give bro, pub and sub arguments
-                        addMessageToLog("Broker " + parsed[1] + " at " + ProcessURL);
+                                typeof(BrokerInterface), ProcessURL);*/
+
+                        process = startProcess(parsed[1], ProcessType.BROKER, processPortFromURL(URL) + " " + myBrokerinfo[BrokerNeighbours.PARENT] + " " + myBrokerinfo[BrokerNeighbours.SONR] + " " + myBrokerinfo[BrokerNeighbours.SONL]); //parente SonR SonL
+                        if (process == null) {
+                            addMessageToLog("Couldn't start " + parsed[1]);
+                        }
+                        addMessageToLog("Broker " + parsed[1] + " at " + URL);
 
                     } else if (String.Compare(parsed[3], ProcessType.PUBLISHER) == 0) {
-                        PublisherInterface publisher =
+                        /*PublisherInterface publisher =
                             (PublisherInterface)Activator.GetObject(
-                                typeof(PublisherInterface), ProcessURL);
-
-                        startProcess(ProcessType.PUBLISHER, "ID PORT"); //have to give bro, pub and sub arguments
-                        addMessageToLog("Publisher " + parsed[1] + " at " + ProcessURL);
+                                typeof(PublisherInterface), ProcessURL);*/
+                        
+                        process = startProcess(parsed[1], ProcessType.PUBLISHER, processPortFromURL(URL));
+                        if (process == null) {
+                            addMessageToLog("Couldn't start " + parsed[1]);
+                        }
+                        addMessageToLog("Publisher " + parsed[1] + " at " + URL);
 
                     } else if (String.Compare(parsed[3], ProcessType.SUBSCRIBER) == 0) {
-                        SubscriberInterface subscriber =
+                        /*SubscriberInterface subscriber =
                             (SubscriberInterface)Activator.GetObject(
-                                typeof(SubscriberInterface), ProcessURL);
-
-                        startProcess(ProcessType.SUBSCRIBER, "ID PORT"); //have to give bro, pub and sub arguments
-                        addMessageToLog("Subscriber " + parsed[1] + " at " + ProcessURL);
+                                typeof(SubscriberInterface), ProcessURL);*/
+                        
+                        process = startProcess(parsed[1], ProcessType.SUBSCRIBER, processPortFromURL(URL));
+                        if (process == null) {
+                            addMessageToLog("Couldn't start " + parsed[1]);
+                        }
+                        addMessageToLog("Subscriber " + parsed[1] + " at " + URL);
                     }
                     break;
 
@@ -230,51 +285,10 @@ namespace SESDAD
             }
         }
 
-        private void crash(String processName) {
-            /*
-            Process[] processes = null;
-			processes = Process.GetProcessesByName(processName);
-
-			foreach (Process process in processes)
-			{
-				process.Kill();
-			}
-
-            //System.Diagnostics.Process.GetProcessesByName("csrss")[0].Kill();
-            */
-        }
-
-        private void status()
-        {
-
-        }
-
-        private void freeze(string processName)
-        {
-            //send a sleep thread request to process or tells responsible puppetmaster slave to do it
-        }
-
-        private void unfreeze(string processName)
-        {
-
-        }
-
-        private void addMessageToLog(string message) {
-            
-            tb_Log.AppendText(message);
-            tb_Log.AppendText(Environment.NewLine);
-        }
-
-        private String[] processURL(string url) { //melhorar codigo
-            String[] spliter = { ":" };
-
-            String[] portAndProcess = url.Split(spliter, StringSplitOptions.None);
-            String[] spliter2 = { @"/" };
-
-            return portAndProcess[2].Split(spliter2, StringSplitOptions.None);
-        }
-
-        private int startProcess(string processType, string args) {
+        /********************************************/
+        //          START A SINGLE PROCESS
+        /*******************************************/
+        public Process startProcess(string processName, string processType, string args) {
 
             string processTypeDirectory = processType.First().ToString().ToUpper() + processType.Substring(1);
             string processPath = Environment.CurrentDirectory.Replace("PuppetMaster", processTypeDirectory); //Broker | Subscriber | Publisher
@@ -284,20 +298,122 @@ namespace SESDAD
             ProcessStartInfo startInfo = new ProcessStartInfo();
             startInfo.FileName = processPath;
             startInfo.Arguments = args;
+            Process process = null;
 
             try
             {
-                Process.Start(startInfo);
+                process = Process.Start(startInfo);
+                LocalProcesses.Add(processName, process); //have to give bro, pub and sub arguments
             }
             catch (Exception e)
             {
                 MessageBox.Show(startInfo.FileName);
                 MessageBox.Show(e.Message);
-                return -1;
             }
 
-            return 0;
-        } 
+            return process;
+        }
+
+        public void crash(String processName) {
+
+            if (LocalProcesses.ContainsKey(processName))
+            {
+                LocalProcesses[processName].Kill();
+            }
+            else {
+                return;
+            }
+        }
+
+        public void status()
+        {
+
+        }
+
+        public void freeze(string processName)
+        {
+            //send a sleep thread request to process or tells responsible puppetmaster slave to do it
+            //suspend(process)
+        }
+
+        public void unfreeze(string processName)
+        {
+            //resume(process)
+        }
+
+        public void addMessageToLog(string message) {
+            
+            tb_Log.AppendText(message);
+            tb_Log.AppendText(Environment.NewLine);
+        }
+
+        private String processPortFromURL(string url) { //melhorar codigo - returns port and processType
+            String[] spliter = { ":" };
+
+            String[] portAndProcess = url.Split(spliter, StringSplitOptions.None);
+            String[] spliter2 = { @"/" };
+
+            String port = portAndProcess[2].Split(spliter2, StringSplitOptions.None)[0];
+
+            return port;
+        }
+
+
+    }
+
+    //************************************************************************************
+    //************************          Puppet Delegates       ***************************
+    //************************************************************************************
+    delegate void DelCrashProcess(string processName);
+    delegate Process DelStartProcess(string processName, string processType, string args);
+
+    class PuppetServices : MarshalByRefObject, PuppetInterface
+    {
+
+        public static PuppetMasterForm form;
+
+        public PuppetServices()
+        {
+
+        }
+
+        public void recieveOrderToCrash(string processName)
+        {
+            // thread-safe access to form
+            form.Invoke(new DelCrashProcess(form.crash), processName);
+        }
+
+        //public void receiveOrderToStartProcess(string processName, string processType, string args) {
+        //    form.Invoke(new DelStartProcess(form.startProcess), processName, processType, args);
+        //}
+
+        public void registerSuperPuppetMaster()
+        {
+            String configPuppetPath = Environment.CurrentDirectory + @"\configPuppet.txt";
+
+            String[] puppetsLocation = System.IO.File.ReadAllLines(configPuppetPath);
+
+            //Console.WriteLine("Broker local registado no Publisher: " + "tcp://localhost:" + BrokerPort + "/" + BrokerName);
+            PuppetInterface superPuppetMaster =
+               (PuppetInterface)Activator.GetObject(
+                      typeof(PuppetInterface), puppetsLocation[0]);
+        }
+        
+        public void receiveOrderToFreeze(string processName) {
+
+        }
+
+        public void receiveOrderToUnfreeze(string processName) {
+
+        }
+
+        public void receiveOrderToCrash(string processName) { }
+        public void receiveOrderToPublish(string processName) { } //mais cenas
+        public void receiveOrderToSubscribe(string processName) { } //mais cenas
+        public void receiveOrderToUnsubscribe(string processName) { } //mais cenas
+        public void receiveOrderToShowStatus(string processName) { }
+        public void sendLogsToMaster(string logInfo) { }
+        public void informMyMaster(string logInfo) { }
     }
 
 }

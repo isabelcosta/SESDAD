@@ -4,10 +4,57 @@ using System.Collections.Generic;
 
 namespace SESDADInterfaces
 {
-    public interface PuppetMasterInterface
+    //*********************************************************************
+    //                              CONSTANTS
+    //*********************************************************************
+
+    public class RoutingPolicyType
     {
-        // penso que nao seja necessario, pois ninguem fala com o PuppetMaster
+        public const string FILTER = "filter";
+        public const string FLOODING = "flooding";
     }
+
+    public class OrderingType
+    {
+        public const string NO = "NO";
+        public const string TOTAL = "TOTAL";
+        public const string FIFO = "FIFO";
+    }
+
+    public class LoggingLevelType
+    {
+        public const string FULL = "full";
+        public const string LIGHT = "light";
+    }
+
+    public class ProcessType
+    {
+        public const string BROKER = "broker";
+        public const string PUBLISHER = "publisher";
+        public const string SUBSCRIBER = "subscriber";
+    }
+
+    public class BrokerNeighbours
+    {
+        public const string SONL = "SonL";
+        public const string SONR = "SonR";
+        public const string PARENT = "Parent";
+    }
+
+    public interface PuppetInterface
+    {
+        void receiveOrderToCrash(string processName);
+        void receiveOrderToFreeze(string processName);
+        void receiveOrderToUnfreeze(string processName);
+        void receiveOrderToPublish(string processName); //mais cenas
+        void receiveOrderToSubscribe(string processName); //mais cenas
+        void receiveOrderToUnsubscribe(string processName); //mais cenas
+        void receiveOrderToShowStatus(string processName);
+        //void receiveOrderToStartProcess(string processName, string processType, string args);
+        void sendLogsToMaster(string logInfo);
+        void informMyMaster(string logInfo);
+    }
+
     [Serializable]
     public class MessageArgs : EventArgs
     {

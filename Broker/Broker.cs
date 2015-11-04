@@ -22,7 +22,7 @@ namespace SESDAD
             BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
             provider.TypeFilterLevel = TypeFilterLevel.Full;
             IDictionary props = new Hashtable();
-            props["port"] = 8088;
+            props["port"] = args[0];
             TcpChannel channel = new TcpChannel(props, null, provider);
 
 

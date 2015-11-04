@@ -1,0 +1,12 @@
+tcp://localhost:30000/puppet
+tcp://localhost:30001/puppet
+tcp://localhost:30002/puppet
+tcp://localhost:30003/puppet
+tcp://localhost:30004/puppet
+tcp://localhost:30005/puppet
+
+
+/**
+localhost quando se testar numa local machine
+IP quando for para testar em ambiente distribuido
+*/
