@@ -43,6 +43,15 @@ namespace SESDAD
     {
 
         BrokerInterface localBroker;
+        /*
+        message
+            */
+        string name;
+        string topic;
+        int numberOfEvents;
+        int interval_x_ms;
+
+
 
         public void addPupperMaster(string name, int port)
         {
@@ -54,22 +63,41 @@ namespace SESDAD
             throw new NotImplementedException();
         }
 
-        public void recieveOrderToPublish(string topic, string namePlusSeqN, int numberOfEvents, int interval_x_ms)
+        public void recieveOrderToPublish(string topic, string name, int numberOfEvents, int interval_x_ms)
         {
             // Formato da mensagem : PubName SeqNumber/Total
-            
-            /*
-            for (int i = 0; i < numberOfEvents; i++)
+            this.name = name;
+            this.numberOfEvents = numberOfEvents;
+            this.topic = topic;
+            this.interval_x_ms = interval_x_ms;
+
+            ThreadStart ts = new ThreadStart(this.publish);
+            Thread t = new Thread(ts);
+            t.Start();
+
+
+        }
+
+        public void publish()
+        {
+            int numOfEv = this.numberOfEvents;
+            int intv_x_ms = this.interval_x_ms;
+            string topicLocal = this.topic;
+
+            for (int i = 1; i <= numOfEv; i++)
             {
-            */
-                
-                localBroker.recieveOrderToFlood(topic, namePlusSeqN + "/" + numberOfEvents, this);
+                string content = name + " " + i + "/" + numberOfEvents;
+                                                
+                                            // Exe: Publisher1 1/10
+                localBroker.recieveOrderToFlood(topicLocal, content, this);
+
                 Console.WriteLine();
-                Console.WriteLine(topic+ ":"+ namePlusSeqN);
+                Console.WriteLine(topicLocal+ ":"+ name);
                 Console.WriteLine();
 
-                Thread.Sleep(interval_x_ms);
-            //}
+                Thread.Sleep(intv_x_ms);
+            }
+
         }
 
         public void registerLocalBroker(string BrokerName, int BrokerPort)
