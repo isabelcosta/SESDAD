@@ -8,6 +8,26 @@ namespace SESDADInterfaces
     {
         // penso que nao seja necessario, pois ninguem fala com o PuppetMaster
     }
+
+    public class RoutingPolicyType
+    {
+        public const string FILTER = "filter";
+        public const string FLOODING = "flooding";
+    }
+
+    public class OrderingType
+    {
+        public const string NO = "NO";
+        public const string TOTAL = "TOTAL";
+        public const string FIFO = "FIFO";
+    }
+
+    public class LoggingLevelType
+    {
+        public const string FULL = "full";
+        public const string LIGHT = "light";
+    }
+
     [Serializable]
     public class MessageArgs : EventArgs
     {

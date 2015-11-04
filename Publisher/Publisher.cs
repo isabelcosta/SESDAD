@@ -56,6 +56,8 @@ namespace SESDAD
 
         public void recieveOrderToPublish(string topic, string message, int numberOfEvents, int interval_x_ms)
         {
+            // Formato da mensagem : PubName SeqNumber/Total
+            
             /*
             for (int i = 0; i < numberOfEvents; i++)
             {
