@@ -200,10 +200,12 @@ namespace SESDAD
             //callback
             foreach (string subTopic in delegates.Keys)
             {
-                if (String.Compare(subTopic,topic)==0)
+                    // checks if the TOPIC BEING PUBLISHED is INCLUDED in the TOPIC SUBSCRIBED
+                if (topicsMatch(topic, subTopic))
                 {
                     foreach (SubscriberRequestID subReqID in delegates[subTopic])
                     {
+                        Console.WriteLine("Ciclo dos subs de topic - subTopic " + subTopic);
                         subReqID.SubDelegate(this, new MessageArgs(topic, message));
                     }
 
@@ -213,6 +215,27 @@ namespace SESDAD
             Console.WriteLine("Flooded: " + message);
             Console.WriteLine();
         }
+
+        public bool topicsMatch (string topicPub, string topicSub)
+        {
+
+            /*
+                    compare the topic published with the topic subscribed without the * character
+                
+            */
+            
+            if (topicSub.EndsWith("*"))
+            {
+                Console.WriteLine("AQUI");
+                topicSub = topicSub.Remove(topicSub.Length - 1);
+            }
+            Console.WriteLine("topic sub " + topicSub + " Pub topic " + topicPub);
+
+            return topicPub.Contains(topicSub); // @ faz falta?
+            
+            
+        }
+
 
         public void subscribeRequest(string topic, string subscriberName, int port)
         {

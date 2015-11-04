@@ -23,7 +23,10 @@ namespace SESDADInterfaces
         public string Body { get { return body; } }
         public string Topic { get { return topic; } }
     }
-
+    public interface PuppetInterface
+    {
+        void informLog (string )
+    }
     public interface PublisherInterface
     {
         void recieveOrderToPublish(string topic, string message, int numeberOfEvents, int interval_x_ms);

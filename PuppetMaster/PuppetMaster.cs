@@ -37,18 +37,26 @@ namespace SESDAD
             string subName2 = "Subscriber-2";
             int subPort2 = 8091;
 
+            int frequence = 1000;
+            int numbOfMsgs1 = 1;
+            int numbOfMsgs3 = 3;
+            int numbOfMsgs5 = 5;
 
             /*
                 Messages
             */
 
-            //Music
-            string message = "There are twelve notes in the chromatic scale built on C";
-            string topic = "Music Theory";
+            //Basics
+            string messageBasics = "Music has rhythm and sound.";
+            string topicBasics = @"\Music\Basics\";
 
-            //Sheeps
-            string messageTwo = "Sheeps provide us wool";
-            string topicTwo = "Sheeps";
+            //Scales
+            string messageBasicsScales = "There are twelve notes in the chromatic scale built on C.";
+            string topicBasicsScales = @"\Music\Basics\Scales\";
+
+            //Chords
+            string messageBasicsChords = "A major chord has a Root, a Major Third and a Perfect Fifht.";
+            string topicBasicsChords = @"\Music\Basics\Chords\";
             
             /*
                 Simple Test - Network Topology
@@ -168,53 +176,56 @@ namespace SESDAD
             broker2.addBroker(broName1, broPort1, "parent");
 
             
-            // Publisher -> MUSIC
-            publisher1.recieveOrderToPublish(topic, message);
+            // Publisher -> Basics/chords
+            publisher1.recieveOrderToPublish(topicBasicsChords, messageBasicsChords, numbOfMsgs1, frequence);
             Thread.Sleep(2000); //2 seconds wait
 
 
-            //Publisher -> MUSIC
-            publisher1.recieveOrderToPublish(topic, message);
+            // Subscriber -> Basics/chords
+            subscriber1.recieveOrderToSubscribe(topicBasicsChords + "*", subName1, subPort1);
+            Thread.Sleep(2000);
+
+            //Publisher -> Basics/chords
+            publisher1.recieveOrderToPublish(topicBasicsChords, messageBasicsChords, numbOfMsgs1, frequence);
+            Thread.Sleep(2000);
+
+            // Publisher -> Basics
+            publisher1.recieveOrderToPublish(topicBasics, messageBasics, numbOfMsgs1, frequence);
+            Thread.Sleep(2000);
+
+            //Subscriber - unsub-> Basic/chords
+            subscriber1.recieveOrderToUnSubscribe(topicBasicsChords + "*", subPort1);
+            Thread.Sleep(2000);
+
+            //Subscriber - sub Basics
+            subscriber1.recieveOrderToSubscribe(topicBasics + "*", subName1, subPort1);
+            Thread.Sleep(2000);
+
+            // Publisher -> Basics/chords
+            publisher1.recieveOrderToPublish(topicBasics, messageBasics, numbOfMsgs1, frequence);
             Thread.Sleep(2000);
 
 
-            // Subscriber -> MUSIC
-            subscriber1.recieveOrderToSubscribe(topic, subName1, subPort1);
+            // Subscriber 2 -> topic Basics
+            subscriber2.recieveOrderToSubscribe(topicBasics + "*", subName2, subPort2);
             Thread.Sleep(2000);
 
 
-            // Publisher -> MUSIC
-            publisher1.recieveOrderToPublish(topic, message);
+            // Publisher -> topic Basics\Scales
+            publisher1.recieveOrderToPublish(topicBasicsScales, messageBasicsScales, numbOfMsgs1, frequence);
             Thread.Sleep(2000);
 
-
-            // Publisher -> SHEEP
-            publisher1.recieveOrderToPublish(topicTwo, messageTwo);
+            /*
+            publisher2.recieveOrderToPublish(topicBasicsScales, messageBasicsScales, numbOfMsgs1, frequence);
+            
+            // Publisher
+            publisher1.recieveOrderToPublish(topicTwo, messageTwo, numbOfMsgs1, frequence);
             Thread.Sleep(2000);
 
-
-            // Subscriber -> SHEEP
-            subscriber1.recieveOrderToSubscribe(topicTwo, subName1, subPort1);
+            publisher1.recieveOrderToPublish(topic, message, numbOfMsgs1, frequence);
             Thread.Sleep(2000);
-
-
-            // Publisher -> SHEEP
-            publisher1.recieveOrderToPublish(topicTwo, messageTwo);
-            Thread.Sleep(2000);
-
-
-            //Subscriber - unsub->SHEEP
-            subscriber1.recieveOrderToUnSubscribe(topicTwo, subPort1);
-            Thread.Sleep(2000);
-
-            // Publisher -> SHEEP
-            publisher1.recieveOrderToPublish(topicTwo, messageTwo);
-            Thread.Sleep(2000);
-
-            publisher1.recieveOrderToPublish(topic, message);
-            Thread.Sleep(2000);
-
             subscriber1.printRecievedMessages();
+            */
            
            /*
 
