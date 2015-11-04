@@ -54,7 +54,7 @@ namespace SESDAD
             throw new NotImplementedException();
         }
 
-        public void recieveOrderToPublish(string topic, string name, int numberOfEvents, int interval_x_ms)
+        public void recieveOrderToPublish(string topic, string namePlusSeqN, int numberOfEvents, int interval_x_ms)
         {
             // Formato da mensagem : PubName SeqNumber/Total
             
@@ -63,9 +63,9 @@ namespace SESDAD
             {
             */
                 
-                localBroker.recieveOrderToFlood(topic, name + " SeqN/" + numberOfEvents, this);
+                localBroker.recieveOrderToFlood(topic, namePlusSeqN + "/" + numberOfEvents, this);
                 Console.WriteLine();
-                Console.WriteLine(topic+ ":"+ name);
+                Console.WriteLine(topic+ ":"+ namePlusSeqN);
                 Console.WriteLine();
 
                 Thread.Sleep(interval_x_ms);
