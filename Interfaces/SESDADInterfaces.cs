@@ -23,15 +23,19 @@ namespace SESDADInterfaces
         public string Body { get { return body; } }
         public string Topic { get { return topic; } }
     }
+
     public interface PuppetInterface
     {
-        void informLog (string )
+        void informAction(string action);
+            
     }
     public interface PublisherInterface
     {
         void recieveOrderToPublish(string topic, string message, int numeberOfEvents, int interval_x_ms);
 
         void registerLocalBroker(string BrokerName, int Brokerport);
+
+        void status();
     }
     public interface SubscriberInterface
     {
@@ -42,8 +46,10 @@ namespace SESDADInterfaces
         void registerLocalBroker(string BrokerName, int Brokerport);
 
         void printRecievedMessages();
+
         void Callback(object sender, MessageArgs m);
 
+        void status();
     }
     public interface BrokerInterface
     {
@@ -58,5 +64,7 @@ namespace SESDADInterfaces
         void addPublisher(string name, int port);
 
         void addBroker(string name, int port, string relation);
+
+        void status();
     }
 }
