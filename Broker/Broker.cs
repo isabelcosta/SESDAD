@@ -269,6 +269,19 @@ namespace SESDAD
             Console.WriteLine("Flooded: " + message);
             Console.WriteLine();
         }
+        
+        public string[] parseMessage(string message)
+        {
+            string[] msgParsed = new string[3];
+
+            string[] msgTemp1 = message.Split(' ');
+            msgParsed[0] = msgTemp1[0];
+            string[] msgTemp2 = msgTemp1[1].Split('/');
+            msgParsed[1] = msgTemp2[0];
+            msgParsed[2] = msgTemp2[1];
+
+            return msgParsed;
+        }
 
         public bool topicsMatch (string topicPub, string topicSub)
         {
