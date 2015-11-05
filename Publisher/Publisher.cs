@@ -38,11 +38,21 @@ namespace SESDAD
     }
 
 
-    class PublisherServices : MarshalByRefObject, PublisherInterface
+    class PublisherServices: MarshalByRefObject, PublisherInterface
     {
 
         BrokerInterface localBroker;
-        string name;
+        PuppetInterface localPuppetMaster;
+
+        /* Policies*/
+        string routing;
+        string ordering;
+        string logging;
+
+        /*Publisher Info*/
+        string myName;
+        int myPort;
+        
         /*
         message
             */
@@ -52,15 +62,13 @@ namespace SESDAD
 
 
 
-        public void addPupperMaster(string name, int port)
+        public void registerLocalPuppetMaster(string name, int port)
         {
-            throw new NotImplementedException();
+            Console.WriteLine("PuppetMasterLocal adicionado " + port);
+            PuppetInterface puppetMaster = (PuppetInterface)Activator.GetObject(typeof(PuppetInterface), "tcp://localhost:" + port + "/pub");
+            localPuppetMaster = puppetMaster;
         }
 
-        public void policies(string routing, string ordering, string logging)
-        {
-            throw new NotImplementedException();
-        }
 
         public void recieveOrderToPublish(string topic, int numberOfEvents, int interval_x_ms)
         {
@@ -85,26 +93,26 @@ namespace SESDAD
 
             for (int i = 1; i <= numOfEv; i++)
             {
-                content = this.name + " " + i + "/" + numOfEv;
-
-                // Exe: Publisher1 1/10
+                content = myName + " " + i + "/" + numOfEv;
+                                                
+                                            // Exe: Publisher1 1/10
                 localBroker.recieveOrderToFlood(topicLocal, content, this);
 
-                Console.WriteLine();
-                Console.WriteLine(topicLocal + " : " + content);
-                Console.WriteLine();
+                string action = "Publish " + topic + " : " + content;
+                informPuppetMaster(action);
+                Console.WriteLine(action);
 
                 Thread.Sleep(intv_x_ms);
             }
 
         }
 
-        public void registerLocalBroker(string BrokerName, int BrokerPort)
+        public void registerLocalBroker(int BrokerPort)
         {
-            Console.WriteLine("Broker local registado no Publisher: " + "tcp://localhost:" + BrokerPort + "/" + BrokerName);
+            Console.WriteLine("Broker local registado no Publisher: " + "tcp://localhost:" + BrokerPort + "/broker");
             localBroker =
                (BrokerInterface)Activator.GetObject(
-                      typeof(BrokerInterface), "tcp://localhost:" + BrokerPort + "/" + BrokerName);
+                      typeof(BrokerInterface), "tcp://localhost:" + BrokerPort + "/broker");
         }
 
         public void status()
@@ -112,9 +120,25 @@ namespace SESDAD
             throw new NotImplementedException();
         }
 
-        public void giveName(string name)
+        private void informPuppetMaster(string action)
         {
-            this.name = name;
+            if (string.Compare(logging, LoggingLevelType.FULL) == 0)
+            {
+                localPuppetMaster.informAction(action);
+            }
+        }
+
+
+        public void giveInfo(string name, int port)
+        {
+            myName = name;
+            myPort = port;
+        }
+        public void policies(string routing, string ordering, string logging)
+        {
+            this.routing = routing;
+            this.ordering = ordering;
+            this.logging = logging;
         }
     }
 

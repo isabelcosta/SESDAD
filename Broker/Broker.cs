@@ -22,7 +22,7 @@ namespace SESDAD
 
             int brokerPort = Int32.Parse(args[0]);
 
-
+            
 
             BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
             provider.TypeFilterLevel = TypeFilterLevel.Full;
@@ -34,27 +34,15 @@ namespace SESDAD
             // TcpChannel channel = new TcpChannel(8088);
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(PublisherServices), "broker",
+                typeof(BrokerServices), "broker",
                 WellKnownObjectMode.Singleton);
 
-
-
-            System.Console.WriteLine("Press <enter> to terminate Broker...");
             System.Console.ReadLine();
         }
     }
 
 
-    /*
-    public class Subscribed
-    {
-        public void Callback(object sender, MessageArgs m)
-        {
-            Console.WriteLine("Fired {0} : {1}", m.Topic, m.Body);
-        }
 
-    }
-    */
 
     public class SubscriberRequestID
     {
@@ -65,11 +53,11 @@ namespace SESDAD
         {
             this.subID = subID;
         }
-        public int SubID { get { return subID; } }
+        public int SubID { get { return subID;} }
+        
+        public MySubs SubDelegate {  get { return subDelegate; } }
 
-        public MySubs SubDelegate { get { return subDelegate; } }
-
-        public void addSubscription(MySubs subscription)
+        public void addSubscription (MySubs subscription)
         {
             subDelegate += subscription;
         }
@@ -108,8 +96,8 @@ namespace SESDAD
                 return -1;
             }
         }
-
-        public bool containsTopic(string topicNew)
+ 
+        public bool containsTopic (string topicNew)
         {
             foreach (string topicList in topics.Keys)
             {
@@ -127,7 +115,7 @@ namespace SESDAD
 
     }
 
-    class PublisherServices : MarshalByRefObject, BrokerInterface
+    class BrokerServices : MarshalByRefObject, BrokerInterface
     {
 
         const string PUBLISHER = "publisher";
@@ -140,23 +128,27 @@ namespace SESDAD
 
         const string UNKOWN = "unkown";
 
+        /* Policies*/
+        string routing;
+        string ordering;
+        string logging;
 
-
-        //     {relation, list of topics to flood there}
+        PuppetInterface localPuppetMaster;
+            //     {relation, list of topics to flood there}
         Dictionary<string, TopicsTable> filteringTable = new Dictionary<string, TopicsTable>();
-
-
 
         Dictionary<string, List<SubscriberRequestID>> delegates = new Dictionary<string, List<SubscriberRequestID>>();
 
         //public event MySubs E;
 
-        Dictionary<Tuple<string, string>, SubscriberInterface> subscribers = new Dictionary<Tuple<string, string>, SubscriberInterface>();
+        Dictionary<int, SubscriberInterface> subscribers = new Dictionary<int,SubscriberInterface>();
         List<PublisherInterface> publishers = new List<PublisherInterface>();
         //List<BrokerInterface> brokers = new List<BrokerInterface>();
         Dictionary<string, BrokerInterface> brokerTree = new Dictionary<string, BrokerInterface>();
         Dictionary<SubscriberInterface, List<string>> subscribersTopics = new Dictionary<SubscriberInterface, List<string>>();
 
+        Dictionary<string, Tuple<int, int>> fifoManager = new Dictionary<string, Tuple<int, int>>();
+        Dictionary<string, List<Tuple<int, string>>> fifoQueue = new Dictionary<string, List<Tuple<int, string>>>();
 
         public bool isBroker(object source)
         {
@@ -204,7 +196,7 @@ namespace SESDAD
         {
 
             // if it not a broker it is a publisher
-            if (!isBroker(source))
+            if (!isBroker(source)) 
             {
                 return PUBLISHER;
             }
@@ -221,11 +213,48 @@ namespace SESDAD
 
 
             BrokerInterface broTest;
-
+            
             // sourceType cases: {publisher, sonL, sonR, parent}
             string sourceType = getSourceType(source);
 
             Console.WriteLine("Sender: {0}", sourceType);
+
+
+            //START
+            //     ORDERING FIFO
+            //
+            string pubName = "";
+            Tuple<int, int> msg = new Tuple<int, int>(0, 0);
+
+            parseMessage(ref pubName, ref msg, message);
+
+
+            Tuple<int, int> msgMngmt = new Tuple<int, int>(0, 0);
+
+
+            if (checkIfIsNext(msg, pubName, topic))
+            {
+                do
+                {
+                    flood(sourceType, topic, message);
+                    if (getFromQueue(pubName + topic, msg.Item1, ref message))
+                    {
+                        break;
+                    }
+                } while (true);
+            }
+            else
+            {
+                // Just add to queue
+                addToQueue(pubName + topic, msg.Item1, message);
+            }
+
+        }
+
+        public void flood (string sourceType, string topic, string message)
+        {
+
+            BrokerInterface broTest;
 
             /*
             in each if statement with check if:
@@ -249,12 +278,12 @@ namespace SESDAD
             {
                 broTest.recieveOrderToFlood(topic, message, this);
             }
-
+            
 
             //callback
             foreach (string subTopic in delegates.Keys)
             {
-                // checks if the TOPIC BEING PUBLISHED is INCLUDED in the TOPIC SUBSCRIBED
+                    // checks if the TOPIC BEING PUBLISHED is INCLUDED in the TOPIC SUBSCRIBED
                 if (topicsMatch(topic, subTopic))
                 {
                     foreach (SubscriberRequestID subReqID in delegates[subTopic])
@@ -264,12 +293,38 @@ namespace SESDAD
 
                 }
             }
-            Console.WriteLine();
-            Console.WriteLine("Flooded: " + message);
-            Console.WriteLine();
+            string action = "Flooded message on topic " + topic;
+            informPuppetMaster(action);
+            Console.WriteLine(action);
         }
+        
 
-        public string[] parseMessage(string message)
+        public bool checkIfIsNext(Tuple<int, int> msg, string pubName, string topic)
+        {
+
+
+            Tuple<int, int> msgMngmt = new Tuple<int, int>(0, 0);
+            if (fifoManager.TryGetValue(pubName + topic, out msgMngmt))
+            {
+                // Key was in dictionary; "value" contains corresponding value
+
+                if (fifoManager[pubName + topic].Item1 + 1 == msg.Item1)
+                {
+                    fifoManager[pubName + topic] = msg;
+                    return true;
+                }
+            }
+
+
+            if (msg.Item1 == 1 )
+            {
+                fifoManager.Add(pubName + topic, msg);
+                return true;
+            }
+            return false;
+        }
+        
+        public void parseMessage(ref string pubName, ref Tuple<int, int> msg, string message)
         {
             string[] msgParsed = new string[3];
 
@@ -279,44 +334,84 @@ namespace SESDAD
             msgParsed[1] = msgTemp2[0];
             msgParsed[2] = msgTemp2[1];
 
-            return msgParsed;
+            pubName = msgParsed[0];
+            msg = new Tuple<int, int>(int.Parse(msgParsed[1]), int.Parse(msgParsed[2]));
         }
 
-        public bool topicsMatch(string topicPub, string topicSub)
+        public void addToQueue(string pubPlusTopic, int msgNumber, string message)
+        {
+
+            List<Tuple<int, string>> msgList = new List<Tuple<int, string>>();
+            Tuple<int, string> msgNPlusMsg = new Tuple<int, string>(msgNumber, message);
+            if (!fifoQueue.TryGetValue(pubPlusTopic, out msgList))
+            {
+                // Key wasn't in dictionary; "value" is now 0
+                msgList.Add(msgNPlusMsg);
+                fifoQueue.Add(pubPlusTopic, msgList);
+            }
+            else
+            {
+                // Key was in dictionary; "value" contains corresponding value
+                msgList.Add(msgNPlusMsg);
+            }
+        }
+
+        public bool getFromQueue(string pubPlusTopic, int msgNumber, ref string message)
+        {
+            List<Tuple<int, string>> msgList = new List<Tuple<int, string>>();
+            Tuple<int, string> msgNPlusMsg = new Tuple<int, string>(msgNumber, message);
+            if (fifoQueue.TryGetValue(pubPlusTopic, out msgList))
+            {
+                // Key was in dictionary; "value" contains corresponding value
+                foreach (Tuple<int, string> currentMsg in msgList)
+                {
+                    if (currentMsg.Item1 == msgNumber + 1)
+                    {
+                        message = currentMsg.Item2;
+                        msgList.Remove(currentMsg);
+                        if (msgList.Count == 0)
+                        {
+                            fifoQueue.Remove(pubPlusTopic);
+                        }
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+       
+        public bool topicsMatch (string topicPub, string topicSub)
         {
 
             /*
                     compare the topic published with the topic subscribed without the * character
                 
             */
-
+            
             if (topicSub.EndsWith("*"))
             {
                 topicSub = topicSub.Remove(topicSub.Length - 1);
             }
             return topicPub.Contains(topicSub);
-
-
+            
+            
         }
 
 
-        public void subscribeRequest(string topic, string subscriberName, int port)
+        public void subscribeRequest(string topic, int port)
         {
 
-
+           
             //subscrito ao evento
-
-            Tuple<string, string> nameAndPort = new Tuple<string, string>(subscriberName, port.ToString());
-
-            SubscriberInterface subscriber = subscribers[nameAndPort];
+            SubscriberInterface subscriber = subscribers[port];
             if (!delegates.ContainsKey(topic))
             {
                 delegates.Add(topic, new List<SubscriberRequestID>());
 
             }
 
-            bool alreadySubscribed = false;
-            Console.WriteLine("topic in delegate {0}", delegates[topic]);
+            bool alreadySubscribed= false;
             foreach (SubscriberRequestID subReqIDTemp in delegates[topic])
             {
                 if (subReqIDTemp.SubID == port)
@@ -333,16 +428,16 @@ namespace SESDAD
                 subReqID.addSubscription(new MySubs(subscriber.Callback));
                 delegates[topic].Add(subReqID);
             }
-
-            Console.WriteLine();
-            Console.WriteLine("Added subscriber {1} at port {0} to the topic {2}", port, subscriberName, topic);
-            Console.WriteLine();
+           
+            string action = "Added subscriber at port " + port + " for the topic " + topic;
+            informPuppetMaster(action);
+            Console.WriteLine(action);
 
         }
 
         public void unSubscribeRequest(string topic, int port)
         {
-
+        
             foreach (SubscriberRequestID subReqIDTemp in delegates[topic])
             {
                 if (subReqIDTemp.SubID == port)
@@ -351,33 +446,33 @@ namespace SESDAD
                     break;
                 }
             }
-
-            Console.WriteLine("Removed subscriber at port {0} to the topic {1}", port, topic);
+            string action = "Removed subscriber at port " + port + " for the topic " + topic;
+            informPuppetMaster(action);
+            Console.WriteLine(action);
 
 
         }
 
         // PuppetMaster envia ordem para o broker para adicionar um subscriber que esta conectado
-        public void addSubscriber(string name, int port)
+        public void addSubscriber(int port)
         {
-            Console.WriteLine("Subscriber adicionado " + name + " " + port);
-            SubscriberInterface subscriber = (SubscriberInterface)Activator.GetObject(typeof(SubscriberInterface), "tcp://localhost:" + port + "/" + name);
-            Tuple<string, string> nameAndPort = new Tuple<string, string>(name, port.ToString());
+            Console.WriteLine("Subscriber adicionado " + port);
+            SubscriberInterface subscriber = (SubscriberInterface)Activator.GetObject(typeof(SubscriberInterface), "tcp://localhost:" + port + "/sub");
 
-            subscribers.Add(nameAndPort, subscriber);
+            subscribers.Add(port, subscriber);
         }
 
-        public void addPublisher(string name, int port)
+        public void addPublisher(int port)
         {
-            Console.WriteLine("Publisher adicionado " + name + " " + port);
-            PublisherInterface publisher = (PublisherInterface)Activator.GetObject(typeof(PublisherInterface), "tcp://localhost:" + port + "/" + name);
+            Console.WriteLine("Publisher adicionado " + port );
+            PublisherInterface publisher = (PublisherInterface)Activator.GetObject(typeof(PublisherInterface), "tcp://localhost:" + port + "/pub");
             publishers.Add(publisher);
         }
 
-        public void addBroker(int port, string name, string relation)
+        public void addBroker(int port, string ip, string relation)
         {
-            Console.WriteLine("Broker adicionado " + name + " " + port);
-            BrokerInterface broker = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), "tcp://localhost:" + port + "/" + name);
+            Console.WriteLine("Broker adicionado " + port);
+            BrokerInterface broker = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), "tcp://" + ip + ":" + port + "/broker");
 
             switch (relation)
             {
@@ -398,14 +493,27 @@ namespace SESDAD
             throw new NotImplementedException();
         }
 
-        public void addPupperMaster(string name, int port)
+        public void registerLocalPuppetMaster(string name, int port)
         {
-            throw new NotImplementedException();
+            Console.WriteLine("PuppetMasterLocal adicionado " + port);
+            PuppetInterface puppetMaster = (PuppetInterface)Activator.GetObject(typeof(PuppetInterface), "tcp://localhost:" + port + "/pub");
+            localPuppetMaster = puppetMaster;
         }
+
+        private void informPuppetMaster(string action)
+        {
+            if(string.Compare(logging,LoggingLevelType.FULL)==0)
+        {
+                localPuppetMaster.informAction(action);
+            }
+        }
+
 
         public void policies(string routing, string ordering, string logging)
         {
-            throw new NotImplementedException();
+            this.routing = routing;
+            this.ordering = ordering;
+            this.logging = logging;
         }
     }
 }
