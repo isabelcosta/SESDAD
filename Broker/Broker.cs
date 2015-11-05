@@ -227,7 +227,56 @@ namespace SESDAD
             string sourceType = getSourceType(source);
 
             Console.WriteLine("Sender: {0}", sourceType);
+
+            string pubName = "";
+            Tuple<int, int> msg = new Tuple<int, int>(0, 0);
+
+            //START
+            //     ORDERING FIFO
+            //
+
+            parseMessage(ref pubName, ref msg, message);
+
+            Dictionary<string, Tuple<int, int>> fifoManager = new Dictionary<string, Tuple<int, int>>();
+            Dictionary<string, List<Tuple<int, int>>> fifoQueue = new Dictionary<string, List<Tuple<int, int>>>();
             
+            
+
+            foreach (var queue in fifoManager)
+            {
+                if(queue.Key == pubName+topic)
+                {
+                    if(queue.Value.Item1 + 1 == msg.Item1)
+                    {
+                        fifoManager[queue.Key] = msg;
+
+                        // Simply flood the message
+                    }
+                }
+                else if(msg.Item1 == 1)
+                {
+                    fifoManager.Add(pubName+topic, msg);
+
+                    // Simpy flood the message
+                }
+                else
+                {
+                    // Add 
+                }
+            }
+
+            fifoManager.Add(pubName+topic, msg);
+
+            /*
+            string msgNumber = msgParsed[1];
+            string msgTotal  = msgParsed[2];
+            */
+            //END 
+            //    ORDERING FIFO
+            //
+
+        
+
             /*
             in each if statement with check if:
                     1st - the process that we are testing isn't the source
@@ -270,7 +319,7 @@ namespace SESDAD
             Console.WriteLine();
         }
         
-        public string[] parseMessage(string message)
+        public void parseMessage(ref string pubName, ref Tuple<int, int> msg, string message)
         {
             string[] msgParsed = new string[3];
 
@@ -280,7 +329,21 @@ namespace SESDAD
             msgParsed[1] = msgTemp2[0];
             msgParsed[2] = msgTemp2[1];
 
-            return msgParsed;
+            pubName = msgParsed[0];
+            msg = new Tuple<int, int>(int.Parse(msgParsed[1]), int.Parse(msgParsed[2]));
+        }
+
+        public void queue(ref Dictionary<string, List<Tuple<int, int>>> fifoQueue, 
+                            string pubPlusTopic, int msgNumber, string message)
+        {
+
+        }
+
+        public bool canFlood()
+        {
+
+
+            return true;
         }
 
         public bool topicsMatch (string topicPub, string topicSub)
