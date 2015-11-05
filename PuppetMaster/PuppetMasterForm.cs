@@ -30,6 +30,7 @@ namespace SESDAD
         private String loggingLevel = LoggingLevelType.LIGHT;
 
         private bool singlePuppetMode = false;
+        private int slaves = 0;
 
         private String puppetURL = null; //tcp://localhost:30000/puppet
         private int puppetID = 0; //indexes the URLs in configPuppet
@@ -50,22 +51,51 @@ namespace SESDAD
         /// <param name="args"></param>
         public PuppetMasterForm(String[] args)
         {
-            //Builds the Puppet Master GUI
-            InitializeComponent();
+            try {
+                this.puppetID = int.Parse(args[0]);
+            } catch {
+                MessageBox.Show("Puppet Master doesn't understand his ID... \nI'll exit for you. Try again!");
+                Environment.Exit(0);
+            }
             
-            //Check if the system should run with a single Puppet Master for testing purposes
-            try { 
-                if (String.Compare("-singlepuppet", args[1].ToLower()) == 0) {
-                    singlePuppetMode = true; 
+            //Builds the Puppet Master GUI
+            InitializeComponent(puppetID.ToString());
+
+            if (this.isMaster())
+            {
+                if (args.Length > 1)
+                {
+                    try
+                    {
+                        this.slaves = int.Parse(args[1]);
+                    }
+                    catch
+                    {
+                        //Check if the system should run with a single Puppet Master for testing purposes
+                        if (String.Compare("-singlepuppet", args[1].ToLower()) == 0)
+                        {
+                            singlePuppetMode = true;
+                        }
+                        else
+                        {
+                            MessageBox.Show("Wrong Arguments... Try Again...");
+                            Environment.Exit(0);
+                        }
+                    }
                 }
-            } catch (Exception) { }
+                else
+                {
+                    MessageBox.Show("Puppet Master has to know how much slaves he has... Try again!");
+                    Environment.Exit(0);
+                }
+            }
             //MessageBox.Show("This is " + (singlePuppetMode ? "single" : "multiple") + " PuppetMaster mode");
             
             String configPuppetPath = Environment.CurrentDirectory + @"\..\..\..\configPuppet.txt";
             
-            this.puppetID = Int32.Parse(args[0]);
-            //MessageBox.Show(configPuppetPath);
-            this.puppetURL = System.IO.File.ReadAllLines(configPuppetPath)[puppetID];
+
+            String[] allPuppetURL = System.IO.File.ReadAllLines(configPuppetPath);
+            this.puppetURL = allPuppetURL[puppetID];
 
             int puppetPort = 30000 + puppetID;
             
@@ -80,6 +110,11 @@ namespace SESDAD
             props["port"] = puppetPort;
             TcpChannel channel = new TcpChannel(props, null, provider);
             ChannelServices.RegisterChannel(channel, false);
+
+            //get puppet slaves remote objects
+            if (this.isMaster()) {
+                //
+            }
 
             /*
             PuppetServices servicos = new PuppetServices();
@@ -134,9 +169,9 @@ namespace SESDAD
 
                 switch (parsedLine[0]) {
                     case "Wait":
-                        int msToSleep = 0;
+                        int timeToSleep = 0;
                         try {
-                            msToSleep = Int32.Parse(parsedLine[1]);
+                            timeToSleep = Int32.Parse(parsedLine[1]);
                         }
                         catch (FormatException) { break; }
                         //Thread.Sleep(msToSleep);
@@ -271,13 +306,13 @@ namespace SESDAD
                     }
                     break;
 
-                case "RoutingPolicy": //RoutingPolicy flooding|filter
+                case "RoutingPolicy": // flooding|filter
                     this.routingPolicy = parsed[1]; break;
 
-                case "Ordering": //Ordering NO|FIFO|TOTAL
+                case "Ordering": // NO|FIFO|TOTAL
                     this.ordering = parsed[1]; break;
 
-                case "LoggingLevel"://LoggingLevel full|light
+                case "LoggingLevel":// full|light
                     this.loggingLevel = parsed[1]; break;
 
                 default:
@@ -358,7 +393,9 @@ namespace SESDAD
             return port;
         }
 
-
+        private bool isMaster() {
+            return puppetID == 0;
+        }
     }
 
     //************************************************************************************
