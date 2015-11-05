@@ -20,8 +20,7 @@ namespace SESDAD
         static void Main(string[] args)
         {
 
-            string brokerName = args[0];
-            int brokerPort = Int32.Parse(args[1]);
+            int brokerPort = Int32.Parse(args[0]);
 
             
 
@@ -35,27 +34,15 @@ namespace SESDAD
             // TcpChannel channel = new TcpChannel(8088);
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(PublisherServices), brokerName,
+                typeof(PublisherServices), "broker",
                 WellKnownObjectMode.Singleton);
 
-
-
-            System.Console.WriteLine("Press <enter> to terminate Broker...");
             System.Console.ReadLine();
         }
     }
 
 
-    /*
-    public class Subscribed
-    {
-        public void Callback(object sender, MessageArgs m)
-        {
-            Console.WriteLine("Fired {0} : {1}", m.Topic, m.Body);
-        }
-
-    }
-    */
+ 
 
     public class SubscriberRequestID
     {
@@ -141,18 +128,20 @@ namespace SESDAD
 
         const string UNKOWN = "unkown";
 
+        /* Policies*/
+        string routing;
+        string ordering;
+        string logging;
 
-
+        PuppetInterface localPuppetMaster;
             //     {relation, list of topics to flood there}
         Dictionary<string, TopicsTable> filteringTable = new Dictionary<string, TopicsTable>();
 
-
-
         Dictionary<string, List<SubscriberRequestID>> delegates = new Dictionary<string, List<SubscriberRequestID>>();
-
+        
         //public event MySubs E;
 
-        Dictionary<Tuple<string, string>, SubscriberInterface> subscribers = new Dictionary<Tuple<string, string>,SubscriberInterface>();
+        Dictionary<int, SubscriberInterface> subscribers = new Dictionary<int,SubscriberInterface>();
         List<PublisherInterface> publishers = new List<PublisherInterface>();
         //List<BrokerInterface> brokers = new List<BrokerInterface>();
         Dictionary<string, BrokerInterface> brokerTree = new Dictionary<string, BrokerInterface>();
@@ -225,8 +214,6 @@ namespace SESDAD
             
             // sourceType cases: {publisher, sonL, sonR, parent}
             string sourceType = getSourceType(source);
-
-            Console.WriteLine("Sender: {0}", sourceType);
             
             /*
             in each if statement with check if:
@@ -265,9 +252,9 @@ namespace SESDAD
 
                 }
             }
-            Console.WriteLine();
-            Console.WriteLine("Flooded: " + message);
-            Console.WriteLine();
+            string action = "Flooded message on topic " + topic;
+            informPuppetMaster(action);
+            Console.WriteLine(action);
         }
         
         public string[] parseMessage(string message)
@@ -301,15 +288,12 @@ namespace SESDAD
         }
 
 
-        public void subscribeRequest(string topic, string subscriberName, int port)
+        public void subscribeRequest(string topic, int port)
         {
 
            
             //subscrito ao evento
-
-            Tuple<string, string> nameAndPort = new Tuple<string, string>(subscriberName, port.ToString());
-
-            SubscriberInterface subscriber = subscribers[nameAndPort];
+            SubscriberInterface subscriber = subscribers[port];
             if (!delegates.ContainsKey(topic))
             {
                 delegates.Add(topic, new List<SubscriberRequestID>());
@@ -317,7 +301,6 @@ namespace SESDAD
             }
 
             bool alreadySubscribed= false;
-            Console.WriteLine("topic in delegate {0}", delegates[topic]);
             foreach (SubscriberRequestID subReqIDTemp in delegates[topic])
             {
                 if (subReqIDTemp.SubID == port)
@@ -334,10 +317,10 @@ namespace SESDAD
                 subReqID.addSubscription(new MySubs(subscriber.Callback));
                 delegates[topic].Add(subReqID);
             }
-           
-            Console.WriteLine();
-            Console.WriteLine("Added subscriber {1} at port {0} to the topic {2}", port, subscriberName, topic);
-            Console.WriteLine();
+
+            string action = "Added subscriber at port " + port + " for the topic " + topic;
+            informPuppetMaster(action);
+            Console.WriteLine(action);
 
         }
 
@@ -352,33 +335,33 @@ namespace SESDAD
                     break;
                 }
             }
-
-            Console.WriteLine("Removed subscriber at port {0} to the topic {1}", port, topic);
+            string action = "Removed subscriber at port " + port + " for the topic " + topic;
+            informPuppetMaster(action);
+            Console.WriteLine(action);
 
 
         }
 
         // PuppetMaster envia ordem para o broker para adicionar um subscriber que esta conectado
-        public void addSubscriber(string name, int port)
+        public void addSubscriber(int port)
         {
-            Console.WriteLine("Subscriber adicionado " + name + " " + port);
-            SubscriberInterface subscriber = (SubscriberInterface)Activator.GetObject(typeof(SubscriberInterface), "tcp://localhost:" + port + "/" + name);
-            Tuple<string,string> nameAndPort = new Tuple<string, string>(name, port.ToString());
+            Console.WriteLine("Subscriber adicionado " + port);
+            SubscriberInterface subscriber = (SubscriberInterface)Activator.GetObject(typeof(SubscriberInterface), "tcp://localhost:" + port + "/sub");
 
-            subscribers.Add(nameAndPort, subscriber);
+            subscribers.Add(port, subscriber);
         }
 
-        public void addPublisher(string name, int port)
+        public void addPublisher(int port)
         {
-            Console.WriteLine("Publisher adicionado " + name + " " + port );
-            PublisherInterface publisher = (PublisherInterface)Activator.GetObject(typeof(PublisherInterface), "tcp://localhost:" + port + "/" + name);
+            Console.WriteLine("Publisher adicionado " + port );
+            PublisherInterface publisher = (PublisherInterface)Activator.GetObject(typeof(PublisherInterface), "tcp://localhost:" + port + "/pub");
             publishers.Add(publisher);
         }
 
-        public void addBroker(string name, int port, string relation)
+        public void addBroker(int port, string ip, string relation)
         {
-            Console.WriteLine("Broker adicionado " + name + " " + port);
-            BrokerInterface broker = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), "tcp://localhost:" + port + "/" + name);
+            Console.WriteLine("Broker adicionado " + port);
+            BrokerInterface broker = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), "tcp://" + ip + ":" + port + "/broker");
 
             switch (relation)
             {
@@ -399,14 +382,27 @@ namespace SESDAD
             throw new NotImplementedException();
         }
 
-        public void addPupperMaster(string name, int port)
+        public void registerLocalPuppetMaster(string name, int port)
         {
-            throw new NotImplementedException();
+            Console.WriteLine("PuppetMasterLocal adicionado " + port);
+            PuppetInterface puppetMaster = (PuppetInterface)Activator.GetObject(typeof(PuppetInterface), "tcp://localhost:" + port + "/pub");
+            localPuppetMaster = puppetMaster;
         }
+
+        private void informPuppetMaster(string action)
+        {
+            if(string.Compare(logging,LoggingLevelType.FULL)==0)
+            {
+                localPuppetMaster.informAction(action);
+            }
+        }
+
 
         public void policies(string routing, string ordering, string logging)
         {
-            throw new NotImplementedException();
+            this.routing = routing;
+            this.ordering = ordering;
+            this.logging = logging;
         }
     }
 }

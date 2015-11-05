@@ -18,6 +18,8 @@ namespace SESDAD
         [STAThread]
         static void Main(string[] args)
         {
+            string ip = "localhost";
+
             string pubName1 = "Publisher-1";
             int pubPort1 = 8086;
 
@@ -75,18 +77,18 @@ namespace SESDAD
             */
             Process pubProcess1 = new Process();
             pubProcess1.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Publisher\bin\Debug\Publisher.exe";
-            pubProcess1.StartInfo.Arguments = pubName1 + " " + pubPort1;
+            pubProcess1.StartInfo.Arguments = pubPort1.ToString();
             pubProcess1.Start();
 
 /*
             Process subProcess1 = new Process();
             subProcess1.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Subscriber\bin\Debug\Subscriber.exe";
-            subProcess1.StartInfo.Arguments = subName1 + " " + subPort1;
+            subProcess1.StartInfo.Arguments = subPort1.ToString();
             subProcess1.Start();
 */
             Process broProcess1 = new Process();
             broProcess1.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Broker\bin\Debug\Broker.exe";
-            broProcess1.StartInfo.Arguments = broName1 + " " + broPort1;
+            broProcess1.StartInfo.Arguments = broPort1.ToString();
             broProcess1.Start();
 
 
@@ -97,18 +99,18 @@ namespace SESDAD
             */
             Process pubProcess2 = new Process();
             pubProcess2.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Publisher\bin\Debug\Publisher.exe";
-            pubProcess2.StartInfo.Arguments = pubName2 + " " + pubPort2;
+            pubProcess2.StartInfo.Arguments = pubPort2.ToString();
             pubProcess2.Start();
 
 /*
             Process subProcess2 = new Process();
             subProcess2.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Subscriber\bin\Debug\Subscriber.exe";
-            subProcess2.StartInfo.Arguments = subName2 + " " + subPort2;
+            subProcess2.StartInfo.Arguments = subPort2.ToString();
             subProcess2.Start();
 */
             Process broProcess2 = new Process();
             broProcess2.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Broker\bin\Debug\Broker.exe";
-            broProcess2.StartInfo.Arguments = broName2 + " " + broPort2;
+            broProcess2.StartInfo.Arguments = broPort2.ToString();
             broProcess2.Start();
 
 
@@ -120,63 +122,68 @@ namespace SESDAD
             /*
                 1st Node
             */
-            Console.WriteLine("Publisher acessivel em: " + "tcp://localhost:" + pubPort1 + "/" + pubName1);
+            Console.WriteLine("Publisher acessivel em: " + "tcp://localhost:" + pubPort1 + "/pub");
             PublisherInterface publisher1 =
                (PublisherInterface)Activator.GetObject(
-                      typeof(PublisherInterface), "tcp://localhost:" + pubPort1 + "/" + pubName1);
+                      typeof(PublisherInterface), "tcp://localhost:" + pubPort1 + "/pub");
 
 /*
-            Console.WriteLine("Subscriber acessivel em: " + "tcp://localhost:" + subPort1 + "/" + subName1);
+            Console.WriteLine("Subscriber acessivel em: " + "tcp://localhost:" + subPort1 + "/sub");
             SubscriberInterface subscriber1 =
                (SubscriberInterface)Activator.GetObject(
-                      typeof(SubscriberInterface), "tcp://localhost:" + subPort1 + "/" + subName1);
+                      typeof(SubscriberInterface), "tcp://localhost:" + subPort1 + "/sub");
 */
 
-            Console.WriteLine("Broker acessivel em: " + "tcp://localhost:" + broPort1 + "/" + broName1);
+            Console.WriteLine("Broker acessivel em: " + "tcp://localhost:" + broPort1 + "/broker");
             BrokerInterface broker1 =
                (BrokerInterface)Activator.GetObject(
-                      typeof(BrokerInterface), "tcp://localhost:" + broPort1 + "/" + broName1);
+                      typeof(BrokerInterface), "tcp://localhost:" + broPort1 + "/broker");
 
             /*
                 2nd Node
             */
-            Console.WriteLine("Publisher acessivel em: " + "tcp://localhost:" + pubPort2 + "/" + pubName2);
+            Console.WriteLine("Publisher acessivel em: " + "tcp://localhost:" + pubPort2 + "/pub");
             PublisherInterface publisher2 =
                (PublisherInterface)Activator.GetObject(
-                      typeof(PublisherInterface), "tcp://localhost:" + pubPort2 + "/" + pubName2);
+                      typeof(PublisherInterface), "tcp://localhost:" + pubPort2 + "/pub");
 
 /*
-            Console.WriteLine("Subscriber acessivel em: " + "tcp://localhost:" + subPort2 + "/" + subName2);
+            Console.WriteLine("Subscriber acessivel em: " + "tcp://localhost:" + subPort2 + "/sub");
             SubscriberInterface subscriber2 =
                (SubscriberInterface)Activator.GetObject(
-                      typeof(SubscriberInterface), "tcp://localhost:" + subPort2 + "/" + subName2);
+                      typeof(SubscriberInterface), "tcp://localhost:" + subPort2 + "/sub");
 
 */
             
-            Console.WriteLine("Broker acessivel em: " + "tcp://localhost:" + broPort2 + "/" + broName2);
+            Console.WriteLine("Broker acessivel em: " + "tcp://localhost:" + broPort2 + "/broker");
             BrokerInterface broker2 =
                (BrokerInterface)Activator.GetObject(
-                      typeof(BrokerInterface), "tcp://localhost:" + broPort2 + "/" + broName2);
+                      typeof(BrokerInterface), "tcp://localhost:" + broPort2 + "/broker");
 
 
-            // Network configuration
-            publisher1.registerLocalBroker(broName1, broPort1);
+            /* 
+            Network configuration
+            */
+
+
+
+            publisher1.registerLocalBroker(broPort1);
             publisher1.giveName(pubName1);
             //subscriber1.registerLocalBroker(broName1, broPort1);
-            broker1.addPublisher(pubName1, pubPort1);
-            broker1.addSubscriber(subName1, subPort1);
-            broker1.addBroker(broName2, broPort2, "sonL");
+            broker1.addPublisher(pubPort1);
+            broker1.addSubscriber(subPort1);
+            broker1.addBroker(broPort2, ip, "sonL");
 
 
             
-            publisher2.registerLocalBroker(broName2, broPort2);
-            publisher1.giveName(pubName2);
+            publisher2.registerLocalBroker(broPort2);
+            publisher2.giveName(pubName2);
 
             //subscriber2.registerLocalBroker(broName2, broPort2);
-            broker2.addPublisher(pubName2, pubPort2);
-            broker2.addSubscriber(subName2, subPort2);
+            broker2.addPublisher(pubPort2);
+            broker2.addSubscriber(subPort2);
             
-            broker2.addBroker(broName1, broPort1, "parent");
+            broker2.addBroker(broPort1, ip, "parent");
 
             // Publisher -> Basics/chords
             publisher1.recieveOrderToPublish(topicBasicsChords, numbOfMsgs5, frequence);
