@@ -26,7 +26,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent(string id)
+        private void InitializeComponent()
         {
             this.tb_Command = new System.Windows.Forms.TextBox();
             this.bt_Command = new System.Windows.Forms.Button();
@@ -44,7 +44,6 @@
             this.tb_Command.Name = "tb_Command";
             this.tb_Command.Size = new System.Drawing.Size(367, 20);
             this.tb_Command.TabIndex = 0;
-            this.tb_Command.ReadOnly = !isMaster();
             // 
             // bt_Command
             // 
@@ -63,7 +62,6 @@
             this.tb_Script.Name = "tb_Script";
             this.tb_Script.Size = new System.Drawing.Size(213, 248);
             this.tb_Script.TabIndex = 2;
-            this.tb_Script.ReadOnly = !isMaster();
             // 
             // bt_Script
             // 
@@ -126,7 +124,6 @@
             this.Controls.Add(this.bt_Command);
             this.Controls.Add(this.tb_Command);
             this.Name = "PuppetMasterForm";
-            this.Text = "Puppet " + (isMaster() ? "Master" : "Slave") + " on site" + id;
             this.ResumeLayout(false);
             this.PerformLayout();
 

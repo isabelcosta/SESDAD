@@ -63,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <Compile Include="PuppetMaster.cs" />
     <Compile Include="PuppetMasterForm.cs">
       <SubType>Form</SubType>
     </Compile>

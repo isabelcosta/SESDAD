@@ -62,7 +62,10 @@ namespace SESDAD
             }
             
             //Builds the Puppet Master GUI
-            InitializeComponent(puppetID.ToString());
+            InitializeComponent();
+            this.tb_Command.ReadOnly = !isMaster();
+            this.tb_Script.ReadOnly = !isMaster();
+            this.Text = "Puppet " + (isMaster() ? "Master" : "Slave") + " on site" + puppetID.ToString();
 
             if (this.isMaster())
             {
@@ -112,7 +115,7 @@ namespace SESDAD
             props["port"] = puppetPort;
             TcpChannel channel = new TcpChannel(props, null, provider);
             ChannelServices.RegisterChannel(channel, false);
-
+            MessageBox.Show("O QUE SE PASSA!");
             PuppetServices servicos = new PuppetServices();
             RemotingServices.Marshal(servicos, "puppet",
                 typeof(PuppetServices));
