@@ -27,7 +27,7 @@ namespace SESDAD
           //  TcpChannel channel = new TcpChannel(8087);
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(PublisherServices), "sub",
+                typeof(SubscriberServices), "sub",
                 WellKnownObjectMode.Singleton);
             System.Console.WriteLine("Press <enter> to terminate Subscriber...");
             System.Console.ReadLine();
@@ -35,7 +35,7 @@ namespace SESDAD
     }
 
 
-    class PublisherServices : MarshalByRefObject, SubscriberInterface
+    class SubscriberServices : MarshalByRefObject, SubscriberInterface
     {
         BrokerInterface localBroker;
         PuppetInterface localPuppetMaster;

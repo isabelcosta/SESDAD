@@ -134,7 +134,7 @@ namespace SESDAD
                       typeof(SubscriberInterface), "tcp://localhost:" + subPort1 + "/sub");
 */
 
-            Console.WriteLine("Broker acessivel em: " + "tcp://localhost:" + broPort1 + "/broker");2
+            Console.WriteLine("Broker acessivel em: " + "tcp://localhost:" + broPort1 + "/broker");
             BrokerInterface broker1 =
                (BrokerInterface)Activator.GetObject(
                       typeof(BrokerInterface), "tcp://localhost:" + broPort1 + "/broker");

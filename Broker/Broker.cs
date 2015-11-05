@@ -34,7 +34,7 @@ namespace SESDAD
             // TcpChannel channel = new TcpChannel(8088);
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(PublisherServices), "broker",
+                typeof(BrokerServices), "broker",
                 WellKnownObjectMode.Singleton);
 
             System.Console.ReadLine();
@@ -115,7 +115,7 @@ namespace SESDAD
 
     }
 
-    class PublisherServices : MarshalByRefObject, BrokerInterface
+    class BrokerServices : MarshalByRefObject, BrokerInterface
     {
 
         const string PUBLISHER = "publisher";
