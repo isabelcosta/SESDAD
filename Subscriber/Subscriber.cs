@@ -52,7 +52,7 @@ namespace SESDAD
 
 
         //invocado pelo PuppetMaster para subscrever a um topico e informar o local broker
-        public void recieveOrderToSubscribe(string topic, int subPort)
+        public void recieveOrderToSubscribe(string topic)
         {
             if (topic == null || topic.Equals(""))
                 throw new Exception("topic is empty");
@@ -60,7 +60,7 @@ namespace SESDAD
             subscriptions.Add(topic);
 
             //informar o local broker que subscreveu
-            localBroker.subscribeRequest(topic, subPort);
+            localBroker.subscribeRequest(topic, myPort);
             string action = "Subscribed to " + topic;
             informPuppetMaster(action);
             Console.WriteLine(action);

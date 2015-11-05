@@ -168,7 +168,7 @@ namespace SESDAD
 
 
             publisher1.registerLocalBroker(broPort1);
-            publisher1.giveName(pubName1);
+            publisher1.giveInfo(pubName1, pubPort1);
             //subscriber1.registerLocalBroker(broName1, broPort1);
             broker1.addPublisher(pubPort1);
             broker1.addSubscriber(subPort1);
@@ -177,7 +177,7 @@ namespace SESDAD
 
             
             publisher2.registerLocalBroker(broPort2);
-            publisher2.giveName(pubName2);
+            publisher2.giveInfo(pubName2, pubPort1);
 
             //subscriber2.registerLocalBroker(broName2, broPort2);
             broker2.addPublisher(pubPort2);

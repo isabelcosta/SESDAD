@@ -65,9 +65,9 @@ namespace SESDADInterfaces
     }
     public interface SubscriberInterface
     {
-        void recieveOrderToSubscribe(string topic, int subPort);
+        void recieveOrderToSubscribe(string topic);
 
-        void recieveOrderToUnSubscribe(string topic, int subPort);
+        void recieveOrderToUnSubscribe(string topic);
 
         // network config
         void registerLocalBroker(int Brokerport);
