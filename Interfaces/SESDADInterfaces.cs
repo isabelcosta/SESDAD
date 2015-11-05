@@ -1,9 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 
 namespace SESDADInterfaces
 {
+    //*********************************************************************
+    //                              CONSTANTS
+    //*********************************************************************
 
     public class RoutingPolicyType
     {
@@ -24,6 +27,35 @@ namespace SESDADInterfaces
         public const string LIGHT = "light";
     }
 
+    public class ProcessType
+    {
+        public const string BROKER = "broker";
+        public const string PUBLISHER = "publisher";
+        public const string SUBSCRIBER = "subscriber";
+    }
+
+    public class BrokerNeighbours
+    {
+        public const string SONL = "sonL";
+        public const string SONR = "sonR";
+        public const string PARENT = "parent";
+    }
+
+    public interface PuppetInterface
+    {
+        void receiveOrderToCrash(string processName);
+        void receiveOrderToFreeze(string processName);
+        void receiveOrderToUnfreeze(string processName);
+        void receiveOrderToPublish(string processName); //mais cenas
+        void receiveOrderToSubscribe(string processName); //mais cenas
+        void receiveOrderToUnsubscribe(string processName); //mais cenas
+        void receiveOrderToShowStatus(string processName);
+        //void receiveOrderToStartProcess(string processName, string processType, string args);
+        void sendLogsToMaster(string logInfo);
+        void informAction(string action);
+        int getNumberOfSlaves();
+        void slaveIsReady();
+    }
     [Serializable]
     public class MessageArgs : EventArgs
     {
@@ -40,11 +72,6 @@ namespace SESDADInterfaces
         public string Topic { get { return topic; } }
     }
 
-    public interface PuppetInterface
-    {
-        void informAction(string action);
-            
-    }
     public interface PublisherInterface
     {
         void recieveOrderToPublish(string topic, int numeberOfEvents, int interval_x_ms);
