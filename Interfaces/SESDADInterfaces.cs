@@ -36,9 +36,9 @@ namespace SESDADInterfaces
 
     public class BrokerNeighbours
     {
-        public const string SONL = "SonL";
-        public const string SONR = "SonR";
-        public const string PARENT = "Parent";
+        public const string SONL = "sonL";
+        public const string SONR = "sonR";
+        public const string PARENT = "parent";
     }
 
     public interface PuppetInterface
@@ -52,8 +52,11 @@ namespace SESDADInterfaces
         void receiveOrderToShowStatus(string processName);
         //void receiveOrderToStartProcess(string processName, string processType, string args);
         void sendLogsToMaster(string logInfo);
-        void informMyMaster(string logInfo);
+        void informAction(string action);
+        int getNumberOfSlaves();
+        void slaveIsReady();
     }
+
 
     [Serializable]
     public class MessageArgs : EventArgs
@@ -73,32 +76,66 @@ namespace SESDADInterfaces
 
     public interface PublisherInterface
     {
-        void recieveOrderToPublish(string topic, string message);
+        void recieveOrderToPublish(string topic, int numeberOfEvents, int interval_x_ms);
 
+        // network config
         void registerLocalBroker(string BrokerName, int Brokerport);
+
+        // network config
+        void addPupperMaster(string name, int port);
+
+        // network config
+        void policies(string routing, string ordering, string logging);
+
+        // network config
+        void giveName(string name);
+
+        void status();
     }
     public interface SubscriberInterface
     {
         void recieveOrderToSubscribe(string topic, string subName, int subPort);
 
+        void recieveOrderToUnSubscribe(string topic, int subPort);
 
-
+        // network config
         void registerLocalBroker(string BrokerName, int Brokerport);
 
         void printRecievedMessages();
+
         void Callback(object sender, MessageArgs m);
 
+        // network config
+        void addPupperMaster(string name, int port);
+
+        // network config
+        void policies(string routing, string ordering, string logging);
+
+        void status();
     }
     public interface BrokerInterface
     {
-        void recieveOrderToFlood(string topic, string message);
+        void recieveOrderToFlood(string topic, string message, object source);
 
         void subscribeRequest(string topic, string subscriberName, int port);
 
+        void unSubscribeRequest(string topic, int port);
+
+        // network config
         void addSubscriber(string name, int port);
 
+        // network config
         void addPublisher(string name, int port);
 
-        void addBroker(string name, int port);
+        // network config
+        void addBroker(int port, string name, string relation);
+
+        // network config
+        void addPupperMaster(string name, int port);
+
+        // network config
+        void policies(string routing, string ordering, string logging);
+
+        void status();
     }
 }

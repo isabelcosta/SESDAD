@@ -16,17 +16,21 @@ namespace SESDAD
 
         static void Main(string[] args)
         {
+
+            int publisherPort = Int32.Parse(args[0]);
+
+
             BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
             provider.TypeFilterLevel = TypeFilterLevel.Full;
             IDictionary props = new Hashtable();
-            props["port"] = args[0];
+            props["port"] = publisherPort;
             TcpChannel channel = new TcpChannel(props, null, provider);
 
 
             //TcpChannel channel = new TcpChannel(8086);
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(PublisherServices), "Publisher",
+                typeof(PublisherServices), "pub",
                 WellKnownObjectMode.Singleton);
             System.Console.WriteLine("Press <enter> to terminate Publisher...");
             System.Console.ReadLine();
@@ -38,15 +42,61 @@ namespace SESDAD
     {
 
         BrokerInterface localBroker;
-        public void recieveOrderToPublish(string topic, string message)
-        {
-            // while(true)
-            //{
-            localBroker.recieveOrderToFlood(topic, message);
+        string name;
+        /*
+        message
+            */
+        string topic;
+        int numberOfEvents;
+        int interval_x_ms;
 
-            Console.WriteLine(topic + ":" + message);
-            //Thread.Sleep(4000);
-            //}
+
+
+        public void addPupperMaster(string name, int port)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void policies(string routing, string ordering, string logging)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void recieveOrderToPublish(string topic, int numberOfEvents, int interval_x_ms)
+        {
+            // Formato da mensagem : PubName SeqNumber/Total
+            this.numberOfEvents = numberOfEvents;
+            this.topic = topic;
+            this.interval_x_ms = interval_x_ms;
+
+            ThreadStart ts = new ThreadStart(this.publish);
+            Thread t = new Thread(ts);
+            t.Start();
+
+
+        }
+
+        public void publish()
+        {
+            int numOfEv = this.numberOfEvents;
+            int intv_x_ms = this.interval_x_ms;
+            string topicLocal = this.topic;
+            string content;
+
+            for (int i = 1; i <= numOfEv; i++)
+            {
+                content = this.name + " " + i + "/" + numOfEv;
+
+                // Exe: Publisher1 1/10
+                localBroker.recieveOrderToFlood(topicLocal, content, this);
+
+                Console.WriteLine();
+                Console.WriteLine(topicLocal + " : " + content);
+                Console.WriteLine();
+
+                Thread.Sleep(intv_x_ms);
+            }
+
         }
 
         public void registerLocalBroker(string BrokerName, int BrokerPort)
@@ -55,6 +105,16 @@ namespace SESDAD
             localBroker =
                (BrokerInterface)Activator.GetObject(
                       typeof(BrokerInterface), "tcp://localhost:" + BrokerPort + "/" + BrokerName);
+        }
+
+        public void status()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void giveName(string name)
+        {
+            this.name = name;
         }
     }
 

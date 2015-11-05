@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System;
 using System.Collections;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
@@ -21,17 +16,18 @@ namespace SESDAD
         [STAThread]
         static void Main(string[] args)
         {
+            int subscriberPort = Int32.Parse(args[0]);
 
             BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
             provider.TypeFilterLevel = TypeFilterLevel.Full;
             IDictionary props = new Hashtable();
-            props["port"] = args[0];
+            props["port"] = subscriberPort;
             TcpChannel channel = new TcpChannel(props, null, provider);
 
             //  TcpChannel channel = new TcpChannel(8087);
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(PublisherServices), "Subscriber",
+                typeof(PublisherServices), "sub",
                 WellKnownObjectMode.Singleton);
             System.Console.WriteLine("Press <enter> to terminate Subscriber...");
             System.Console.ReadLine();
@@ -56,12 +52,32 @@ namespace SESDAD
 
             //informar o local broker que subscreveu
             localBroker.subscribeRequest(topic, subName, subPort);
-
+            Console.WriteLine();
             Console.WriteLine("Subscribed to: " + topic);
+            Console.WriteLine();
+
         }
+
+        public void recieveOrderToUnSubscribe(string topic, int subPort)
+        {
+            if (topic == null || topic.Equals(""))
+                throw new Exception("topic is empty");
+            //adicionar as subscricoes a lista
+            subscriptions.Remove(topic);
+
+            //informar o local broker que subscreveu
+            localBroker.unSubscribeRequest(topic, subPort);
+            Console.WriteLine();
+            Console.WriteLine("Unsubscribed to: " + topic);
+            Console.WriteLine();
+        }
+
         public void Callback(object sender, MessageArgs m)
         {
+            Console.WriteLine();
             Console.WriteLine("Recieved " + m.Topic + ":" + m.Body);
+            Console.WriteLine();
+
             messages.Add(new Tuple<string, string>(m.Topic, m.Body));
 
         }
@@ -84,10 +100,27 @@ namespace SESDAD
 
             foreach (Tuple<string, string> msg in messages)
             {
-                Console.WriteLine("Topic " + msg.Item1 + " - " + msg.Item2);
-
+                Console.WriteLine("--");
+                Console.WriteLine("Topic: {0}", msg.Item1);
+                Console.WriteLine("Message: {0}", msg.Item2);
             }
+            Console.WriteLine("--");
         }
 
+        public void status()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void addPupperMaster(string name, int port)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void policies(string routing, string ordering, string logging)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
+

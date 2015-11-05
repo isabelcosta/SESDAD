@@ -18,7 +18,6 @@ using System.Runtime.Serialization.Formatters;
 
 namespace SESDAD
 {
-
     public partial class PuppetMasterForm : Form
     {
 
@@ -36,6 +35,9 @@ namespace SESDAD
         private int puppetID = 0; //indexes the URLs in configPuppet
 
         private IDictionary<string, Process> LocalProcesses = new Dictionary<string, Process>(); //Array with processes <processName, process>
+        private IDictionary<string, PublisherInterface> myPubs = new Dictionary<string, PublisherInterface>();
+        private IDictionary<string, SubscriberInterface> mySubs = new Dictionary<string, SubscriberInterface>();
+        private BrokerInterface myBroker = null;
         private IDictionary<string, string> myBrokerinfo = new Dictionary<string, string>();
 
         //Only PuppetMaster's use, to access the Puppet Master Slaves
@@ -44,6 +46,7 @@ namespace SESDAD
 
         //Only to slave
         private PuppetInterface puppetMasterRemote = null;
+
 
         /// <summary>
         /// Puppet Master Constructor
@@ -93,7 +96,6 @@ namespace SESDAD
             
             String configPuppetPath = Environment.CurrentDirectory + @"\..\..\..\configPuppet.txt";
             
-
             String[] allPuppetURL = System.IO.File.ReadAllLines(configPuppetPath);
             this.puppetURL = allPuppetURL[puppetID];
 
@@ -101,15 +103,8 @@ namespace SESDAD
             
             //Single Mode: PuppetMaster reads and processes all processes
             //Multiple Mode: Each Puppet Master/Slave processes its processes 
-            readConfigFile();
+            this.readConfigFile();
 
-            //slave will save puppetMasterRemoteObject for remote communications
-            if (!isMaster()) {
-                puppetMasterRemote = (PuppetInterface)Activator.GetObject(
-                                typeof(PuppetInterface),
-                                allPuppetURL[0]
-                            );
-            }
             //puppet enables communication through his port
             BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
             provider.TypeFilterLevel = TypeFilterLevel.Full;
@@ -117,6 +112,47 @@ namespace SESDAD
             props["port"] = puppetPort;
             TcpChannel channel = new TcpChannel(props, null, provider);
             ChannelServices.RegisterChannel(channel, false);
+
+            PuppetServices servicos = new PuppetServices();
+            RemotingServices.Marshal(servicos, "puppet",
+                typeof(PuppetServices));
+
+            MessageBox.Show("O QUE SE PASSA!");
+            /*if (!isMaster())
+            {
+                puppetMasterRemote =
+                        (PuppetInterface)Activator.GetObject(
+                            typeof(PuppetInterface),
+                            allPuppetURL[0]
+                        );
+                puppetMasterRemote.slaveIsReady();
+            }*/
+            /*
+            if (isMaster()) {
+                    PuppetInterface me =
+                        (PuppetInterface)Activator.GetObject(
+                            typeof(PuppetInterface),
+                            allPuppetURL[0]
+                        );
+
+                while (me.getNumberOfSlaves() != slaves) {
+                    Thread.Sleep(2000);
+                }
+                MessageBox.Show("I'm ready!!!");
+            }
+            */
+            //slave will save puppetMasterRemoteObject for remote communications
+            //if (!isMaster()) {
+
+                //TODO: send pai e filhos ao broker
+
+                //addNeighboursToMyBroker();
+                //TODO: send policies a todos os processos
+
+
+                //TODO: envia flag a dizer q esta pronto
+
+            //}
 
             /*
             RemotingConfiguration.RegisterWellKnownServiceType(
@@ -131,17 +167,15 @@ namespace SESDAD
             /
             /********************************************************************************/
 
-            PuppetServices servicos = new PuppetServices();
-            RemotingServices.Marshal(servicos, "PuppetService",
-                typeof(PuppetServices));
-            MessageBox.Show("Queryable passa");
+            
             /*******************************************************************************
             /
             /                  quando todos os processos estiverem iniciados
             /
             /********************************************************************************/
             //Being the puppetMaster, he stores the puppetSlaves remote objects
-            if (this.isMaster()) {
+            /*if (this.isMaster()) {
+                //TODO: espera por resposta de todos os slaves
                 for (int puppetIndex = 1; puppetIndex <= this.slaves; puppetIndex++) {
                     PuppetInterface slave =
                         (PuppetInterface)Activator.GetObject(
@@ -150,9 +184,8 @@ namespace SESDAD
                         );
                     slavesRemoteObjects.Add(puppetIndex, slave);
                 }
-            }
-
-
+            }*/
+            
         }
 
         //************************************************************************************
@@ -272,6 +305,39 @@ namespace SESDAD
             }
         }
 
+        private void addNeighboursToMyBroker()
+        {
+            String configPuppetPath = Environment.CurrentDirectory + @"\..\..\..\configPuppet.txt";
+            
+            String[] lines = System.IO.File.ReadAllLines(configPuppetPath);
+
+            String[] blankSpace = { " " };
+
+            foreach (string line in lines)
+            {
+                String[] parsed = line.Split(blankSpace, StringSplitOptions.None);
+
+                if (String.Compare(parsed[0], "Process") == 0)
+                {
+                    string brokerPort = portAndIpFromURL(parsed[7])[0];
+                    string brokerIp = portAndIpFromURL(parsed[7])[1];
+
+                    if (String.Compare(parsed[5], myBrokerinfo[BrokerNeighbours.PARENT]) == 0) //se o broker for pai do meu broker
+                    {
+                        myBroker.addBroker(int.Parse(brokerPort), brokerIp, BrokerNeighbours.PARENT);
+                    }
+                    else if (String.Compare(parsed[5], myBrokerinfo[BrokerNeighbours.SONR]) == 0) //se o broker for filho direito do meu broker
+                    {
+                        myBroker.addBroker(int.Parse(brokerPort), brokerIp, BrokerNeighbours.SONR);
+                    }
+                    else if (String.Compare(parsed[5], myBrokerinfo[BrokerNeighbours.SONL]) == 0) //se o broker for filho esquerdo do meu broker
+                    {
+                        myBroker.addBroker(int.Parse(brokerPort), brokerIp, BrokerNeighbours.SONL);
+                    }
+                }
+            }
+        }
+
         private void processConfigFileLines(String line) {
             String[] blankSpace = { " " };
             String[] parsed = line.Split(blankSpace, StringSplitOptions.None);
@@ -298,33 +364,37 @@ namespace SESDAD
                     
                     string URL = parsed[7];
                     Process process = null;
+                    string processPort = portAndIpFromURL(URL)[0];
+                    string processIp = portAndIpFromURL(URL)[1];
 
                     if (this.isMaster()) {
                         string slaveID = parsed[5].Replace("site", ""); //removes the "site" from string
                         slavesProcesses.Add(parsed[1], int.Parse(slaveID)); //processName -> slaveID
                     }
 
-                    if (String.Compare("site" + this.puppetID, parsed[5]) != 0) { //se não pertence ao meu site nao me interessa
-                        break;
-                    }
-
                     if (String.Compare(parsed[3], ProcessType.BROKER) == 0) {
-                        /*BrokerInterface broker =
-                            (BrokerInterface)Activator.GetObject(
-                                typeof(BrokerInterface), ProcessURL);*/
 
-                        process = startProcess(parsed[1], ProcessType.BROKER, processPortFromURL(URL) + " " + myBrokerinfo[BrokerNeighbours.PARENT] + " " + myBrokerinfo[BrokerNeighbours.SONR] + " " + myBrokerinfo[BrokerNeighbours.SONL]); //parente SonR SonL
-                        if (process == null) {
-                            addMessageToLog("Couldn't start " + parsed[1]);
+                        if (String.Compare("site" + this.puppetID, parsed[5]) == 0) //se for o meu broker
+                        {
+                            process = startProcess(parsed[1], ProcessType.BROKER, processPort);
+                            if (process == null) {
+                                addMessageToLog("Couldn't start " + parsed[1]);
+                            }
+                            addMessageToLog("Broker " + parsed[1] + " at " + URL);
+                            Thread.Sleep(1000); //espera que o broker se torne disponivel
+                            myBroker = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), URL);
                         }
-                        addMessageToLog("Broker " + parsed[1] + " at " + URL);
 
                     } else if (String.Compare(parsed[3], ProcessType.PUBLISHER) == 0) {
                         /*PublisherInterface publisher =
                             (PublisherInterface)Activator.GetObject(
                                 typeof(PublisherInterface), ProcessURL);*/
-                        
-                        process = startProcess(parsed[1], ProcessType.PUBLISHER, processPortFromURL(URL));
+                        if (String.Compare("site" + this.puppetID, parsed[5]) != 0)
+                        { //se não pertence ao meu site nao me interessa
+                            break;
+                        }
+
+                        process = startProcess(parsed[1], ProcessType.PUBLISHER, processPort);
                         if (process == null) {
                             addMessageToLog("Couldn't start " + parsed[1]);
                         }
@@ -334,8 +404,12 @@ namespace SESDAD
                         /*SubscriberInterface subscriber =
                             (SubscriberInterface)Activator.GetObject(
                                 typeof(SubscriberInterface), ProcessURL);*/
-                        
-                        process = startProcess(parsed[1], ProcessType.SUBSCRIBER, processPortFromURL(URL));
+                        if (String.Compare("site" + this.puppetID, parsed[5]) != 0)
+                        { //se não pertence ao meu site nao me interessa
+                            break;
+                        }
+
+                        process = startProcess(parsed[1], ProcessType.SUBSCRIBER, processPort);
                         if (process == null) {
                             addMessageToLog("Couldn't start " + parsed[1]);
                         }
@@ -424,15 +498,17 @@ namespace SESDAD
             tb_Log.AppendText(Environment.NewLine);
         }
 
-        private String processPortFromURL(string url) { //melhorar codigo - returns port and processType
+        private String[] portAndIpFromURL(string url) { //melhorar codigo - returns port and processType
             String[] spliter = { ":" };
 
             String[] portAndProcess = url.Split(spliter, StringSplitOptions.None);
             String[] spliter2 = { @"/" };
 
             String port = portAndProcess[2].Split(spliter2, StringSplitOptions.None)[0];
+            String ip = portAndProcess[1];
 
-            return port;
+            String[] portAndIpFromURL = {port, ip};
+            return portAndIpFromURL;
         }
 
         private bool isMaster() {
@@ -449,6 +525,8 @@ namespace SESDAD
     class PuppetServices : MarshalByRefObject, PuppetInterface
     {
         public static PuppetMasterForm form;
+
+        int numberOfSlaves = 0;
 
         public PuppetServices()
         {
@@ -490,7 +568,17 @@ namespace SESDAD
         public void receiveOrderToUnsubscribe(string processName) { } //mais cenas
         public void receiveOrderToShowStatus(string processName) { }
         public void sendLogsToMaster(string logInfo) { }
-        public void informMyMaster(string logInfo) { }
+        public void informAction(string action) { }
+
+        public void slaveIsReady()
+        {
+            numberOfSlaves++;
+        }
+
+        public int getNumberOfSlaves()
+        {
+            return numberOfSlaves;
+        }
     }
 
 }
