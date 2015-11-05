@@ -248,20 +248,28 @@ namespace SESDAD
                 {
                     if(queue.Value.Item1 + 1 == msg.Item1)
                     {
-                        fifoManager[queue.Key] = msg;
-
+                        if (msg.Item1 != msg.Item2)
+                        {
+                            fifoManager[queue.Key] = msg;
+                            // Simply flood the message
+                        }
+                        fifoManager.Remove(pubName + topic);
                         // Simply flood the message
                     }
                 }
                 else if(msg.Item1 == 1)
                 {
-                    fifoManager.Add(pubName+topic, msg);
-
+                    if(msg.Item1 != msg.Item2)
+                    {
+                        fifoManager.Add(pubName + topic, msg);
+                        // Simpy flood the message
+                    }
+                    fifoManager.Remove(pubName + topic);
                     // Simpy flood the message
                 }
                 else
                 {
-                    // Add 
+                    // Add to fifoQueue
                 }
             }
 
