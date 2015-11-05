@@ -77,18 +77,18 @@ namespace SESDAD
             */
             Process pubProcess1 = new Process();
             pubProcess1.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Publisher\bin\Debug\Publisher.exe";
-            pubProcess1.StartInfo.Arguments = pubName1 + " " + pubPort1;
+            pubProcess1.StartInfo.Arguments = pubPort1.ToString();
             pubProcess1.Start();
 
 /*
             Process subProcess1 = new Process();
             subProcess1.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Subscriber\bin\Debug\Subscriber.exe";
-            subProcess1.StartInfo.Arguments = subName1 + " " + subPort1;
+            subProcess1.StartInfo.Arguments = subPort1.ToString();
             subProcess1.Start();
 */
             Process broProcess1 = new Process();
             broProcess1.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Broker\bin\Debug\Broker.exe";
-            broProcess1.StartInfo.Arguments = broName1 + " " + broPort1;
+            broProcess1.StartInfo.Arguments = broPort1.ToString();
             broProcess1.Start();
 
 
@@ -99,18 +99,18 @@ namespace SESDAD
             */
             Process pubProcess2 = new Process();
             pubProcess2.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Publisher\bin\Debug\Publisher.exe";
-            pubProcess2.StartInfo.Arguments = pubName2 + " " + pubPort2;
+            pubProcess2.StartInfo.Arguments = pubPort2.ToString();
             pubProcess2.Start();
 
 /*
             Process subProcess2 = new Process();
             subProcess2.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Subscriber\bin\Debug\Subscriber.exe";
-            subProcess2.StartInfo.Arguments = subName2 + " " + subPort2;
+            subProcess2.StartInfo.Arguments = subPort2.ToString();
             subProcess2.Start();
 */
             Process broProcess2 = new Process();
             broProcess2.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Broker\bin\Debug\Broker.exe";
-            broProcess2.StartInfo.Arguments = broName2 + " " + broPort2;
+            broProcess2.StartInfo.Arguments = broPort2.ToString();
             broProcess2.Start();
 
 
