@@ -161,6 +161,7 @@ namespace SESDAD
 
             // Network configuration
             publisher1.registerLocalBroker(broName1, broPort1);
+            publisher1.giveName(pubName1);
             //subscriber1.registerLocalBroker(broName1, broPort1);
             broker1.addPublisher(pubName1, pubPort1);
             broker1.addSubscriber(subName1, subPort1);
@@ -169,6 +170,8 @@ namespace SESDAD
 
             
             publisher2.registerLocalBroker(broName2, broPort2);
+            publisher1.giveName(pubName2);
+
             //subscriber2.registerLocalBroker(broName2, broPort2);
             broker2.addPublisher(pubName2, pubPort2);
             broker2.addSubscriber(subName2, subPort2);
@@ -176,8 +179,8 @@ namespace SESDAD
             broker2.addBroker(broName1, broPort1, "parent");
 
             // Publisher -> Basics/chords
-            publisher1.recieveOrderToPublish(topicBasicsChords, pubName1, numbOfMsgs5, frequence);
-            publisher2.recieveOrderToPublish(topicBasicsScales, pubName2, numbOfMsgs5, frequence-1000);
+            publisher1.recieveOrderToPublish(topicBasicsChords, numbOfMsgs5, frequence);
+            publisher2.recieveOrderToPublish(topicBasicsScales, numbOfMsgs5, frequence-1000);
 
 
             Thread.Sleep(2000); //2 seconds wait

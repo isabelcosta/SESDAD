@@ -51,13 +51,19 @@ namespace SESDADInterfaces
     }
     public interface PublisherInterface
     {
-        void recieveOrderToPublish(string topic, string message, int numeberOfEvents, int interval_x_ms);
+        void recieveOrderToPublish(string topic, int numeberOfEvents, int interval_x_ms);
 
+        // network config
         void registerLocalBroker(string BrokerName, int Brokerport);
 
+        // network config
         void addPupperMaster(string name, int port);
 
+        // network config
         void policies(string routing, string ordering, string logging);
+
+        // network config
+        void giveName(string name);
 
         void status();
     }
@@ -67,14 +73,17 @@ namespace SESDADInterfaces
 
         void recieveOrderToUnSubscribe(string topic, int subPort);
 
+        // network config
         void registerLocalBroker(string BrokerName, int Brokerport);
 
         void printRecievedMessages();
 
         void Callback(object sender, MessageArgs m);
 
+        // network config
         void addPupperMaster(string name, int port);
 
+        // network config
         void policies(string routing, string ordering, string logging);
 
         void status();
@@ -87,14 +96,19 @@ namespace SESDADInterfaces
 
         void unSubscribeRequest(string topic, int port);
 
+        // network config
         void addSubscriber(string name, int port);
 
+        // network config
         void addPublisher(string name, int port);
 
+        // network config
         void addBroker(string name, int port, string relation);
 
+        // network config
         void addPupperMaster(string name, int port);
 
+        // network config
         void policies(string routing, string ordering, string logging);
 
         void status();

@@ -43,10 +43,10 @@ namespace SESDAD
     {
 
         BrokerInterface localBroker;
+        string name;
         /*
         message
             */
-        string name;
         string topic;
         int numberOfEvents;
         int interval_x_ms;
@@ -63,10 +63,9 @@ namespace SESDAD
             throw new NotImplementedException();
         }
 
-        public void recieveOrderToPublish(string topic, string name, int numberOfEvents, int interval_x_ms)
+        public void recieveOrderToPublish(string topic, int numberOfEvents, int interval_x_ms)
         {
             // Formato da mensagem : PubName SeqNumber/Total
-            this.name = name;
             this.numberOfEvents = numberOfEvents;
             this.topic = topic;
             this.interval_x_ms = interval_x_ms;
@@ -83,16 +82,17 @@ namespace SESDAD
             int numOfEv = this.numberOfEvents;
             int intv_x_ms = this.interval_x_ms;
             string topicLocal = this.topic;
+            string content;
 
             for (int i = 1; i <= numOfEv; i++)
             {
-                string content = name + " " + i + "/" + numberOfEvents;
+                content = this.name + " " + i + "/" + numOfEv;
                                                 
                                             // Exe: Publisher1 1/10
                 localBroker.recieveOrderToFlood(topicLocal, content, this);
 
                 Console.WriteLine();
-                Console.WriteLine(topicLocal+ ":"+ name);
+                Console.WriteLine(topicLocal+ " : " + content);
                 Console.WriteLine();
 
                 Thread.Sleep(intv_x_ms);
@@ -111,6 +111,11 @@ namespace SESDAD
         public void status()
         {
             throw new NotImplementedException();
+        }
+
+        public void giveName(string name)
+        {
+            this.name = name;
         }
     }
 

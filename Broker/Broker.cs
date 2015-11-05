@@ -76,6 +76,58 @@ namespace SESDAD
         }
 
     }
+
+    class TopicsTable
+    {
+        Dictionary<string, int> topics = new Dictionary<string, int>();
+
+
+        public int addSubNumber(string topic)
+        {
+            if (topics.ContainsKey(topic))
+            {
+                topics[topic]++;
+                return topics[topic];
+            }
+
+            else
+            {
+                Console.WriteLine("Cant increment topic that doesnt exist");
+                return -1;
+            }
+        }
+        public int remSubNumber(string topic)
+        {
+            if (topics.ContainsKey(topic))
+            {
+                topics[topic]--;
+                return topics[topic];
+            }
+            else
+            {
+                Console.WriteLine("Cant decrement topic that doesnt exist");
+                return -1;
+            }
+        }
+ 
+        public bool containsTopic (string topicNew)
+        {
+            foreach (string topicList in topics.Keys)
+            {
+                if (topicNew.Contains(topicList))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public void AddTopic(string topic)
+        {
+            topics.Add(topic, 1);
+        }
+
+    }
+
     class PublisherServices : MarshalByRefObject, BrokerInterface
     {
 
@@ -91,11 +143,14 @@ namespace SESDAD
 
 
 
-        public Dictionary<string, List<SubscriberRequestID>> delegates = new Dictionary<string, List<SubscriberRequestID>>();
+            //     {relation, list of topics to flood there}
+        Dictionary<string, TopicsTable> filteringTable = new Dictionary<string, TopicsTable>();
+
+
+
+        Dictionary<string, List<SubscriberRequestID>> delegates = new Dictionary<string, List<SubscriberRequestID>>();
 
         //public event MySubs E;
-
-
 
         Dictionary<Tuple<string, string>, SubscriberInterface> subscribers = new Dictionary<Tuple<string, string>,SubscriberInterface>();
         List<PublisherInterface> publishers = new List<PublisherInterface>();
@@ -205,7 +260,6 @@ namespace SESDAD
                 {
                     foreach (SubscriberRequestID subReqID in delegates[subTopic])
                     {
-                        Console.WriteLine("Ciclo dos subs de topic - subTopic " + subTopic);
                         subReqID.SubDelegate(this, new MessageArgs(topic, message));
                     }
 
@@ -226,12 +280,9 @@ namespace SESDAD
             
             if (topicSub.EndsWith("*"))
             {
-                Console.WriteLine("AQUI");
                 topicSub = topicSub.Remove(topicSub.Length - 1);
             }
-            Console.WriteLine("topic sub " + topicSub + " Pub topic " + topicPub);
-
-            return topicPub.Contains(topicSub); // @ faz falta?
+            return topicPub.Contains(topicSub);
             
             
         }
