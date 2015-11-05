@@ -40,10 +40,10 @@ namespace SESDAD
 
         //Only PuppetMaster's use, to access the Puppet Master Slaves
         private IDictionary<string, int> slavesProcesses  = new Dictionary<string, int>(); //Hashtable please <processName, slaveURL>
-        private IDictionary<int, string> slavesRemoteObjects = new Dictionary<int, string>(); //Hashtable please <processName, slaveURL>
+        private IDictionary<int, PuppetInterface> slavesRemoteObjects = new Dictionary<int, PuppetInterface>(); //Hashtable please <processName, slaveURL>
 
-
-
+        //Only to slave
+        private PuppetInterface puppetMasterRemote = null;
 
         /// <summary>
         /// Puppet Master Constructor
@@ -102,8 +102,15 @@ namespace SESDAD
             //Single Mode: PuppetMaster reads and processes all processes
             //Multiple Mode: Each Puppet Master/Slave processes its processes 
             readConfigFile();
-            
-            //regista o servico de puppet
+
+            //slave will save puppetMasterRemoteObject for remote communications
+            if (!isMaster()) {
+                puppetMasterRemote = (PuppetInterface)Activator.GetObject(
+                                typeof(PuppetInterface),
+                                allPuppetURL[0]
+                            );
+            }
+            //puppet enables communication through his port
             BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
             provider.TypeFilterLevel = TypeFilterLevel.Full;
             IDictionary props = new Hashtable();
@@ -111,15 +118,41 @@ namespace SESDAD
             TcpChannel channel = new TcpChannel(props, null, provider);
             ChannelServices.RegisterChannel(channel, false);
 
-            //get puppet slaves remote objects
+            /*
+            RemotingConfiguration.RegisterWellKnownServiceType(
+                typeof(PuppetInterface),
+                "PuppetService",
+                WellKnownObjectMode.Singleton
+            );*/
+
+            /*******************************************************************************
+            /
+            /                  QUE PASSA????????????????????????
+            /
+            /********************************************************************************/
+
+            PuppetServices servicos = new PuppetServices();
+            RemotingServices.Marshal(servicos, "PuppetService",
+                typeof(PuppetServices));
+            MessageBox.Show("Queryable passa");
+            /*******************************************************************************
+            /
+            /                  quando todos os processos estiverem iniciados
+            /
+            /********************************************************************************/
+            //Being the puppetMaster, he stores the puppetSlaves remote objects
             if (this.isMaster()) {
-                //
+                for (int puppetIndex = 1; puppetIndex <= this.slaves; puppetIndex++) {
+                    PuppetInterface slave =
+                        (PuppetInterface)Activator.GetObject(
+                            typeof(PuppetInterface),
+                            allPuppetURL[puppetIndex]
+                        );
+                    slavesRemoteObjects.Add(puppetIndex, slave);
+                }
             }
 
-            /*
-            PuppetServices servicos = new PuppetServices();
-            RemotingServices.Marshal(servicos, "Puppet - " + puppetID,
-                typeof(PuppetServices));*/
+
         }
 
         //************************************************************************************
@@ -174,7 +207,6 @@ namespace SESDAD
                             timeToSleep = Int32.Parse(parsedLine[1]);
                         }
                         catch (FormatException) { break; }
-                        //Thread.Sleep(msToSleep);
                         break;
 
                     default:
@@ -267,6 +299,11 @@ namespace SESDAD
                     string URL = parsed[7];
                     Process process = null;
 
+                    if (this.isMaster()) {
+                        string slaveID = parsed[5].Replace("site", ""); //removes the "site" from string
+                        slavesProcesses.Add(parsed[1], int.Parse(slaveID)); //processName -> slaveID
+                    }
+
                     if (String.Compare("site" + this.puppetID, parsed[5]) != 0) { //se não pertence ao meu site nao me interessa
                         break;
                     }
@@ -351,13 +388,18 @@ namespace SESDAD
 
         public void crash(String processName) {
 
-            if (LocalProcesses.ContainsKey(processName))
+            if (isMaster())
             {
-                LocalProcesses[processName].Kill();
+                slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToCrash(processName);
             }
             else {
-                return;
+                if (LocalProcesses.ContainsKey(processName))
+                {
+                    LocalProcesses[processName].Kill();
+                }
+                else { return; } // TALVEZ DESNECESSARIO
             }
+            
         }
 
         public void status()
@@ -406,7 +448,6 @@ namespace SESDAD
 
     class PuppetServices : MarshalByRefObject, PuppetInterface
     {
-
         public static PuppetMasterForm form;
 
         public PuppetServices()
@@ -414,7 +455,7 @@ namespace SESDAD
 
         }
 
-        public void recieveOrderToCrash(string processName)
+        public void receiveOrderToCrash(string processName)
         {
             // thread-safe access to form
             form.Invoke(new DelCrashProcess(form.crash), processName);
@@ -443,8 +484,7 @@ namespace SESDAD
         public void receiveOrderToUnfreeze(string processName) {
 
         }
-
-        public void receiveOrderToCrash(string processName) { }
+        
         public void receiveOrderToPublish(string processName) { } //mais cenas
         public void receiveOrderToSubscribe(string processName) { } //mais cenas
         public void receiveOrderToUnsubscribe(string processName) { } //mais cenas
