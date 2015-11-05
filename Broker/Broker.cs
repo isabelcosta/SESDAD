@@ -42,7 +42,7 @@ namespace SESDAD
     }
 
 
- 
+
 
     public class SubscriberRequestID
     {
@@ -138,7 +138,7 @@ namespace SESDAD
         Dictionary<string, TopicsTable> filteringTable = new Dictionary<string, TopicsTable>();
 
         Dictionary<string, List<SubscriberRequestID>> delegates = new Dictionary<string, List<SubscriberRequestID>>();
-        
+
         //public event MySubs E;
 
         Dictionary<int, SubscriberInterface> subscribers = new Dictionary<int,SubscriberInterface>();
@@ -147,6 +147,8 @@ namespace SESDAD
         Dictionary<string, BrokerInterface> brokerTree = new Dictionary<string, BrokerInterface>();
         Dictionary<SubscriberInterface, List<string>> subscribersTopics = new Dictionary<SubscriberInterface, List<string>>();
 
+        Dictionary<string, Tuple<int, int>> fifoManager = new Dictionary<string, Tuple<int, int>>();
+        Dictionary<string, List<Tuple<int, string>>> fifoQueue = new Dictionary<string, List<Tuple<int, string>>>();
 
         public bool isBroker(object source)
         {
@@ -214,7 +216,46 @@ namespace SESDAD
             
             // sourceType cases: {publisher, sonL, sonR, parent}
             string sourceType = getSourceType(source);
-            
+
+            Console.WriteLine("Sender: {0}", sourceType);
+
+
+            //START
+            //     ORDERING FIFO
+            //
+            string pubName = "";
+            Tuple<int, int> msg = new Tuple<int, int>(0, 0);
+
+            parseMessage(ref pubName, ref msg, message);
+
+
+            Tuple<int, int> msgMngmt = new Tuple<int, int>(0, 0);
+
+
+            if (checkIfIsNext(msg, pubName, topic))
+            {
+                do
+                {
+                    flood(sourceType, topic, message);
+                    if (getFromQueue(pubName + topic, msg.Item1, ref message))
+                    {
+                        break;
+                    }
+                } while (true);
+            }
+            else
+            {
+                // Just add to queue
+                addToQueue(pubName + topic, msg.Item1, message);
+            }
+
+        }
+
+        public void flood (string sourceType, string topic, string message)
+        {
+
+            BrokerInterface broTest;
+
             /*
             in each if statement with check if:
                     1st - the process that we are testing isn't the source
@@ -225,7 +266,7 @@ namespace SESDAD
 
 
             //                      1st                                                   2nd
-            if ((string.Compare(sourceType, BROKER_SONR)!=0) && brokerTree.TryGetValue(BROKER_SONR, out broTest))
+            if ((string.Compare(sourceType, BROKER_SONR) != 0) && brokerTree.TryGetValue(BROKER_SONR, out broTest))
             {
                 broTest.recieveOrderToFlood(topic, message, this);
             }
@@ -257,7 +298,33 @@ namespace SESDAD
             Console.WriteLine(action);
         }
         
-        public string[] parseMessage(string message)
+
+        public bool checkIfIsNext(Tuple<int, int> msg, string pubName, string topic)
+        {
+
+
+            Tuple<int, int> msgMngmt = new Tuple<int, int>(0, 0);
+            if (fifoManager.TryGetValue(pubName + topic, out msgMngmt))
+            {
+                // Key was in dictionary; "value" contains corresponding value
+
+                if (fifoManager[pubName + topic].Item1 + 1 == msg.Item1)
+                {
+                    fifoManager[pubName + topic] = msg;
+                    return true;
+                }
+            }
+
+
+            if (msg.Item1 == 1 )
+            {
+                fifoManager.Add(pubName + topic, msg);
+                return true;
+            }
+            return false;
+        }
+        
+        public void parseMessage(ref string pubName, ref Tuple<int, int> msg, string message)
         {
             string[] msgParsed = new string[3];
 
@@ -267,9 +334,53 @@ namespace SESDAD
             msgParsed[1] = msgTemp2[0];
             msgParsed[2] = msgTemp2[1];
 
-            return msgParsed;
+            pubName = msgParsed[0];
+            msg = new Tuple<int, int>(int.Parse(msgParsed[1]), int.Parse(msgParsed[2]));
         }
 
+        public void addToQueue(string pubPlusTopic, int msgNumber, string message)
+        {
+
+            List<Tuple<int, string>> msgList = new List<Tuple<int, string>>();
+            Tuple<int, string> msgNPlusMsg = new Tuple<int, string>(msgNumber, message);
+            if (!fifoQueue.TryGetValue(pubPlusTopic, out msgList))
+            {
+                // Key wasn't in dictionary; "value" is now 0
+                msgList.Add(msgNPlusMsg);
+                fifoQueue.Add(pubPlusTopic, msgList);
+            }
+            else
+            {
+                // Key was in dictionary; "value" contains corresponding value
+                msgList.Add(msgNPlusMsg);
+            }
+        }
+
+        public bool getFromQueue(string pubPlusTopic, int msgNumber, ref string message)
+        {
+            List<Tuple<int, string>> msgList = new List<Tuple<int, string>>();
+            Tuple<int, string> msgNPlusMsg = new Tuple<int, string>(msgNumber, message);
+            if (fifoQueue.TryGetValue(pubPlusTopic, out msgList))
+            {
+                // Key was in dictionary; "value" contains corresponding value
+                foreach (Tuple<int, string> currentMsg in msgList)
+                {
+                    if (currentMsg.Item1 == msgNumber + 1)
+                    {
+                        message = currentMsg.Item2;
+                        msgList.Remove(currentMsg);
+                        if (msgList.Count == 0)
+                        {
+                            fifoQueue.Remove(pubPlusTopic);
+                        }
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+       
         public bool topicsMatch (string topicPub, string topicSub)
         {
 
@@ -317,7 +428,7 @@ namespace SESDAD
                 subReqID.addSubscription(new MySubs(subscriber.Callback));
                 delegates[topic].Add(subReqID);
             }
-
+           
             string action = "Added subscriber at port " + port + " for the topic " + topic;
             informPuppetMaster(action);
             Console.WriteLine(action);
@@ -392,7 +503,7 @@ namespace SESDAD
         private void informPuppetMaster(string action)
         {
             if(string.Compare(logging,LoggingLevelType.FULL)==0)
-            {
+        {
                 localPuppetMaster.informAction(action);
             }
         }
