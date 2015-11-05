@@ -341,10 +341,23 @@ namespace SESDAD
             msg = new Tuple<int, int>(int.Parse(msgParsed[1]), int.Parse(msgParsed[2]));
         }
 
-        public void queue(ref Dictionary<string, List<Tuple<int, int>>> fifoQueue, 
+        public void addToQueue(ref Dictionary<string, List<Tuple<int, string>>> fifoQueue, 
                             string pubPlusTopic, int msgNumber, string message)
         {
 
+            List<Tuple<int, string>> msgList = new List<Tuple<int, string>>();
+            Tuple<int, string> msgNPlusMsg = new Tuple<int, string>(msgNumber, message);
+            if (!fifoQueue.TryGetValue(pubPlusTopic, out msgList))
+            {
+                // Key wasn't in dictionary; "value" is now 0
+                msgList.Add(msgNPlusMsg);
+                fifoQueue.Add(pubPlusTopic, msgList);
+            }
+            else
+            {
+                // Key was in dictionary; "value" contains corresponding value
+                msgList.Add(msgNPlusMsg);
+            }
         }
 
         public bool canFlood()
