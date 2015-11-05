@@ -103,6 +103,18 @@ namespace SESDAD
             //Multiple Mode: Each Puppet Master/Slave processes its processes 
             readConfigFile();
 
+             //puppet enables communication through his port
+            BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
+            provider.TypeFilterLevel = TypeFilterLevel.Full;
+            IDictionary props = new Hashtable();
+            props["port"] = puppetPort;
+            TcpChannel channel = new TcpChannel(props, null, provider);
+            ChannelServices.RegisterChannel(channel, false);           
+
+            PuppetServices servicos = new PuppetServices();
+            RemotingServices.Marshal(servicos, "PuppetService",
+                typeof(PuppetServices));
+            
             //slave will save puppetMasterRemoteObject for remote communications
             if (!isMaster()) {
                 puppetMasterRemote = (PuppetInterface)Activator.GetObject(
@@ -110,13 +122,6 @@ namespace SESDAD
                                 allPuppetURL[0]
                             );
             }
-            //puppet enables communication through his port
-            BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
-            provider.TypeFilterLevel = TypeFilterLevel.Full;
-            IDictionary props = new Hashtable();
-            props["port"] = puppetPort;
-            TcpChannel channel = new TcpChannel(props, null, provider);
-            ChannelServices.RegisterChannel(channel, false);
 
             /*
             RemotingConfiguration.RegisterWellKnownServiceType(
@@ -131,17 +136,13 @@ namespace SESDAD
             /
             /********************************************************************************/
 
-            PuppetServices servicos = new PuppetServices();
-            RemotingServices.Marshal(servicos, "PuppetService",
-                typeof(PuppetServices));
-            MessageBox.Show("Queryable passa");
             /*******************************************************************************
             /
             /                  quando todos os processos estiverem iniciados
             /
             /********************************************************************************/
             //Being the puppetMaster, he stores the puppetSlaves remote objects
-            if (this.isMaster()) {
+            /*if (this.isMaster()) {
                 for (int puppetIndex = 1; puppetIndex <= this.slaves; puppetIndex++) {
                     PuppetInterface slave =
                         (PuppetInterface)Activator.GetObject(
@@ -150,7 +151,7 @@ namespace SESDAD
                         );
                     slavesRemoteObjects.Add(puppetIndex, slave);
                 }
-            }
+            }*/
 
 
         }
