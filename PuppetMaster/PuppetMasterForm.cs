@@ -34,10 +34,12 @@ namespace SESDAD
         private String puppetURL = null; //tcp://localhost:30000/puppet
         private int puppetID = 0; //indexes the URLs in configPuppet
 
+        //for both PuppetMaster and PuppetSlaves
         private IDictionary<string, Process> LocalProcesses = new Dictionary<string, Process>(); //Array with processes <processName, process>
         private IDictionary<string, PublisherInterface> myPubs = new Dictionary<string, PublisherInterface>(); //<processName, PublisherInterface>
         private IDictionary<string, SubscriberInterface> mySubs = new Dictionary<string, SubscriberInterface>(); //<processName, SubscriberInterface>
         private BrokerInterface myBroker = null;
+        private int myBrokerPort = 0;
         private IDictionary<string, string> myBrokerinfo = new Dictionary<string, string>();
 
         //Only PuppetMaster's use, to access the Puppet Master Slaves
@@ -130,31 +132,20 @@ namespace SESDAD
                     Thread.Sleep(2000);
                 }
 
-                this.addNeighboursToMyBroker();
-
-                //foreach (Object process in ) {
-
-                //}
-
-            }
-            
-            
-            
-            //if (!isMaster()) {
-
-                //TODO: send pai e filhos ao broker
-
-                //addNeighboursToMyBroker();
+                this.addNeighboursToMyBroker(); //TODO: acho q pode ficar fora dos dois if's
                 //TODO: send policies a todos os processos
-                
-            //}
 
-            /*******************************************************************************
-            /
-            /                  quando todos os processos estiverem iniciados
-            /
-            /********************************************************************************/
-            //Being the puppetMaster, he stores the puppetSlaves remote objects
+                foreach (PublisherInterface pub in myPubs.Values)
+                {
+                    pub.registerLocalBroker(myBrokerPort);
+                }
+                foreach (SubscriberInterface sub in mySubs.Values)
+                {
+                    sub.registerLocalBroker(myBrokerPort);
+                }
+            }
+
+            //Being the puppetMaster, he stores the puppetSlaves remote objects, when they are all up
             if (this.isMaster()) {
                 PuppetInterface me =
                         (PuppetInterface)Activator.GetObject(
@@ -165,9 +156,7 @@ namespace SESDAD
                 while (me.getNumberOfSlaves() != slaves) {
                     Thread.Sleep(2000);
                 }
-                MessageBox.Show("I'm ready!!!");
 
-                //TODO: espera por resposta de todos os slaves
                 for (int puppetIndex = 1; puppetIndex <= this.slaves; puppetIndex++) {
 
                     PuppetInterface slave =
@@ -178,6 +167,8 @@ namespace SESDAD
                     slavesRemoteObjects.Add(puppetIndex, slave);
                     slave.slavesAreUp();
                 }
+
+                this.addNeighboursToMyBroker();
             }
             
         }
@@ -232,6 +223,7 @@ namespace SESDAD
                         int timeToSleep = 0;
                         try {
                             timeToSleep = Int32.Parse(parsedLine[1]);
+                            Thread.Sleep(timeToSleep);
                         }
                         catch (FormatException) { break; }
                         break;
@@ -363,6 +355,7 @@ namespace SESDAD
 
                     if (this.isMaster()) {
                         string slaveID = parsed[5].Replace("site", ""); //removes the "site" from string
+                        MessageBox.Show(slaveID);
                         slavesProcesses.Add(parsed[1], int.Parse(slaveID)); //processName -> slaveID
                     }
 
@@ -375,9 +368,10 @@ namespace SESDAD
                                 addMessageToLog("Couldn't start " + parsed[1]);
                             }
                             addMessageToLog("Broker " + parsed[1] + " at " + URL);
-                            //Thread.Sleep(1000); //espera que o broker se torne disponivel
+
                             BrokerInterface bro = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), URL);
                             myBroker = bro;
+                            myBrokerPort = int.Parse(processPort);
                         }
 
                     } else if (String.Compare(parsed[3], ProcessType.PUBLISHER) == 0) {
@@ -391,9 +385,8 @@ namespace SESDAD
                             addMessageToLog("Couldn't start " + parsed[1]);
                         }
                         addMessageToLog("Publisher " + parsed[1] + " at " + URL);
-                        /*PublisherInterface publisher =
-                            (PublisherInterface)Activator.GetObject(
-                                typeof(PublisherInterface), ProcessURL);*/
+                        PublisherInterface publisher = (PublisherInterface)Activator.GetObject(typeof(PublisherInterface), URL);
+                        myPubs.Add(parsed[1], publisher);
 
                     } else if (String.Compare(parsed[3], ProcessType.SUBSCRIBER) == 0) {
                         if (String.Compare("site" + this.puppetID, parsed[5]) != 0)
@@ -406,9 +399,9 @@ namespace SESDAD
                             addMessageToLog("Couldn't start " + parsed[1]);
                         }
                         addMessageToLog("Subscriber " + parsed[1] + " at " + URL);
-                        /*SubscriberInterface subscriber =
-                            (SubscriberInterface)Activator.GetObject(
-                                typeof(SubscriberInterface), ProcessURL);*/
+                        SubscriberInterface subscriber = (SubscriberInterface)Activator.GetObject(typeof(SubscriberInterface), URL);
+                        mySubs.Add(parsed[1], subscriber);
+
                     }
                     break;
 
@@ -459,7 +452,13 @@ namespace SESDAD
             //MessageBox.Show(puppetID.ToString());
             if (isMaster())
             {
-                slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToCrash(processName);
+                if (LocalProcesses.ContainsKey(processName))
+                {
+                    LocalProcesses[processName].Kill();
+                }
+                else {
+                    slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToCrash(processName);
+                }
             }
             else {
                 if (LocalProcesses.ContainsKey(processName))
