@@ -186,8 +186,8 @@ namespace SESDAD
             broker2.addBroker(broPort1, ip, "parent");
 
             // Publisher -> Basics/chords
-            publisher1.recieveOrderToPublish(topicBasicsChords, numbOfMsgs5, frequence);
-            publisher2.recieveOrderToPublish(topicBasicsScales, numbOfMsgs5, frequence-1000);
+            publisher1.receiveOrderToPublish(topicBasicsChords, numbOfMsgs5, frequence);
+            publisher2.receiveOrderToPublish(topicBasicsScales, numbOfMsgs5, frequence-1000);
 
 
             Thread.Sleep(2000); //2 seconds wait

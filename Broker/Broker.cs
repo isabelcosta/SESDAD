@@ -208,7 +208,7 @@ namespace SESDAD
         }
 
         //used for the PuppetMaster to request a broker to flood a message
-        public void recieveOrderToFlood(string topic, string message, object source)
+        public void receiveOrderToFlood(string topic, string message, object source)
         {
 
 
@@ -268,15 +268,15 @@ namespace SESDAD
             //                      1st                                                   2nd
             if ((string.Compare(sourceType, BROKER_SONR) != 0) && brokerTree.TryGetValue(BROKER_SONR, out broTest))
             {
-                broTest.recieveOrderToFlood(topic, message, this);
+                broTest.receiveOrderToFlood(topic, message, this);
             }
             if ((string.Compare(sourceType, BROKER_SONL) != 0) && brokerTree.TryGetValue(BROKER_SONL, out broTest))
             {
-                broTest.recieveOrderToFlood(topic, message, this);
+                broTest.receiveOrderToFlood(topic, message, this);
             }
             if ((string.Compare(sourceType, BROKER_PARENT) != 0) && brokerTree.TryGetValue(BROKER_PARENT, out broTest))
             {
-                broTest.recieveOrderToFlood(topic, message, this);
+                broTest.receiveOrderToFlood(topic, message, this);
             }
             
 

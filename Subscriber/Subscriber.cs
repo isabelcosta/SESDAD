@@ -52,7 +52,7 @@ namespace SESDAD
 
 
         //invocado pelo PuppetMaster para subscrever a um topico e informar o local broker
-        public void recieveOrderToSubscribe(string topic)
+        public void receiveOrderToSubscribe(string topic)
         {
             if (topic == null || topic.Equals(""))
                 throw new Exception("topic is empty");
@@ -62,12 +62,12 @@ namespace SESDAD
             //informar o local broker que subscreveu
             localBroker.subscribeRequest(topic, myPort);
             string action = "Subscribed to " + topic;
-            informPuppetMaster(action);
+            //informPuppetMaster(action);
             Console.WriteLine(action);
 
         }
 
-        public void recieveOrderToUnSubscribe(string topic)
+        public void receiveOrderToUnSubscribe(string topic)
         {
             //adicionar as subscricoes a lista
             subscriptions.Remove(topic);
@@ -76,7 +76,7 @@ namespace SESDAD
             localBroker.unSubscribeRequest(topic, myPort);
 
             string action = "Unsubscribed to " + topic;
-            informPuppetMaster(action);
+            //informPuppetMaster(action);
             Console.WriteLine(action);
 
         }
@@ -84,10 +84,10 @@ namespace SESDAD
         public void Callback(object sender, MessageArgs m)
         {
             Console.WriteLine();
-            Console.WriteLine("Recieved " + m.Topic+ ":" + m.Body);
+            Console.WriteLine("received " + m.Topic+ ":" + m.Body);
             Console.WriteLine();
 
-            string action = "Recieved " + m.Topic + " : " + m.Body;
+            string action = "received " + m.Topic + " : " + m.Body;
             informPuppetMaster(action);
             Console.WriteLine(action);
 
@@ -107,7 +107,7 @@ namespace SESDAD
             
         }
 
-        public void printRecievedMessages()
+        public void printReceivedMessages()
         {
 
             foreach (Tuple<string, string> msg in messages) {
