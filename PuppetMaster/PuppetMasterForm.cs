@@ -310,7 +310,7 @@ namespace SESDAD
 
         private void addNeighboursToMyBroker()
         {
-            String configPuppetPath = Environment.CurrentDirectory + @"\..\..\..\configPuppet.txt";
+            String configPuppetPath = Environment.CurrentDirectory + @"\..\..\..\configFile.txt"; //TODO: create a attribute or method
             
             String[] lines = System.IO.File.ReadAllLines(configPuppetPath);
 
@@ -325,17 +325,31 @@ namespace SESDAD
                     string brokerPort = portAndIpFromURL(parsed[7])[0];
                     string brokerIp = portAndIpFromURL(parsed[7])[1];
 
-                    if (String.Compare(parsed[5], myBrokerinfo[BrokerNeighbours.PARENT]) == 0) //se o broker for pai do meu broker
+                    //MessageBox.Show(
+                    //    "Pai " + (myBrokerinfo[BrokerNeighbours.PARENT] == null ? "none" : myBrokerinfo[BrokerNeighbours.PARENT]) + "; sonL " 
+                    //    + (myBrokerinfo[BrokerNeighbours.SONL] == null ? "none" : myBrokerinfo[BrokerNeighbours.SONL]) + "; sonR " 
+                    //    + (myBrokerinfo[BrokerNeighbours.SONR] == null ? "none" : myBrokerinfo[BrokerNeighbours.SONR])
+                    //);
+
+                    if (myBrokerinfo.ContainsKey(BrokerNeighbours.PARENT) && (String.Compare("none", myBrokerinfo[BrokerNeighbours.PARENT]) != 0)) //se o broker for pai do meu broker
                     {
-                        myBroker.addBroker(int.Parse(brokerPort), brokerIp, BrokerNeighbours.PARENT);
+                        if ((String.Compare(parsed[5], myBrokerinfo[BrokerNeighbours.PARENT]) == 0) && (String.Compare(parsed[3], ProcessType.BROKER) == 0)) {
+                            myBroker.addBroker(int.Parse(brokerPort), brokerIp, BrokerNeighbours.PARENT);
+                        }
                     }
-                    else if (String.Compare(parsed[5], myBrokerinfo[BrokerNeighbours.SONR]) == 0) //se o broker for filho direito do meu broker
+                    if (myBrokerinfo.ContainsKey(BrokerNeighbours.SONR)) //se o broker for filho direito do meu broker
                     {
-                        myBroker.addBroker(int.Parse(brokerPort), brokerIp, BrokerNeighbours.SONR);
+                        if ((String.Compare(parsed[5], myBrokerinfo[BrokerNeighbours.SONR]) == 0) && (String.Compare(parsed[3], ProcessType.BROKER) == 0))
+                        {
+                            myBroker.addBroker(int.Parse(brokerPort), brokerIp, BrokerNeighbours.SONR);
+                        }
                     }
-                    else if (String.Compare(parsed[5], myBrokerinfo[BrokerNeighbours.SONL]) == 0) //se o broker for filho esquerdo do meu broker
+                    if (myBrokerinfo.ContainsKey(BrokerNeighbours.SONL)) //se o broker for filho esquerdo do meu broker
                     {
-                        myBroker.addBroker(int.Parse(brokerPort), brokerIp, BrokerNeighbours.SONL);
+                        if ((String.Compare(parsed[5], myBrokerinfo[BrokerNeighbours.SONL]) == 0) && (String.Compare(parsed[3], ProcessType.BROKER) == 0))
+                        {
+                            myBroker.addBroker(int.Parse(brokerPort), brokerIp, BrokerNeighbours.SONL);
+                        }
                     }
                 }
             }
@@ -351,6 +365,7 @@ namespace SESDAD
             switch (parsed[0])
             {
                 case "Site": //Site sitename Parent sitename|none
+                    //MessageBox.Show("Im " + this.puppetID + " site" + this.puppetID + "        " + parsed[1]);
                     if (String.Compare("site" + this.puppetID, parsed[1]) == 0)
                     { //se eu for um filho logo tenho o pai do meu broker
                         myBrokerinfo[BrokerNeighbours.PARENT] = parsed[3];
@@ -376,7 +391,6 @@ namespace SESDAD
 
                     if (this.isMaster()) {
                         string slaveID = parsed[5].Replace("site", ""); //removes the "site" from string
-                        //MessageBox.Show(slaveID);
                         slavesProcesses.Add(parsed[1], int.Parse(slaveID)); //processName -> slaveID
                     }
 
@@ -628,7 +642,8 @@ namespace SESDAD
             String[] spliter2 = { @"/" };
 
             String port = portAndProcess[2].Split(spliter2, StringSplitOptions.None)[0];
-            String ip = portAndProcess[1];
+
+            String ip = portAndProcess[1].Substring(2);
 
             String[] portAndIpFromURL = {port, ip};
             return portAndIpFromURL;
