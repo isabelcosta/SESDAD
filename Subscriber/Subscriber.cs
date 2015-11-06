@@ -135,7 +135,7 @@ namespace SESDAD
         {
             //if (string.Compare(logging, LoggingLevelType.FULL) == 0)
             //{
-                localPuppetMaster.informAction(action);
+            //    localPuppetMaster.informAction(action);
             //}
         }
 

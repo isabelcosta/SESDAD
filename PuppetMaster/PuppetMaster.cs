@@ -166,23 +166,29 @@ namespace SESDAD
             broker1.addPublisher(pubPort1);
             broker1.addSubscriber(subPort1);
             broker1.addBroker(broPort2, "localhost", "sonL");
+            broker1.policies(RoutingPolicyType.FILTER, OrderingType.FIFO, LoggingLevelType.LIGHT);
+            subscriber1.policies(RoutingPolicyType.FILTER, OrderingType.FIFO, LoggingLevelType.LIGHT);
+            publisher1.policies(RoutingPolicyType.FILTER, OrderingType.FIFO, LoggingLevelType.LIGHT);
 
 
 
             publisher2.registerLocalBroker(broPort2);
-            publisher1.giveInfo(pubName2, pubPort2);
-
+            publisher2.giveInfo(pubName2, pubPort2);
             subscriber2.registerLocalBroker(broPort2);
             subscriber2.giveInfo(subName2, subPort2);
             broker2.addPublisher(pubPort2);
             broker2.addSubscriber(subPort2);
-
             broker2.addBroker(broPort1, "localhost", "parent");
+            broker2.policies(RoutingPolicyType.FILTER, OrderingType.FIFO, LoggingLevelType.LIGHT);
+            subscriber2.policies(RoutingPolicyType.FILTER, OrderingType.FIFO, LoggingLevelType.LIGHT);
+            publisher2.policies(RoutingPolicyType.FILTER, OrderingType.FIFO, LoggingLevelType.LIGHT);
 
             // Publisher -> Basics/chords
 
+
             publisher1.receiveOrderToPublish(topicBasicsChords, numbOfMsgs5, frequence);
             publisher2.receiveOrderToPublish(topicBasicsScales, numbOfMsgs5, frequence - 1000);
+
             subscriber1.receiveOrderToSubscribe(topicBasicsChords + "*");
             Thread.Sleep(2000);
 

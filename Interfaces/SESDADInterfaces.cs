@@ -122,6 +122,10 @@ namespace SESDADInterfaces
 
         void unSubscribeRequest(string topic, int port);
 
+        void filterSubscription(string topic, BrokerInterface source);
+
+        void filterUnsubscription(string topic, BrokerInterface source);
+
         // network config
         void addSubscriber(int port);
 
