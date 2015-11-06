@@ -107,21 +107,28 @@ namespace SESDAD
             //Single Mode: PuppetMaster reads and processes all processes
             //Multiple Mode: Each Puppet Master/Slave processes its processes 
             this.readConfigFile();
-
-            //puppet enables communication through his port
-            BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
+            
+            PuppetServices.form = this;
+            /*//puppet enables communication through his port
+            /*BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
             provider.TypeFilterLevel = TypeFilterLevel.Full;
             IDictionary props = new Hashtable();
             props["port"] = puppetPort;
-            TcpChannel channel = new TcpChannel(props, null, provider);
+            TcpChannel channel = new TcpChannel(props, null, provider);*/
+            /*TcpChannel channel = new TcpChannel(puppetPort);
+            MessageBox.Show(channel.ToString());
             ChannelServices.RegisterChannel(channel, false);
+
+            //ChannelServices.RegisterChannel(channel, false);
+
             MessageBox.Show("O QUE SE PASSA!");
+
             PuppetServices servicos = new PuppetServices();
             RemotingServices.Marshal(servicos, "puppet",
                 typeof(PuppetServices));
 
-            MessageBox.Show("O QUE SE PASSA!");
-            /*if (!isMaster())
+            MessageBox.Show("MARIA");*/
+            if (!isMaster())
             {
                 puppetMasterRemote =
                         (PuppetInterface)Activator.GetObject(
@@ -129,8 +136,8 @@ namespace SESDAD
                             allPuppetURL[0]
                         );
                 puppetMasterRemote.slaveIsReady();
-            }*/
-            /*
+            }
+            
             if (isMaster()) {
                     PuppetInterface me =
                         (PuppetInterface)Activator.GetObject(
@@ -143,7 +150,7 @@ namespace SESDAD
                 }
                 MessageBox.Show("I'm ready!!!");
             }
-            */
+            
             //slave will save puppetMasterRemoteObject for remote communications
             //if (!isMaster()) {
 
@@ -384,8 +391,9 @@ namespace SESDAD
                                 addMessageToLog("Couldn't start " + parsed[1]);
                             }
                             addMessageToLog("Broker " + parsed[1] + " at " + URL);
-                            Thread.Sleep(1000); //espera que o broker se torne disponivel
-                            myBroker = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), URL);
+                            //Thread.Sleep(1000); //espera que o broker se torne disponivel
+                            BrokerInterface bro = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), URL);
+                            myBroker = bro;
                         }
 
                     } else if (String.Compare(parsed[3], ProcessType.PUBLISHER) == 0) {

@@ -22,7 +22,7 @@ namespace SESDAD
 
             int brokerPort = Int32.Parse(args[0]);
 
-            
+            //System.Console.WriteLine(brokerPort.ToString());
 
             BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
             provider.TypeFilterLevel = TypeFilterLevel.Full;
@@ -37,6 +37,7 @@ namespace SESDAD
                 typeof(BrokerServices), "broker",
                 WellKnownObjectMode.Singleton);
 
+            System.Console.WriteLine("Press <enter> to terminate Broker...");
             System.Console.ReadLine();
         }
     }
