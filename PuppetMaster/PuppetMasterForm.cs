@@ -158,33 +158,16 @@ namespace SESDAD
 
                 //addNeighboursToMyBroker();
                 //TODO: send policies a todos os processos
-
-
-                //TODO: envia flag a dizer q esta pronto
-
+                
             //}
 
-            /*
-            RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(PuppetInterface),
-                "PuppetService",
-                WellKnownObjectMode.Singleton
-            );*/
-
-            /*******************************************************************************
-            /
-            /                  QUE PASSA????????????????????????
-            /
-            /********************************************************************************/
-
-            
             /*******************************************************************************
             /
             /                  quando todos os processos estiverem iniciados
             /
             /********************************************************************************/
             //Being the puppetMaster, he stores the puppetSlaves remote objects
-            /*if (this.isMaster()) {
+            if (this.isMaster()) {
                 //TODO: espera por resposta de todos os slaves
                 for (int puppetIndex = 1; puppetIndex <= this.slaves; puppetIndex++) {
                     PuppetInterface slave =
@@ -194,7 +177,7 @@ namespace SESDAD
                         );
                     slavesRemoteObjects.Add(puppetIndex, slave);
                 }
-            }*/
+            }
             
         }
 
@@ -472,7 +455,7 @@ namespace SESDAD
         }
 
         public void crash(String processName) {
-
+            MessageBox.Show(puppetID.ToString());
             if (isMaster())
             {
                 slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToCrash(processName);
