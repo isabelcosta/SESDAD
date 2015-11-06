@@ -75,7 +75,7 @@ namespace SESDAD
 
             //informar o local broker que subscreveu
             localBroker.unSubscribeRequest(topic, myPort);
-
+ 
             string action = "Unsubscribed to " + topic;
             //informPuppetMaster(action);
             Console.WriteLine(action);
