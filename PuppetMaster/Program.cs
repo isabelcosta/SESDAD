@@ -18,7 +18,6 @@ using System.Runtime.Serialization.Formatters;
 
 namespace SESDAD
 {
-    //class Program
     partial class PuppetMasterForm
     {
         /// <summary>
@@ -32,8 +31,8 @@ namespace SESDAD
             provider.TypeFilterLevel = TypeFilterLevel.Full;
             IDictionary props = new Hashtable();
             props["port"] = 30000 + int.Parse(args[0]);
-            //TcpChannel channel = new TcpChannel(30000 + int.Parse(args[0]));
-            TcpChannel channel = new TcpChannel(props, null, provider); 
+            TcpChannel channel = new TcpChannel(props, null, provider);
+
             ChannelServices.RegisterChannel(channel, false);
 
             PuppetServices servicos = new PuppetServices();

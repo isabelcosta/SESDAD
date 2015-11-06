@@ -49,7 +49,7 @@ namespace SESDADInterfaces
         void receiveOrderToPublish(string processName, string topic, int numberOfEvents, int interval_x_ms);
         void receiveOrderToSubscribe(string processName, string topic);
         void receiveOrderToUnsubscribe(string processName, string topic);
-        void receiveOrderToShowStatus(string processName);
+        void receiveOrderToShowStatus();
         void informAction(string action);
         void slaveIsReady();
         int getNumberOfSlaves();

@@ -3,7 +3,7 @@ using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
-
+using System.Collections.Generic;
 using SESDADInterfaces;
 using System.Collections;
 using System.Runtime.Serialization.Formatters;
@@ -59,6 +59,7 @@ namespace SESDAD
         string topic;
         int numberOfEvents;
         int interval_x_ms;
+        List<string> topicsPublishing = new List<string>();
 
 
 
@@ -76,6 +77,11 @@ namespace SESDAD
             this.numberOfEvents = numberOfEvents;
             this.topic = topic;
             this.interval_x_ms = interval_x_ms;
+
+            if (!topicsPublishing.Contains(topic))
+            {
+                topicsPublishing.Add(topic);
+            }
 
             ThreadStart ts = new ThreadStart(this.publish);
             Thread t = new Thread(ts);
@@ -98,12 +104,13 @@ namespace SESDAD
                                             // Exe: Publisher1 1/10
                 localBroker.receiveOrderToFlood(topicLocal, content, this);
 
-                string action = "PubEvent Publish " + topic + " : " + content; //TODO: as mensagens vao como PubEvent certo?
+                string action = "PubEvent - " + myName + " publishes " + topic + " : " + content; //TODO: as mensagens vao como PubEvent certo?
                 informPuppetMaster(action);
-                Console.WriteLine(action);
+                //Console.WriteLine(action);
 
                 Thread.Sleep(intv_x_ms);
             }
+            topicsPublishing.Remove(topicLocal);
 
         }
 
@@ -117,7 +124,12 @@ namespace SESDAD
 
         public void status()
         {
-            throw new NotImplementedException();
+            Console.WriteLine("- Status:");
+            foreach (string top in topicsPublishing)
+            {
+                Console.WriteLine("Publishing: " + top);
+            }
+            Console.WriteLine("- End of Status.");
         }
 
         private void informPuppetMaster(string action)

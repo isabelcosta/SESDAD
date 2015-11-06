@@ -34,6 +34,9 @@ namespace SESDAD
         private String puppetURL = null; //tcp://localhost:30000/puppet
         private int puppetID = 0; //indexes the URLs in configPuppet
 
+        String configFilePath = Environment.CurrentDirectory + @"\..\..\..\configFile.txt";
+        String configPuppetPath = Environment.CurrentDirectory + @"\..\..\..\configPuppet.txt";
+
         //for both PuppetMaster and PuppetSlaves
         private IDictionary<string, Process> LocalProcesses = new Dictionary<string, Process>(); //Array with processes <processName, process>
         private IDictionary<string, Tuple<int, PublisherInterface>> myPubs = new Dictionary<string, Tuple<int, PublisherInterface>>(); //<processName, PublisherInterface>
@@ -98,9 +101,7 @@ namespace SESDAD
                 }
             }
             
-            String configPuppetPath = Environment.CurrentDirectory + @"\..\..\..\configPuppet.txt";
-            
-            String[] allPuppetURL = System.IO.File.ReadAllLines(configPuppetPath);
+            String[] allPuppetURL = System.IO.File.ReadAllLines(this.configPuppetPath);
             this.puppetURL = allPuppetURL[puppetID];
 
             int puppetPort = 30000 + puppetID;
@@ -157,9 +158,8 @@ namespace SESDAD
                 
             }
 
-
             //configuring network
-            this.addNeighboursToMyBroker(); //TODO: acho q pode ficar fora dos dois if's
+            this.addNeighboursToMyBroker();
 
             PublisherInterface pubI;
             SubscriberInterface subI;
@@ -171,8 +171,8 @@ namespace SESDAD
                 pubPort = entry.Value.Item1;
                 pubI.registerLocalBroker(myBrokerPort);
                 pubI.registerLocalPuppetMaster(entry.Key, puppetPort);
-                pubI.policies(this.routingPolicy, this.ordering, this.loggingLevel);
                 pubI.giveInfo(entry.Key, pubPort);
+                pubI.policies(this.routingPolicy, this.ordering, this.loggingLevel);
                 myBroker.addPublisher(pubPort);
 
             }
@@ -182,11 +182,12 @@ namespace SESDAD
                 subPort = entry.Value.Item1;
                 subI.registerLocalBroker(myBrokerPort);
                 subI.registerLocalPuppetMaster(entry.Key, puppetPort);
-                subI.policies(this.routingPolicy, this.ordering, this.loggingLevel);
                 subI.giveInfo(entry.Key, subPort);
+                subI.policies(this.routingPolicy, this.ordering, this.loggingLevel);
                 myBroker.addSubscriber(subPort);
             }
             myBroker.registerLocalPuppetMaster(puppetPort);
+            myBroker.policies(this.routingPolicy, this.ordering, this.loggingLevel);
         }
 
         //************************************************************************************
@@ -236,13 +237,14 @@ namespace SESDAD
 
                 switch (parsedLine[0]) {
                     case "Wait":
+                        addMessageToLog(line);
                         int timeToSleep = 0;
                         try {
                             timeToSleep = Int32.Parse(parsedLine[1]);
                             Thread.Sleep(timeToSleep);
                         }
                         catch (FormatException) { break; }
-                        addMessageToLog(line);
+                        
                         break;
 
                     default:
@@ -259,36 +261,34 @@ namespace SESDAD
                 case "Subscriber":
                     if (parsedLine[2] == "Subscribe")
                     {
-                        subscribe(parsedLine[1], parsedLine[3]);//1 - process; 3 - topic
                         addMessageToLog("Subscriber " + parsedLine[1] + " Subscribe " + parsedLine[3]);
+                        subscribe(parsedLine[1], parsedLine[3]);//1 - process; 3 - topic
                     }
                     else if (parsedLine[2] == "Unsubscribe")
                     {
-                        unsubscribe(parsedLine[1], parsedLine[3]);
                         addMessageToLog("Subscriber " + parsedLine[1] + " Unsubscribe " + parsedLine[3]);
+                        unsubscribe(parsedLine[1], parsedLine[3]);
                     }
                     break;
                 case "Publisher": //1 - process; 3 - nEvents; 5 - topic; 7 - interval;
-                    publish(parsedLine[1], parsedLine[5], int.Parse(parsedLine[3]), int.Parse(parsedLine[7]));
                     addMessageToLog("Publisher " + parsedLine[1] + " Publish " + parsedLine[3] + " Ontopic " + parsedLine[5] + " Interval " + parsedLine[7]);
+                    publish(parsedLine[1], parsedLine[5], int.Parse(parsedLine[3]), int.Parse(parsedLine[7]));
                     break;
                 case "Status":
+                    addMessageToLog("Status");
                     status();
-
-                    //send to all nodes status request
-                    addMessageToLog("Status"); //TODO: n sei se e necessario
                     break;
                 case "Crash":
-                    crash(parsedLine[1]);
                     addMessageToLog("Crash " + parsedLine[1]);
+                    crash(parsedLine[1]);
                     break;
                 case "Freeze":
-                    freeze(parsedLine[1]);
                     addMessageToLog("Freeze " + parsedLine[1]);
+                    freeze(parsedLine[1]);
                     break;
                 case "Unfreeze":
-                    unfreeze(parsedLine[1]);
                     addMessageToLog("Unfreeze " + parsedLine[1]);
+                    unfreeze(parsedLine[1]);
                     break;
                 default: break;
             }
@@ -301,9 +301,7 @@ namespace SESDAD
         //Reads and process the configFile.txt
         private void readConfigFile() {
 
-            String configFilePath = Environment.CurrentDirectory + @"\..\..\..\configFile.txt";
-            
-            String[] lines = System.IO.File.ReadAllLines(configFilePath);
+            String[] lines = System.IO.File.ReadAllLines(this.configFilePath);
             
             foreach (string line in lines)
             {
@@ -313,9 +311,7 @@ namespace SESDAD
 
         private void addNeighboursToMyBroker()
         {
-            String configPuppetPath = Environment.CurrentDirectory + @"\..\..\..\configFile.txt"; //TODO: create a attribute or method
-            
-            String[] lines = System.IO.File.ReadAllLines(configPuppetPath);
+            String[] lines = System.IO.File.ReadAllLines(this.configPuppetPath);
 
             String[] blankSpace = { " " };
 
@@ -362,7 +358,6 @@ namespace SESDAD
             switch (parsed[0])
             {
                 case "Site": //Site sitename Parent sitename|none
-                    //MessageBox.Show("Im " + this.puppetID + " site" + this.puppetID + "        " + parsed[1]);
                     if (String.Compare("site" + this.puppetID, parsed[1]) == 0)
                     { //se eu for um filho logo tenho o pai do meu broker
                         myBrokerinfo[BrokerNeighbours.PARENT] = parsed[3];
@@ -404,6 +399,7 @@ namespace SESDAD
                             BrokerInterface bro = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), URL);
                             myBroker = bro;
                             myBrokerPort = int.Parse(processPort);
+                            myBroker.giveInfo(parsed[1], myBrokerPort);
                         }
 
                     } else if (String.Compare(parsed[3], ProcessType.PUBLISHER) == 0) {
@@ -484,22 +480,15 @@ namespace SESDAD
         /*******************************************/
         public void subscribe(string processName, string topic)//1 - process; 3 - topic
         {
-            if (isMaster()) //TODO: da pra ficar com menos linhas
+            if (mySubs.ContainsKey(processName)) //if my subscriber tells it to puplish
             {
-                if (mySubs.ContainsKey(processName)) //if my publisher tells it to puplish
-                {
-                    mySubs[processName].Item2.receiveOrderToSubscribe(topic);
-                }
-                else
-                { //if not my publisher calls slave to order publish command
-                    slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToSubscribe(processName, topic);
-                }
+                mySubs[processName].Item2.receiveOrderToSubscribe(topic);
             }
             else
-            {
-                if (mySubs.ContainsKey(processName))
+            { //if not my subscriber calls slave to order publish command
+                if (isMaster())
                 {
-                    mySubs[processName].Item2.receiveOrderToSubscribe(topic);
+                    slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToSubscribe(processName, topic);
                 }
             }
 
@@ -507,25 +496,17 @@ namespace SESDAD
 
         public void unsubscribe(string processName, string topic)//1 - process; 3 - topic
         {
-            if (isMaster()) //TODO: da pra ficar com menos linhas
+            if (mySubs.ContainsKey(processName)) //if my subscriber tells it to puplish
             {
-                if (mySubs.ContainsKey(processName)) //if my publisher tells it to puplish
+                mySubs[processName].Item2.receiveOrderToUnSubscribe(topic);
+            }
+            else
+            { //if not my subscriber calls slave to order publish command
+                if (isMaster())
                 {
-                    mySubs[processName].Item2.receiveOrderToUnSubscribe(topic);
-                }
-                else
-                { //if not my publisher calls slave to order publish command
                     slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToUnsubscribe(processName, topic);
                 }
             }
-            else
-            {
-                if (mySubs.ContainsKey(processName))
-                {
-                    mySubs[processName].Item2.receiveOrderToUnSubscribe(topic);
-                }
-            }
-
         }
 
         public void publish(string processName, string topic, int nEvents, int interval)
@@ -579,21 +560,21 @@ namespace SESDAD
         {
             if (isMaster())
             {
-                foreach (var item in collection)
-                {
-
+                foreach (PuppetInterface puppet in slavesRemoteObjects.Values) {
+                    puppet.receiveOrderToShowStatus();
                 }
-                slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToFreeze(processName);
             }
-            else
+            myBroker.status();
+            foreach (KeyValuePair<string, Tuple<int, PublisherInterface>> entry in myPubs)
             {
-                if (LocalProcesses.ContainsKey(processName))
-                {
-                    //LocalProcesses[processName].Suspend();
-                }
-                else { return; } // TALVEZ DESNECESSARIO
+                PublisherInterface pubI = entry.Value.Item2;
+                pubI.status();
             }
-
+            foreach (KeyValuePair<string, Tuple<int, SubscriberInterface>> entry in mySubs)
+            {
+                SubscriberInterface subI = entry.Value.Item2;
+                subI.status();
+            }
         }
 
         public void freeze(string processName)
@@ -677,6 +658,7 @@ namespace SESDAD
     delegate void DelSubscribe(string processName, string topic);
     delegate void DelUnsubscribe(string processName, string topic);
     delegate void DelReceiveLogs(string action);
+    delegate void DelShowStatus();
 
     class PuppetServices : MarshalByRefObject, PuppetInterface
     {
@@ -716,7 +698,9 @@ namespace SESDAD
         public void receiveOrderToUnsubscribe(string processName, string topic) {
             form.Invoke(new DelUnsubscribe(form.unsubscribe), processName, topic);
         }
-        public void receiveOrderToShowStatus(string processName) { }
+        public void receiveOrderToShowStatus() {
+            form.Invoke(new DelShowStatus(form.status));
+        }
 
         public void informAction(string action) {
             form.Invoke(new DelReceiveLogs(form.receiveLogs), action);

@@ -167,12 +167,12 @@ namespace SESDAD
             try
             {
                 broTest = (BrokerInterface)source;
-                Console.WriteLine("It's a broker");
+                //Console.WriteLine("It's a broker");
                 return true;
             }
             catch (Exception)
             {
-                Console.WriteLine("It's not a broker");
+                //Console.WriteLine("It's not a broker");
                 return false;
             }
         }
@@ -199,7 +199,7 @@ namespace SESDAD
                 return BROKER_PARENT;
             }
             // should NEVER get here! (weird behavior)
-            Console.WriteLine("WEIRD, maybe the broker isn't registred in the local tree (brokers DC to this broker)");
+            //Console.WriteLine("WEIRD, maybe the broker isn't registred in the local tree (brokers DC to this broker)");
             return UNKOWN;
         }
 
@@ -339,16 +339,14 @@ namespace SESDAD
 
                 }
             }
-            string action = "BroEvent Flooded message on topic " + topic;
+            string action = "BroEvent - " + myName + " Flooded message on topic " + topic;
             informPuppetMaster(action);
-            Console.WriteLine(action);
+            //Console.WriteLine(action);
         }
         
 
         public bool checkIfIsNext(Tuple<int, int> msg, string pubName, string topic)
         {
-
-
             Tuple<int, int> msgMngmt = new Tuple<int, int>(0, 0);
             if (fifoManager.TryGetValue(pubName + topic, out msgMngmt))
             {
@@ -482,7 +480,7 @@ namespace SESDAD
 
             string action = "BroEvent Added subscriber at port " + port + " for the topic " + topic;
             //informPuppetMaster(action);
-            Console.WriteLine(action);
+            //Console.WriteLine(action);
 
         }
 
@@ -525,7 +523,7 @@ namespace SESDAD
 
             string action = "BroEvent Removed subscriber at port " + port + " for the topic " + topic;
             //informPuppetMaster(action);
-            Console.WriteLine(action);
+            //Console.WriteLine(action);
 
 
         }
@@ -588,7 +586,14 @@ namespace SESDAD
 
         public void status()
         {
-            throw new NotImplementedException();
+            Console.WriteLine("- Status:");
+            Console.WriteLine("I'm Alive");
+            foreach (int sub in subscribers.Keys)
+            {
+                Console.WriteLine("Subscribers in port: " + sub);
+            }
+            Console.WriteLine("Has " + publishers.Count + " Publishers");
+            Console.WriteLine("- End of Status.");
         }
 
         public void registerLocalPuppetMaster(int port)
@@ -600,7 +605,7 @@ namespace SESDAD
 
         private void informPuppetMaster(string action)
         {
-            if(string.Compare(logging,LoggingLevelType.FULL)==0)
+            if (string.Compare(logging,LoggingLevelType.FULL)==0)
             {
                 localPuppetMaster.informAction(action);
             }
@@ -645,12 +650,9 @@ namespace SESDAD
             }
             else
             {
-                Console.WriteLine("POIOPIOPIOPIPOIOPIOP");
-
                 filteringTable.Add(relation, testTable);
                 filteringTable[relation].AddTopic(topic);
                 filterSubscriptionFlood(topic, this);
-                Console.WriteLine("ASDFASDFASDFASDFAS");
             }
                 foreach(string t in filteringTable[relation].getTopicDict().Keys)
                 {
