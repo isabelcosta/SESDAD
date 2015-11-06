@@ -274,6 +274,7 @@ namespace SESDAD
                     break;
                 case "Status":
                     status();
+
                     //send to all nodes status request
                     addMessageToLog("Status"); //TODO: n sei se e necessario
                     break;
@@ -576,6 +577,22 @@ namespace SESDAD
 
         public void status()
         {
+            if (isMaster())
+            {
+                foreach (var item in collection)
+                {
+
+                }
+                slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToFreeze(processName);
+            }
+            else
+            {
+                if (LocalProcesses.ContainsKey(processName))
+                {
+                    //LocalProcesses[processName].Suspend();
+                }
+                else { return; } // TALVEZ DESNECESSARIO
+            }
 
         }
 
