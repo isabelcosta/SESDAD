@@ -267,8 +267,8 @@ namespace SESDAD
                         //unsubscribe(parsed[1], parsed[3]);
                     }
                     break;
-                case "Publisher":
-                    //publish(parsed[1], parsed[3], parsed[5], parsed[7]); //1 - process; 3 - nEvents; 5 - topic; 7 - interval;
+                case "Publisher": //1 - process; 3 - nEvents; 5 - topic; 7 - interval;
+                    publish(parsedLine[1], parsedLine[5], int.Parse(parsedLine[3]), int.Parse(parsedLine[7])); 
                     break;
                 case "Status":
                     status();
@@ -421,8 +421,6 @@ namespace SESDAD
                         addMessageToLog("Subscriber " + parsed[1] + " at " + URL);
                         SubscriberInterface subscriber = (SubscriberInterface)Activator.GetObject(typeof(SubscriberInterface), URL);
                         mySubs.Add(parsed[1], new Tuple<int, SubscriberInterface>(int.Parse(processPort), subscriber));
-                        MessageBox.Show(parsed[1] + "   " + processPort);
-
                     }
                     break;
 
@@ -495,7 +493,29 @@ namespace SESDAD
             }
 
         }
-            
+
+        public void publish(string processName, string topic, int nEvents, int interval)
+        {
+            if (isMaster())
+            {
+                if (myPubs.ContainsKey(processName)) //if my publisher tells it to puplish
+                {
+                    myPubs[processName].Item2.recieveOrderToPublish(topic, nEvents, interval);
+                }
+                else { //if not my publisher calls slave to order publish command
+                    slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToPublish(processName, topic, nEvents, interval);
+                }
+            }
+            else
+            {
+                if (myPubs.ContainsKey(processName))
+                {
+                    myPubs[processName].Item2.recieveOrderToPublish(topic, nEvents, interval);
+                }
+            }
+
+        }
+
         public void crash(String processName) {
             if (isMaster())
             {
@@ -561,6 +581,17 @@ namespace SESDAD
             }
         }
 
+        public void receiveLogs(string action) {
+            if (isMaster())
+            {
+                addMessageToLog(action);
+            }
+            else
+            {
+                puppetMasterRemote.informAction(action);
+            }
+        }
+
         public void addMessageToLog(string message) {
             
             tb_Log.AppendText(message);
@@ -591,7 +622,9 @@ namespace SESDAD
     delegate void DelCrashProcess(string processName);
     delegate void DelFreezeProcess(string processName);
     delegate void DelUnfreezeProcess(string processName);
-    delegate Process DelStartProcess(string processName, string processType, string args);
+    delegate void DelPublish(string processName, string topic, int numberOfEvents, int interval_x_ms);
+    delegate void DelSubscribe(string processName);
+    delegate void DelReceiveLogs(string action);
 
     class PuppetServices : MarshalByRefObject, PuppetInterface
     {
@@ -603,10 +636,7 @@ namespace SESDAD
         //for PuppetSlave
         bool allSlavesAreUp = false;
 
-        public PuppetServices()
-        {
-
-        }
+        public PuppetServices() { }
 
         public void receiveOrderToCrash(string processName)
         {
@@ -624,7 +654,7 @@ namespace SESDAD
             form.Invoke(new DelUnfreezeProcess(form.unfreeze), processName);
         }
 
-        public void registerSuperPuppetMaster()
+        /*public void registerSuperPuppetMaster()
         {
             String configPuppetPath = Environment.CurrentDirectory + @"\configPuppet.txt";
 
@@ -634,32 +664,37 @@ namespace SESDAD
             PuppetInterface superPuppetMaster =
                (PuppetInterface)Activator.GetObject(
                       typeof(PuppetInterface), puppetsLocation[0]);
+        }*/
+        
+        
+        public void receiveOrderToPublish(string processName, string topic, int numberOfEvents, int interval_x_ms) {
+            // thread-safe access to form
+            form.Invoke(new DelPublish(form.publish), processName, topic, numberOfEvents, interval_x_ms);
         }
-        
-        
-        public void receiveOrderToPublish(string processName) { } //mais cenas
         public void receiveOrderToSubscribe(string processName) { } //mais cenas
         public void receiveOrderToUnsubscribe(string processName) { } //mais cenas
         public void receiveOrderToShowStatus(string processName) { }
-        public void sendLogsToMaster(string logInfo) { }
-        public void informAction(string action) { }
 
-        public void slaveIsReady()
+        public void informAction(string action) {
+            form.Invoke(new DelReceiveLogs(form.receiveLogs), action);
+        }
+
+        public void slaveIsReady() //indicates that a slave has configured his local network
         {
             numberOfSlaves++;
         }
 
-        public void slavesAreUp()
+        public void slavesAreUp() //indicates that all slaves are up and running
         {
             allSlavesAreUp = true;
         }
 
-        public int getNumberOfSlaves()
+        public int getNumberOfSlaves() //get number of up and running slaves
         {
             return numberOfSlaves;
         }
 
-        public bool areAllSlavesUp()
+        public bool areAllSlavesUp() //tells the master if all slaves are up and running
         {
             return allSlavesAreUp;
         }
