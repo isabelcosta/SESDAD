@@ -133,7 +133,7 @@ namespace SESDADInterfaces
         void addBroker(int port, string ip, string relation);
 
         // network config
-        void registerLocalPuppetMaster(string name, int port);
+        void registerLocalPuppetMaster(int port);
 
         // network config
         void policies(string routing, string ordering, string logging);

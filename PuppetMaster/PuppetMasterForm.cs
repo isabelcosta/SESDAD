@@ -36,8 +36,8 @@ namespace SESDAD
 
         //for both PuppetMaster and PuppetSlaves
         private IDictionary<string, Process> LocalProcesses = new Dictionary<string, Process>(); //Array with processes <processName, process>
-        private IDictionary<string, PublisherInterface> myPubs = new Dictionary<string, PublisherInterface>(); //<processName, PublisherInterface>
-        private IDictionary<string, SubscriberInterface> mySubs = new Dictionary<string, SubscriberInterface>(); //<processName, SubscriberInterface>
+        private IDictionary<string, Tuple<int, PublisherInterface>> myPubs = new Dictionary<string, Tuple<int, PublisherInterface>>(); //<processName, PublisherInterface>
+        private IDictionary<string, Tuple<int, SubscriberInterface>> mySubs = new Dictionary<string, Tuple<int, SubscriberInterface>>(); //<processName, SubscriberInterface>
         private BrokerInterface myBroker = null;
         private int myBrokerPort = 0;
         private IDictionary<string, string> myBrokerinfo = new Dictionary<string, string>();
@@ -131,18 +131,6 @@ namespace SESDAD
                 {
                     Thread.Sleep(2000);
                 }
-
-                this.addNeighboursToMyBroker(); //TODO: acho q pode ficar fora dos dois if's
-                //TODO: send policies a todos os processos
-
-                foreach (PublisherInterface pub in myPubs.Values)
-                {
-                    pub.registerLocalBroker(myBrokerPort);
-                }
-                foreach (SubscriberInterface sub in mySubs.Values)
-                {
-                    sub.registerLocalBroker(myBrokerPort);
-                }
             }
 
             //Being the puppetMaster, he stores the puppetSlaves remote objects, when they are all up
@@ -167,10 +155,37 @@ namespace SESDAD
                     slavesRemoteObjects.Add(puppetIndex, slave);
                     slave.slavesAreUp();
                 }
-
-                this.addNeighboursToMyBroker();
+                
             }
-            
+
+
+            //configuring network
+            this.addNeighboursToMyBroker(); //TODO: acho q pode ficar fora dos dois if's
+
+            PublisherInterface pubI;
+            SubscriberInterface subI;
+            int pubPort, subPort;
+
+            foreach (KeyValuePair<string, Tuple<int, PublisherInterface>> entry in myPubs)
+            {
+                pubI = entry.Value.Item2;
+                pubPort = entry.Value.Item1;
+                pubI.registerLocalBroker(myBrokerPort);
+                pubI.registerLocalPuppetMaster(entry.Key, puppetPort);
+                pubI.policies(this.routingPolicy, this.ordering, this.loggingLevel);
+                myBroker.addPublisher(pubPort);
+
+            }
+            foreach (KeyValuePair<string, Tuple<int, SubscriberInterface>> entry in mySubs)
+            {
+                subI = entry.Value.Item2;
+                subPort = entry.Value.Item1;
+                subI.registerLocalBroker(myBrokerPort);
+                subI.registerLocalPuppetMaster(entry.Key, puppetPort);
+                subI.policies(this.routingPolicy, this.ordering, this.loggingLevel);
+                myBroker.addSubscriber(subPort);
+            }
+            myBroker.registerLocalPuppetMaster(puppetPort);
         }
 
         //************************************************************************************
@@ -355,7 +370,7 @@ namespace SESDAD
 
                     if (this.isMaster()) {
                         string slaveID = parsed[5].Replace("site", ""); //removes the "site" from string
-                        MessageBox.Show(slaveID);
+                        //MessageBox.Show(slaveID);
                         slavesProcesses.Add(parsed[1], int.Parse(slaveID)); //processName -> slaveID
                     }
 
@@ -386,7 +401,7 @@ namespace SESDAD
                         }
                         addMessageToLog("Publisher " + parsed[1] + " at " + URL);
                         PublisherInterface publisher = (PublisherInterface)Activator.GetObject(typeof(PublisherInterface), URL);
-                        myPubs.Add(parsed[1], publisher);
+                        myPubs.Add(parsed[1], new Tuple<int, PublisherInterface>(int.Parse(processPort), publisher));
 
                     } else if (String.Compare(parsed[3], ProcessType.SUBSCRIBER) == 0) {
                         if (String.Compare("site" + this.puppetID, parsed[5]) != 0)
@@ -400,7 +415,7 @@ namespace SESDAD
                         }
                         addMessageToLog("Subscriber " + parsed[1] + " at " + URL);
                         SubscriberInterface subscriber = (SubscriberInterface)Activator.GetObject(typeof(SubscriberInterface), URL);
-                        mySubs.Add(parsed[1], subscriber);
+                        mySubs.Add(parsed[1], new Tuple<int, SubscriberInterface>(int.Parse(processPort), subscriber));
 
                     }
                     break;
