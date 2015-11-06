@@ -70,7 +70,7 @@ namespace SESDAD
         }
 
 
-        public void recieveOrderToPublish(string topic, int numberOfEvents, int interval_x_ms)
+        public void receiveOrderToPublish(string topic, int numberOfEvents, int interval_x_ms)
         {
             // Formato da mensagem : PubName SeqNumber/Total
             this.numberOfEvents = numberOfEvents;
@@ -96,7 +96,7 @@ namespace SESDAD
                 content = myName + " " + i + "/" + numOfEv;
                                                 
                                             // Exe: Publisher1 1/10
-                localBroker.recieveOrderToFlood(topicLocal, content, this);
+                localBroker.receiveOrderToFlood(topicLocal, content, this);
 
                 string action = "PubEvent Publish " + topic + " : " + content; //TODO: as mensagens vao como PubEvent certo?
                 informPuppetMaster(action);

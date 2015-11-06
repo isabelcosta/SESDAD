@@ -173,6 +173,7 @@ namespace SESDAD
                 pubI.registerLocalBroker(myBrokerPort);
                 pubI.registerLocalPuppetMaster(entry.Key, puppetPort);
                 pubI.policies(this.routingPolicy, this.ordering, this.loggingLevel);
+                pubI.giveInfo(entry.Key, pubPort);
                 myBroker.addPublisher(pubPort);
 
             }
@@ -183,6 +184,7 @@ namespace SESDAD
                 subI.registerLocalBroker(myBrokerPort);
                 subI.registerLocalPuppetMaster(entry.Key, puppetPort);
                 subI.policies(this.routingPolicy, this.ordering, this.loggingLevel);
+                subI.giveInfo(entry.Key, subPort);
                 myBroker.addSubscriber(subPort);
             }
             myBroker.registerLocalPuppetMaster(puppetPort);
@@ -474,7 +476,7 @@ namespace SESDAD
             {
                 if (mySubs.ContainsKey(processName)) //if my publisher tells it to puplish
                 {
-                    mySubs[processName].Item2.recieveOrderToSubscribe(topic);
+                    mySubs[processName].Item2.receiveOrderToSubscribe(topic);
                 }
                 else
                 { //if not my publisher calls slave to order publish command
@@ -485,7 +487,7 @@ namespace SESDAD
             {
                 if (mySubs.ContainsKey(processName))
                 {
-                    mySubs[processName].Item2.recieveOrderToSubscribe(topic);
+                    mySubs[processName].Item2.receiveOrderToSubscribe(topic);
                 }
             }
 
@@ -497,7 +499,7 @@ namespace SESDAD
             {
                 if (mySubs.ContainsKey(processName)) //if my publisher tells it to puplish
                 {
-                    mySubs[processName].Item2.recieveOrderToUnSubscribe(topic);
+                    mySubs[processName].Item2.receiveOrderToUnSubscribe(topic);
                 }
                 else
                 { //if not my publisher calls slave to order publish command
@@ -508,7 +510,7 @@ namespace SESDAD
             {
                 if (mySubs.ContainsKey(processName))
                 {
-                    mySubs[processName].Item2.recieveOrderToUnSubscribe(topic);
+                    mySubs[processName].Item2.receiveOrderToUnSubscribe(topic);
                 }
             }
 
@@ -520,7 +522,7 @@ namespace SESDAD
             {
                 if (myPubs.ContainsKey(processName)) //if my publisher tells it to puplish
                 {
-                    myPubs[processName].Item2.recieveOrderToPublish(topic, nEvents, interval);
+                    myPubs[processName].Item2.receiveOrderToPublish(topic, nEvents, interval);
                 }
                 else { //if not my publisher calls slave to order publish command
                     slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToPublish(processName, topic, nEvents, interval);
@@ -530,7 +532,7 @@ namespace SESDAD
             {
                 if (myPubs.ContainsKey(processName))
                 {
-                    myPubs[processName].Item2.recieveOrderToPublish(topic, nEvents, interval);
+                    myPubs[processName].Item2.receiveOrderToPublish(topic, nEvents, interval);
                 }
             }
 

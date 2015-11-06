@@ -134,6 +134,9 @@ namespace SESDAD
         string ordering;
         string logging;
 
+        string myName;
+        int myPort;
+
         PuppetInterface localPuppetMaster;
             //     {relation, list of topics to flood there}
         Dictionary<string, TopicsTable> filteringTable = new Dictionary<string, TopicsTable>();
@@ -209,7 +212,7 @@ namespace SESDAD
         }
 
         //used for the PuppetMaster to request a broker to flood a message
-        public void recieveOrderToFlood(string topic, string message, object source)
+        public void receiveOrderToFlood(string topic, string message, object source)
         {
 
 
@@ -218,7 +221,6 @@ namespace SESDAD
             // sourceType cases: {publisher, sonL, sonR, parent}
             string sourceType = getSourceType(source);
 
-            Console.WriteLine("Sender: {0}", sourceType);
 
 
             //START
@@ -269,15 +271,15 @@ namespace SESDAD
             //                      1st                                                   2nd
             if ((string.Compare(sourceType, BROKER_SONR) != 0) && brokerTree.TryGetValue(BROKER_SONR, out broTest))
             {
-                broTest.recieveOrderToFlood(topic, message, this);
+                broTest.receiveOrderToFlood(topic, message, this);
             }
             if ((string.Compare(sourceType, BROKER_SONL) != 0) && brokerTree.TryGetValue(BROKER_SONL, out broTest))
             {
-                broTest.recieveOrderToFlood(topic, message, this);
+                broTest.receiveOrderToFlood(topic, message, this);
             }
             if ((string.Compare(sourceType, BROKER_PARENT) != 0) && brokerTree.TryGetValue(BROKER_PARENT, out broTest))
             {
-                broTest.recieveOrderToFlood(topic, message, this);
+                broTest.receiveOrderToFlood(topic, message, this);
             }
             
 
@@ -289,6 +291,7 @@ namespace SESDAD
                 {
                     foreach (SubscriberRequestID subReqID in delegates[subTopic])
                     {
+                        Console.WriteLine("LOL " + topic + " " + message);
                         subReqID.SubDelegate(this, new MessageArgs(topic, message));
                     }
 
@@ -406,7 +409,14 @@ namespace SESDAD
 
             //subscrito ao evento
             //MessageBox.Show(port.ToString());
+            foreach (int p in subscribers.Keys)
+            {
+                Console.WriteLine("chave " + p);
+
+            }
+            Console.WriteLine( "port " + port);
             SubscriberInterface subscriber = subscribers[port];
+
             if (!delegates.ContainsKey(topic))
             {
                 delegates.Add(topic, new List<SubscriberRequestID>());
@@ -432,7 +442,7 @@ namespace SESDAD
             }
            
             string action = "BroEvent Added subscriber at port " + port + " for the topic " + topic;
-            informPuppetMaster(action);
+            //informPuppetMaster(action);
             Console.WriteLine(action);
 
         }
@@ -449,7 +459,7 @@ namespace SESDAD
                 }
             }
             string action = "BroEvent Removed subscriber at port " + port + " for the topic " + topic;
-            informPuppetMaster(action);
+            //informPuppetMaster(action);
             Console.WriteLine(action);
 
 
@@ -466,7 +476,7 @@ namespace SESDAD
 
         public void addPublisher(int port)
         {
-            Console.WriteLine("Publisher adicionado " + port );
+            Console.WriteLine("Publisher adicionado " + port);
             PublisherInterface publisher = (PublisherInterface)Activator.GetObject(typeof(PublisherInterface), "tcp://localhost:" + port + "/pub");
             publishers.Add(publisher);
         }
@@ -516,6 +526,12 @@ namespace SESDAD
             this.routing = routing;
             this.ordering = ordering;
             this.logging = logging;
+        }
+
+        public void giveInfo(string name, int port)
+        {
+            myName = name;
+            myPort = port;
         }
     }
 }
