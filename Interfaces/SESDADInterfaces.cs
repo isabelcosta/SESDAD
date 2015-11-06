@@ -53,8 +53,10 @@ namespace SESDADInterfaces
         //void receiveOrderToStartProcess(string processName, string processType, string args);
         void sendLogsToMaster(string logInfo);
         void informAction(string action);
-        int getNumberOfSlaves();
         void slaveIsReady();
+        int getNumberOfSlaves();
+        void slavesAreUp();
+        bool areAllSlavesUp();
     }
     [Serializable]
     public class MessageArgs : EventArgs

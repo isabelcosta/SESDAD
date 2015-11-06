@@ -35,8 +35,8 @@ namespace SESDAD
         private int puppetID = 0; //indexes the URLs in configPuppet
 
         private IDictionary<string, Process> LocalProcesses = new Dictionary<string, Process>(); //Array with processes <processName, process>
-        private IDictionary<string, PublisherInterface> myPubs = new Dictionary<string, PublisherInterface>();
-        private IDictionary<string, SubscriberInterface> mySubs = new Dictionary<string, SubscriberInterface>();
+        private IDictionary<string, PublisherInterface> myPubs = new Dictionary<string, PublisherInterface>(); //<processName, PublisherInterface>
+        private IDictionary<string, SubscriberInterface> mySubs = new Dictionary<string, SubscriberInterface>(); //<processName, SubscriberInterface>
         private BrokerInterface myBroker = null;
         private IDictionary<string, string> myBrokerinfo = new Dictionary<string, string>();
 
@@ -109,49 +109,37 @@ namespace SESDAD
             this.readConfigFile();
             
             PuppetServices.form = this;
-            /*//puppet enables communication through his port
-            /*BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
-            provider.TypeFilterLevel = TypeFilterLevel.Full;
-            IDictionary props = new Hashtable();
-            props["port"] = puppetPort;
-            TcpChannel channel = new TcpChannel(props, null, provider);*/
-            /*TcpChannel channel = new TcpChannel(puppetPort);
-            MessageBox.Show(channel.ToString());
-            ChannelServices.RegisterChannel(channel, false);
 
-            //ChannelServices.RegisterChannel(channel, false);
-
-            MessageBox.Show("O QUE SE PASSA!");
-
-            PuppetServices servicos = new PuppetServices();
-            RemotingServices.Marshal(servicos, "puppet",
-                typeof(PuppetServices));
-
-            MessageBox.Show("MARIA");*/
             if (!isMaster())
             {
+                //slave will save puppetMasterRemoteObject for remote communications
                 puppetMasterRemote =
                         (PuppetInterface)Activator.GetObject(
                             typeof(PuppetInterface),
                             allPuppetURL[0]
                         );
-                puppetMasterRemote.slaveIsReady();
-            }
-            
-            if (isMaster()) {
-                    PuppetInterface me =
-                        (PuppetInterface)Activator.GetObject(
+                puppetMasterRemote.slaveIsReady(); //avisa o Master que ja iniciou os seus processos
+
+                PuppetInterface me = (PuppetInterface)Activator.GetObject(
                             typeof(PuppetInterface),
-                            allPuppetURL[0]
+                            allPuppetURL[puppetID]
                         );
 
-                while (me.getNumberOfSlaves() != slaves) {
+                while (!me.areAllSlavesUp())
+                {
                     Thread.Sleep(2000);
                 }
-                MessageBox.Show("I'm ready!!!");
+
+                this.addNeighboursToMyBroker();
+
+                //foreach (Object process in ) {
+
+                //}
+
             }
             
-            //slave will save puppetMasterRemoteObject for remote communications
+            
+            
             //if (!isMaster()) {
 
                 //TODO: send pai e filhos ao broker
@@ -168,14 +156,27 @@ namespace SESDAD
             /********************************************************************************/
             //Being the puppetMaster, he stores the puppetSlaves remote objects
             if (this.isMaster()) {
+                PuppetInterface me =
+                        (PuppetInterface)Activator.GetObject(
+                            typeof(PuppetInterface),
+                            allPuppetURL[0]
+                        );
+
+                while (me.getNumberOfSlaves() != slaves) {
+                    Thread.Sleep(2000);
+                }
+                MessageBox.Show("I'm ready!!!");
+
                 //TODO: espera por resposta de todos os slaves
                 for (int puppetIndex = 1; puppetIndex <= this.slaves; puppetIndex++) {
+
                     PuppetInterface slave =
                         (PuppetInterface)Activator.GetObject(
                             typeof(PuppetInterface),
                             allPuppetURL[puppetIndex]
                         );
                     slavesRemoteObjects.Add(puppetIndex, slave);
+                    slave.slavesAreUp();
                 }
             }
             
@@ -380,9 +381,6 @@ namespace SESDAD
                         }
 
                     } else if (String.Compare(parsed[3], ProcessType.PUBLISHER) == 0) {
-                        /*PublisherInterface publisher =
-                            (PublisherInterface)Activator.GetObject(
-                                typeof(PublisherInterface), ProcessURL);*/
                         if (String.Compare("site" + this.puppetID, parsed[5]) != 0)
                         { //se não pertence ao meu site nao me interessa
                             break;
@@ -393,11 +391,11 @@ namespace SESDAD
                             addMessageToLog("Couldn't start " + parsed[1]);
                         }
                         addMessageToLog("Publisher " + parsed[1] + " at " + URL);
+                        /*PublisherInterface publisher =
+                            (PublisherInterface)Activator.GetObject(
+                                typeof(PublisherInterface), ProcessURL);*/
 
                     } else if (String.Compare(parsed[3], ProcessType.SUBSCRIBER) == 0) {
-                        /*SubscriberInterface subscriber =
-                            (SubscriberInterface)Activator.GetObject(
-                                typeof(SubscriberInterface), ProcessURL);*/
                         if (String.Compare("site" + this.puppetID, parsed[5]) != 0)
                         { //se não pertence ao meu site nao me interessa
                             break;
@@ -408,6 +406,9 @@ namespace SESDAD
                             addMessageToLog("Couldn't start " + parsed[1]);
                         }
                         addMessageToLog("Subscriber " + parsed[1] + " at " + URL);
+                        /*SubscriberInterface subscriber =
+                            (SubscriberInterface)Activator.GetObject(
+                                typeof(SubscriberInterface), ProcessURL);*/
                     }
                     break;
 
@@ -455,7 +456,7 @@ namespace SESDAD
         }
 
         public void crash(String processName) {
-            MessageBox.Show(puppetID.ToString());
+            //MessageBox.Show(puppetID.ToString());
             if (isMaster())
             {
                 slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToCrash(processName);
@@ -466,8 +467,7 @@ namespace SESDAD
                     LocalProcesses[processName].Kill();
                 }
                 else { return; } // TALVEZ DESNECESSARIO
-            }
-            
+            }  
         }
 
         public void status()
@@ -479,11 +479,35 @@ namespace SESDAD
         {
             //send a sleep thread request to process or tells responsible puppetmaster slave to do it
             //suspend(process)
+            if (isMaster())
+            {
+                slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToFreeze(processName);
+            }
+            else
+            {
+                if (LocalProcesses.ContainsKey(processName))
+                {
+                    //LocalProcesses[processName].Suspend();
+                }
+                else { return; } // TALVEZ DESNECESSARIO
+            }
         }
 
         public void unfreeze(string processName)
         {
             //resume(process)
+            if (isMaster())
+            {
+                slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToUnfreeze(processName);
+            }
+            else
+            {
+                if (LocalProcesses.ContainsKey(processName))
+                {
+                    //LocalProcesses[processName].ResumeThread();
+                }
+                else { return; } // TALVEZ DESNECESSARIO
+            }
         }
 
         public void addMessageToLog(string message) {
@@ -514,13 +538,19 @@ namespace SESDAD
     //************************          Puppet Delegates       ***************************
     //************************************************************************************
     delegate void DelCrashProcess(string processName);
+    delegate void DelFreezeProcess(string processName);
+    delegate void DelUnfreezeProcess(string processName);
     delegate Process DelStartProcess(string processName, string processType, string args);
 
     class PuppetServices : MarshalByRefObject, PuppetInterface
     {
         public static PuppetMasterForm form;
 
+        //for PuppetMaster
         int numberOfSlaves = 0;
+
+        //for PuppetSlave
+        bool allSlavesAreUp = false;
 
         public PuppetServices()
         {
@@ -533,9 +563,15 @@ namespace SESDAD
             form.Invoke(new DelCrashProcess(form.crash), processName);
         }
 
-        //public void receiveOrderToStartProcess(string processName, string processType, string args) {
-        //    form.Invoke(new DelStartProcess(form.startProcess), processName, processType, args);
-        //}
+        public void receiveOrderToFreeze(string processName) {
+            // thread-safe access to form
+            form.Invoke(new DelFreezeProcess(form.freeze), processName);
+        }
+
+        public void receiveOrderToUnfreeze(string processName) {
+            // thread-safe access to form
+            form.Invoke(new DelUnfreezeProcess(form.unfreeze), processName);
+        }
 
         public void registerSuperPuppetMaster()
         {
@@ -549,13 +585,6 @@ namespace SESDAD
                       typeof(PuppetInterface), puppetsLocation[0]);
         }
         
-        public void receiveOrderToFreeze(string processName) {
-
-        }
-
-        public void receiveOrderToUnfreeze(string processName) {
-
-        }
         
         public void receiveOrderToPublish(string processName) { } //mais cenas
         public void receiveOrderToSubscribe(string processName) { } //mais cenas
@@ -569,9 +598,19 @@ namespace SESDAD
             numberOfSlaves++;
         }
 
+        public void slavesAreUp()
+        {
+            allSlavesAreUp = true;
+        }
+
         public int getNumberOfSlaves()
         {
             return numberOfSlaves;
+        }
+
+        public bool areAllSlavesUp()
+        {
+            return allSlavesAreUp;
         }
     }
 
