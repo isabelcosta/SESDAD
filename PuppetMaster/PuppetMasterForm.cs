@@ -241,6 +241,7 @@ namespace SESDAD
                             Thread.Sleep(timeToSleep);
                         }
                         catch (FormatException) { break; }
+                        addMessageToLog(line);
                         break;
 
                     default:
@@ -272,6 +273,7 @@ namespace SESDAD
                 case "Status":
                     status();
                     //send to all nodes status request
+                    addMessageToLog("Status"); //TODO: n sei se e necessario
                     break;
                 case "Crash":
                     crash(parsedLine[1]);
@@ -339,6 +341,9 @@ namespace SESDAD
             }
         }
 
+        /********************************************/
+        //          PROCESSES CONFIG FILE
+        /*******************************************/
         private void processConfigFileLines(String line) {
             String[] blankSpace = { " " };
             String[] parsed = line.Split(blankSpace, StringSplitOptions.None);
@@ -416,6 +421,7 @@ namespace SESDAD
                         addMessageToLog("Subscriber " + parsed[1] + " at " + URL);
                         SubscriberInterface subscriber = (SubscriberInterface)Activator.GetObject(typeof(SubscriberInterface), URL);
                         mySubs.Add(parsed[1], new Tuple<int, SubscriberInterface>(int.Parse(processPort), subscriber));
+                        MessageBox.Show(parsed[1] + "   " + processPort);
 
                     }
                     break;
@@ -463,13 +469,42 @@ namespace SESDAD
             return process;
         }
 
-        public void crash(String processName) {
-            //MessageBox.Show(puppetID.ToString());
+        /********************************************/
+        //                 COMMANDS
+        /*******************************************/
+        public void subscribe(string processName, string topic)//1 - process; 3 - topic
+        {
             if (isMaster())
             {
                 if (LocalProcesses.ContainsKey(processName))
                 {
                     LocalProcesses[processName].Kill();
+                }
+                else
+                {
+                    //slavesRemoteObjects[slavesProcesses[processName]].recieveOrderToSubscribe(topic); ;
+                }
+            }
+            else
+            {
+                if (LocalProcesses.ContainsKey(processName))
+                {
+                    mySubs[processName].Item2.recieveOrderToSubscribe(topic);
+                }
+                else { return; } // TALVEZ DESNECESSARIO
+            }
+
+        }
+            
+        public void crash(String processName) {
+            if (isMaster())
+            {
+                if (LocalProcesses.ContainsKey(processName))
+                {
+                    if (!LocalProcesses[processName].HasExited)
+                    {
+                        LocalProcesses[processName].Kill();
+                    }
                 }
                 else {
                     slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToCrash(processName);
@@ -478,9 +513,11 @@ namespace SESDAD
             else {
                 if (LocalProcesses.ContainsKey(processName))
                 {
-                    LocalProcesses[processName].Kill();
+                    if (!LocalProcesses[processName].HasExited)
+                    {
+                        LocalProcesses[processName].Kill();
+                    }
                 }
-                else { return; } // TALVEZ DESNECESSARIO
             }  
         }
 
