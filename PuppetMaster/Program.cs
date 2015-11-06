@@ -14,6 +14,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Diagnostics;
+using System.Runtime.Serialization.Formatters;
 
 namespace SESDAD
 {
@@ -27,13 +28,12 @@ namespace SESDAD
         static void Main(String[] args)
         {
 
-            //BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
-            //provider.TypeFilterLevel = TypeFilterLevel.Full;
-            //IDictionary props = new Hashtable();
-            //props["port"] = 30000 + args[0];
-            TcpChannel channel = new TcpChannel(30000 + int.Parse(args[0]));
-            //TcpChannel channel = new TcpChannel(props, null, provider); 
-            //TcpChannel channel = new TcpChannel(puppetPort);
+            BinaryServerFormatterSinkProvider provider = new BinaryServerFormatterSinkProvider();
+            provider.TypeFilterLevel = TypeFilterLevel.Full;
+            IDictionary props = new Hashtable();
+            props["port"] = 30000 + int.Parse(args[0]);
+            //TcpChannel channel = new TcpChannel(30000 + int.Parse(args[0]));
+            TcpChannel channel = new TcpChannel(props, null, provider); 
             ChannelServices.RegisterChannel(channel, false);
 
             PuppetServices servicos = new PuppetServices();

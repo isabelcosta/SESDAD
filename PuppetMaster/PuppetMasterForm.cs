@@ -97,7 +97,6 @@ namespace SESDAD
                     Environment.Exit(0);
                 }
             }
-            //MessageBox.Show("This is " + (singlePuppetMode ? "single" : "multiple") + " PuppetMaster mode");
             
             String configPuppetPath = Environment.CurrentDirectory + @"\..\..\..\configPuppet.txt";
             
@@ -261,14 +260,17 @@ namespace SESDAD
                     if (parsedLine[2] == "Subscribe")
                     {
                         subscribe(parsedLine[1], parsedLine[3]);//1 - process; 3 - topic
+                        addMessageToLog("Subscriber " + parsedLine[1] + " Subscribe " + parsedLine[3]);
                     }
                     else if (parsedLine[2] == "Unsubscribe")
                     {
                         unsubscribe(parsedLine[1], parsedLine[3]);
+                        addMessageToLog("Subscriber " + parsedLine[1] + " Unsubscribe " + parsedLine[3]);
                     }
                     break;
                 case "Publisher": //1 - process; 3 - nEvents; 5 - topic; 7 - interval;
-                    publish(parsedLine[1], parsedLine[5], int.Parse(parsedLine[3]), int.Parse(parsedLine[7])); 
+                    publish(parsedLine[1], parsedLine[5], int.Parse(parsedLine[3]), int.Parse(parsedLine[7]));
+                    addMessageToLog("Publisher " + parsedLine[1] + " Publish " + parsedLine[3] + " Ontopic " + parsedLine[5] + " Interval " + parsedLine[7]);
                     break;
                 case "Status":
                     status();
@@ -324,12 +326,6 @@ namespace SESDAD
                 {
                     string brokerPort = portAndIpFromURL(parsed[7])[0];
                     string brokerIp = portAndIpFromURL(parsed[7])[1];
-
-                    //MessageBox.Show(
-                    //    "Pai " + (myBrokerinfo[BrokerNeighbours.PARENT] == null ? "none" : myBrokerinfo[BrokerNeighbours.PARENT]) + "; sonL " 
-                    //    + (myBrokerinfo[BrokerNeighbours.SONL] == null ? "none" : myBrokerinfo[BrokerNeighbours.SONL]) + "; sonR " 
-                    //    + (myBrokerinfo[BrokerNeighbours.SONR] == null ? "none" : myBrokerinfo[BrokerNeighbours.SONR])
-                    //);
 
                     if (myBrokerinfo.ContainsKey(BrokerNeighbours.PARENT) && (String.Compare("none", myBrokerinfo[BrokerNeighbours.PARENT]) != 0)) //se o broker for pai do meu broker
                     {

@@ -122,10 +122,7 @@ namespace SESDAD
 
         private void informPuppetMaster(string action)
         {
-            //if (string.Compare(logging, LoggingLevelType.FULL) == 0)
-            //{
-                localPuppetMaster.informAction(action);
-            //}
+            localPuppetMaster.informAction(action);
         }
 
 
