@@ -354,6 +354,7 @@ namespace SESDAD
                     if (String.Compare("site" + this.puppetID, parsed[1]) == 0)
                     { //se eu for um filho logo tenho o pai do meu broker
                         myBrokerinfo[BrokerNeighbours.PARENT] = parsed[3];
+
                     }
            
                     else if (String.Compare("site" + this.puppetID, parsed[3]) == 0) { //primeiro defino o filho SonL depois o SonR
