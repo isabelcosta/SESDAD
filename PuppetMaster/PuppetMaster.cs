@@ -5,8 +5,6 @@ using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
 using System.Collections.Generic;
-using Microsoft.VisualBasic.FileIO;
-using Microsoft.VisualBasic.MyServices;
 
 using SESDADInterfaces;
 using System.Diagnostics;
@@ -75,18 +73,18 @@ namespace SESDAD
             */
             Process pubProcess1 = new Process();
             pubProcess1.StartInfo.FileName = @"C:\Users\Francisco Caixeiro\Desktop\SESDAD\Publisher\bin\Debug\Publisher.exe";
-            pubProcess1.StartInfo.Arguments = pubName1 + " " + pubPort1;
+            pubProcess1.StartInfo.Arguments = pubPort1.ToString();
             pubProcess1.Start();
 
 
             Process subProcess1 = new Process();
             subProcess1.StartInfo.FileName = @"C:\Users\Francisco Caixeiro\Desktop\SESDAD\Subscriber\bin\Debug\Subscriber.exe";
-            subProcess1.StartInfo.Arguments = subName1 + " " + subPort1;
+            subProcess1.StartInfo.Arguments = subPort1.ToString();
             subProcess1.Start();
 
             Process broProcess1 = new Process();
             broProcess1.StartInfo.FileName = @"C:\Users\Francisco Caixeiro\Desktop\SESDAD\Broker\bin\Debug\Broker.exe";
-            broProcess1.StartInfo.Arguments = broName1 + " " + broPort1;
+            broProcess1.StartInfo.Arguments = broPort1.ToString();
             broProcess1.Start();
 
 
@@ -97,18 +95,18 @@ namespace SESDAD
             */
             Process pubProcess2 = new Process();
             pubProcess2.StartInfo.FileName = @"C:\Users\Francisco Caixeiro\Desktop\SESDAD\Publisher\bin\Debug\Publisher.exe";
-            pubProcess2.StartInfo.Arguments = pubName2 + " " + pubPort2;
+            pubProcess2.StartInfo.Arguments = pubPort2.ToString();
             pubProcess2.Start();
 
 
             Process subProcess2 = new Process();
             subProcess2.StartInfo.FileName = @"C:\Users\Francisco Caixeiro\Desktop\SESDAD\Subscriber\bin\Debug\Subscriber.exe";
-            subProcess2.StartInfo.Arguments = subName2 + " " + subPort2;
+            subProcess2.StartInfo.Arguments = subPort2.ToString();
             subProcess2.Start();
 
             Process broProcess2 = new Process();
             broProcess2.StartInfo.FileName = @"C:\Users\Francisco Caixeiro\Desktop\SESDAD\Broker\bin\Debug\Broker.exe";
-            broProcess2.StartInfo.Arguments = broName2 + " " + broPort2;
+            broProcess2.StartInfo.Arguments = broPort2.ToString();
             broProcess2.Start();
 
 
@@ -120,69 +118,72 @@ namespace SESDAD
             /*
                 1st Node
             */
-            Console.WriteLine("Publisher acessivel em: " + "tcp://localhost:" + pubPort1 + "/" + pubName1);
+            Console.WriteLine("Publisher acessivel em: " + "tcp://localhost:" + pubPort1 + "/pub");
             PublisherInterface publisher1 =
                (PublisherInterface)Activator.GetObject(
-                      typeof(PublisherInterface), "tcp://localhost:" + pubPort1 + "/" + pubName1);
+                      typeof(PublisherInterface), "tcp://localhost:" + pubPort1 + "/pub");
 
 
-            Console.WriteLine("Subscriber acessivel em: " + "tcp://localhost:" + subPort1 + "/" + subName1);
+            Console.WriteLine("Subscriber acessivel em: " + "tcp://localhost:" + subPort1 + "/sub");
             SubscriberInterface subscriber1 =
                (SubscriberInterface)Activator.GetObject(
-                      typeof(SubscriberInterface), "tcp://localhost:" + subPort1 + "/" + subName1);
+                      typeof(SubscriberInterface), "tcp://localhost:" + subPort1 + "/sub");
 
 
-            Console.WriteLine("Broker acessivel em: " + "tcp://localhost:" + broPort1 + "/" + broName1);
+            Console.WriteLine("Broker acessivel em: " + "tcp://localhost:" + broPort1 + "/broker");
             BrokerInterface broker1 =
                (BrokerInterface)Activator.GetObject(
-                      typeof(BrokerInterface), "tcp://localhost:" + broPort1 + "/" + broName1);
+                      typeof(BrokerInterface), "tcp://localhost:" + broPort1 + "/broker");
+
 
             /*
                 2nd Node
             */
-            Console.WriteLine("Publisher acessivel em: " + "tcp://localhost:" + pubPort2 + "/" + pubName2);
+            Console.WriteLine("Publisher acessivel em: " + "tcp://localhost:" + pubPort2 + "/pub");
             PublisherInterface publisher2 =
                (PublisherInterface)Activator.GetObject(
-                      typeof(PublisherInterface), "tcp://localhost:" + pubPort2 + "/" + pubName2);
+                      typeof(PublisherInterface), "tcp://localhost:" + pubPort2 + "/pub");
 
 
-            Console.WriteLine("Subscriber acessivel em: " + "tcp://localhost:" + subPort2 + "/" + subName2);
+            Console.WriteLine("Subscriber acessivel em: " + "tcp://localhost:" + subPort2 + "/sub");
             SubscriberInterface subscriber2 =
                (SubscriberInterface)Activator.GetObject(
-                      typeof(SubscriberInterface), "tcp://localhost:" + subPort2 + "/" + subName2);
+                      typeof(SubscriberInterface), "tcp://localhost:" + subPort2 + "/sub");
 
 
 
-            Console.WriteLine("Broker acessivel em: " + "tcp://localhost:" + broPort2 + "/" + broName2);
+            Console.WriteLine("Broker acessivel em: " + "tcp://localhost:" + broPort2 + "/broker");
             BrokerInterface broker2 =
                (BrokerInterface)Activator.GetObject(
-                      typeof(BrokerInterface), "tcp://localhost:" + broPort2 + "/" + broName2);
+                      typeof(BrokerInterface), "tcp://localhost:" + broPort2 + "/broker");
 
 
             // Network configuration
-            publisher1.registerLocalBroker(broName1, broPort1);
-            publisher1.giveName(pubName1);
-            subscriber1.registerLocalBroker(broName1, broPort1);
-            broker1.addPublisher(pubName1, pubPort1);
-            broker1.addSubscriber(subName1, subPort1);
-            broker1.addBroker(broName2, broPort2, "sonL");
+            publisher1.registerLocalBroker(broPort1);
+            publisher1.giveInfo(pubName1, pubPort1);
+            subscriber1.registerLocalBroker(broPort1);
+            subscriber1.giveInfo(subName1, subPort1);
+            broker1.addPublisher(pubPort1);
+            broker1.addSubscriber(subPort1);
+            broker1.addBroker(broPort2, "localhost", "sonL");
 
 
 
-            publisher2.registerLocalBroker(broName2, broPort2);
-            publisher1.giveName(pubName2);
+            publisher2.registerLocalBroker(broPort2);
+            publisher1.giveInfo(pubName2, pubPort2);
 
-            subscriber2.registerLocalBroker(broName2, broPort2);
-            broker2.addPublisher(pubName2, pubPort2);
-            broker2.addSubscriber(subName2, subPort2);
+            subscriber2.registerLocalBroker(broPort2);
+            subscriber2.giveInfo(subName2, subPort2);
+            broker2.addPublisher(pubPort2);
+            broker2.addSubscriber(subPort2);
 
-            broker2.addBroker(broName1, broPort1, "parent");
+            broker2.addBroker(broPort1, "localhost", "parent");
 
             // Publisher -> Basics/chords
 
-            publisher1.recieveOrderToPublish(topicBasicsChords, numbOfMsgs5, frequence);
-            publisher2.recieveOrderToPublish(topicBasicsScales, numbOfMsgs5, frequence - 1000);
-            subscriber1.recieveOrderToSubscribe(topicBasicsChords + "*", subName1, subPort1);
+            publisher1.receiveOrderToPublish(topicBasicsChords, numbOfMsgs5, frequence);
+            publisher2.receiveOrderToPublish(topicBasicsScales, numbOfMsgs5, frequence - 1000);
+            subscriber1.receiveOrderToSubscribe(topicBasicsChords + "*");
             Thread.Sleep(2000);
 
 
@@ -192,79 +193,79 @@ namespace SESDAD
             /*
 
             // Subscriber -> Basics/chords
-            subscriber1.recieveOrderToSubscribe(topicBasicsChords + "*", subName1, subPort1);
+            subscriber1.receiveOrderToSubscribe(topicBasicsChords + "*", subName1, subPort1);
             Thread.Sleep(2000);
 
             //Publisher -> Basics/chords
-            publisher1.recieveOrderToPublish(topicBasicsChords, messageBasicsChords, numbOfMsgs1, frequence);
+            publisher1.receiveOrderToPublish(topicBasicsChords, messageBasicsChords, numbOfMsgs1, frequence);
             Thread.Sleep(2000);
 
             // Publisher -> Basics
-            publisher1.recieveOrderToPublish(topicBasics, messageBasics, numbOfMsgs1, frequence);
+            publisher1.receiveOrderToPublish(topicBasics, messageBasics, numbOfMsgs1, frequence);
             Thread.Sleep(2000);
 
             //Subscriber - unsub-> Basic/chords
-            subscriber1.recieveOrderToUnSubscribe(topicBasicsChords + "*", subPort1);
+            subscriber1.receiveOrderToUnSubscribe(topicBasicsChords + "*", subPort1);
             Thread.Sleep(2000);
 
             //Subscriber - sub Basics
-            subscriber1.recieveOrderToSubscribe(topicBasics + "*", subName1, subPort1);
+            subscriber1.receiveOrderToSubscribe(topicBasics + "*", subName1, subPort1);
             Thread.Sleep(2000);
 
             // Publisher -> Basics/chords
-            publisher1.recieveOrderToPublish(topicBasics, messageBasics, numbOfMsgs1, frequence);
+            publisher1.receiveOrderToPublish(topicBasics, messageBasics, numbOfMsgs1, frequence);
             Thread.Sleep(2000);
 
 
             // Subscriber 2 -> topic Basics
-            subscriber2.recieveOrderToSubscribe(topicBasics + "*", subName2, subPort2);
+            subscriber2.receiveOrderToSubscribe(topicBasics + "*", subName2, subPort2);
             Thread.Sleep(2000);
 
 
             // Publisher -> topic Basics\Scales
-            publisher1.recieveOrderToPublish(topicBasicsScales, messageBasicsScales, numbOfMsgs1, frequence);
+            publisher1.receiveOrderToPublish(topicBasicsScales, messageBasicsScales, numbOfMsgs1, frequence);
             Thread.Sleep(2000);
             */
 
 
             /*
-            publisher2.recieveOrderToPublish(topicBasicsScales, messageBasicsScales, numbOfMsgs1, frequence);
+            publisher2.receiveOrderToPublish(topicBasicsScales, messageBasicsScales, numbOfMsgs1, frequence);
             
             // Publisher
-            publisher1.recieveOrderToPublish(topicTwo, messageTwo, numbOfMsgs1, frequence);
+            publisher1.receiveOrderToPublish(topicTwo, messageTwo, numbOfMsgs1, frequence);
             Thread.Sleep(2000);
 
-            publisher1.recieveOrderToPublish(topic, message, numbOfMsgs1, frequence);
+            publisher1.receiveOrderToPublish(topic, message, numbOfMsgs1, frequence);
             Thread.Sleep(2000);
-            subscriber1.printRecievedMessages();
+            subscriber1.printreceivedMessages();
             */
 
             /*
 
-             publisher1.recieveOrderToPublish(topic, message);
+             publisher1.receiveOrderToPublish(topic, message);
              Thread.Sleep(2000);
 
-             subscriber1.recieveOrderToSubscribe(topic, subName1, subPort1);
+             subscriber1.receiveOrderToSubscribe(topic, subName1, subPort1);
              Thread.Sleep(2000);
 
-             publisher1.recieveOrderToPublish(topic, message);
+             publisher1.receiveOrderToPublish(topic, message);
              Thread.Sleep(2000);
 
-             subscriber2.recieveOrderToSubscribe(topic, subName2, subPort2);
+             subscriber2.receiveOrderToSubscribe(topic, subName2, subPort2);
              Thread.Sleep(2000);
 
-             publisher1.recieveOrderToPublish(topic, message);
+             publisher1.receiveOrderToPublish(topic, message);
              Thread.Sleep(2000);
              */
 
             /*
-             publisher1.recieveOrderToPublish(topic, message);
+             publisher1.receiveOrderToPublish(topic, message);
              Thread.Sleep(2000);
 
-             subscriber1.recieveOrderToSubscribe(topic, subName1, subPort1);
+             subscriber1.receiveOrderToSubscribe(topic, subName1, subPort1);
              Thread.Sleep(2000);
 
-             publisher1.recieveOrderToPublish(topic, message);
+             publisher1.receiveOrderToPublish(topic, message);
              Thread.Sleep(2000);
              */
 
