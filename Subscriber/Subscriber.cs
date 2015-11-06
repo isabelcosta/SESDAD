@@ -126,7 +126,7 @@ namespace SESDAD
         public void registerLocalPuppetMaster(string name, int port)
         {
             Console.WriteLine("PuppetMasterLocal adicionado " + port);
-            PuppetInterface puppetMaster = (PuppetInterface)Activator.GetObject(typeof(PuppetInterface), "tcp://localhost:" + port + "/pub");
+            PuppetInterface puppetMaster = (PuppetInterface)Activator.GetObject(typeof(PuppetInterface), "tcp://localhost:" + port + "/puppet");
             localPuppetMaster = puppetMaster;
         }
 

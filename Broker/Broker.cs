@@ -294,7 +294,7 @@ namespace SESDAD
 
                 }
             }
-            string action = "Flooded message on topic " + topic;
+            string action = "BroEvent Flooded message on topic " + topic;
             informPuppetMaster(action);
             Console.WriteLine(action);
         }
@@ -403,8 +403,9 @@ namespace SESDAD
         public void subscribeRequest(string topic, int port)
         {
 
-           
+
             //subscrito ao evento
+            //MessageBox.Show(port.ToString());
             SubscriberInterface subscriber = subscribers[port];
             if (!delegates.ContainsKey(topic))
             {
@@ -430,7 +431,7 @@ namespace SESDAD
                 delegates[topic].Add(subReqID);
             }
            
-            string action = "Added subscriber at port " + port + " for the topic " + topic;
+            string action = "BroEvent Added subscriber at port " + port + " for the topic " + topic;
             informPuppetMaster(action);
             Console.WriteLine(action);
 
@@ -447,7 +448,7 @@ namespace SESDAD
                     break;
                 }
             }
-            string action = "Removed subscriber at port " + port + " for the topic " + topic;
+            string action = "BroEvent Removed subscriber at port " + port + " for the topic " + topic;
             informPuppetMaster(action);
             Console.WriteLine(action);
 
@@ -504,7 +505,7 @@ namespace SESDAD
         private void informPuppetMaster(string action)
         {
             if(string.Compare(logging,LoggingLevelType.FULL)==0)
-        {
+            {
                 localPuppetMaster.informAction(action);
             }
         }

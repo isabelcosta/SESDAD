@@ -98,7 +98,7 @@ namespace SESDAD
                                             // Exe: Publisher1 1/10
                 localBroker.recieveOrderToFlood(topicLocal, content, this);
 
-                string action = "Publish " + topic + " : " + content;
+                string action = "PubEvent Publish " + topic + " : " + content; //TODO: as mensagens vao como PubEvent certo?
                 informPuppetMaster(action);
                 Console.WriteLine(action);
 

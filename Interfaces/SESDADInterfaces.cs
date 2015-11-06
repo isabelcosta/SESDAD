@@ -46,9 +46,9 @@ namespace SESDADInterfaces
         void receiveOrderToCrash(string processName);
         void receiveOrderToFreeze(string processName);
         void receiveOrderToUnfreeze(string processName);
-        void receiveOrderToPublish(string processName, string topic, int numberOfEvents, int interval_x_ms); //mais cenas
-        void receiveOrderToSubscribe(string processName); //mais cenas
-        void receiveOrderToUnsubscribe(string processName); //mais cenas
+        void receiveOrderToPublish(string processName, string topic, int numberOfEvents, int interval_x_ms);
+        void receiveOrderToSubscribe(string processName, string topic);
+        void receiveOrderToUnsubscribe(string processName, string topic);
         void receiveOrderToShowStatus(string processName);
         void informAction(string action);
         void slaveIsReady();

@@ -258,13 +258,11 @@ namespace SESDAD
                 case "Subscriber":
                     if (parsedLine[2] == "Subscribe")
                     {
-                        //MessageBox.Show(parsedLine[1] + " sub " + parsedLine[3]);
-                        //subscribe(parsed[1], parsed[3]);//1 - process; 3 - topic
+                        subscribe(parsedLine[1], parsedLine[3]);//1 - process; 3 - topic
                     }
                     else if (parsedLine[2] == "Unsubscribe")
                     {
-                        //MessageBox.Show(parsed[1] + " unsub " + parsed[3]);
-                        //unsubscribe(parsed[1], parsed[3]);
+                        unsubscribe(parsedLine[1], parsedLine[3]);
                     }
                     break;
                 case "Publisher": //1 - process; 3 - nEvents; 5 - topic; 7 - interval;
@@ -472,24 +470,46 @@ namespace SESDAD
         /*******************************************/
         public void subscribe(string processName, string topic)//1 - process; 3 - topic
         {
-            if (isMaster())
+            if (isMaster()) //TODO: da pra ficar com menos linhas
             {
-                if (LocalProcesses.ContainsKey(processName))
+                if (mySubs.ContainsKey(processName)) //if my publisher tells it to puplish
                 {
-                    LocalProcesses[processName].Kill();
+                    mySubs[processName].Item2.recieveOrderToSubscribe(topic);
                 }
                 else
-                {
-                    //slavesRemoteObjects[slavesProcesses[processName]].recieveOrderToSubscribe(topic); ;
+                { //if not my publisher calls slave to order publish command
+                    slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToSubscribe(processName, topic);
                 }
             }
             else
             {
-                if (LocalProcesses.ContainsKey(processName))
+                if (mySubs.ContainsKey(processName))
                 {
                     mySubs[processName].Item2.recieveOrderToSubscribe(topic);
                 }
-                else { return; } // TALVEZ DESNECESSARIO
+            }
+
+        }
+
+        public void unsubscribe(string processName, string topic)//1 - process; 3 - topic
+        {
+            if (isMaster()) //TODO: da pra ficar com menos linhas
+            {
+                if (mySubs.ContainsKey(processName)) //if my publisher tells it to puplish
+                {
+                    mySubs[processName].Item2.recieveOrderToUnSubscribe(topic);
+                }
+                else
+                { //if not my publisher calls slave to order publish command
+                    slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToUnsubscribe(processName, topic);
+                }
+            }
+            else
+            {
+                if (mySubs.ContainsKey(processName))
+                {
+                    mySubs[processName].Item2.recieveOrderToUnSubscribe(topic);
+                }
             }
 
         }
@@ -623,7 +643,8 @@ namespace SESDAD
     delegate void DelFreezeProcess(string processName);
     delegate void DelUnfreezeProcess(string processName);
     delegate void DelPublish(string processName, string topic, int numberOfEvents, int interval_x_ms);
-    delegate void DelSubscribe(string processName);
+    delegate void DelSubscribe(string processName, string topic);
+    delegate void DelUnsubscribe(string processName, string topic);
     delegate void DelReceiveLogs(string action);
 
     class PuppetServices : MarshalByRefObject, PuppetInterface
@@ -653,26 +674,17 @@ namespace SESDAD
             // thread-safe access to form
             form.Invoke(new DelUnfreezeProcess(form.unfreeze), processName);
         }
-
-        /*public void registerSuperPuppetMaster()
-        {
-            String configPuppetPath = Environment.CurrentDirectory + @"\configPuppet.txt";
-
-            String[] puppetsLocation = System.IO.File.ReadAllLines(configPuppetPath);
-
-            //Console.WriteLine("Broker local registado no Publisher: " + "tcp://localhost:" + BrokerPort + "/" + BrokerName);
-            PuppetInterface superPuppetMaster =
-               (PuppetInterface)Activator.GetObject(
-                      typeof(PuppetInterface), puppetsLocation[0]);
-        }*/
-        
         
         public void receiveOrderToPublish(string processName, string topic, int numberOfEvents, int interval_x_ms) {
             // thread-safe access to form
             form.Invoke(new DelPublish(form.publish), processName, topic, numberOfEvents, interval_x_ms);
         }
-        public void receiveOrderToSubscribe(string processName) { } //mais cenas
-        public void receiveOrderToUnsubscribe(string processName) { } //mais cenas
+        public void receiveOrderToSubscribe(string processName, string topic) {
+            form.Invoke(new DelSubscribe(form.subscribe), processName, topic);
+        }
+        public void receiveOrderToUnsubscribe(string processName, string topic) {
+            form.Invoke(new DelUnsubscribe(form.unsubscribe), processName, topic);
+        }
         public void receiveOrderToShowStatus(string processName) { }
 
         public void informAction(string action) {
