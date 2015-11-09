@@ -102,7 +102,7 @@ namespace SESDAD
                 content = myName + " " + i + "/" + numOfEv;
                                                 
                                             // Exe: Publisher1 1/10
-                localBroker.receiveOrderToFlood(topicLocal, content, this);
+                localBroker.receiveOrderToFlood(topicLocal, content, myName, myPort);
 
                 string action = "PubEvent - " + myName + " publishes " + topic + " : " + content; //TODO: as mensagens vao como PubEvent certo?
                 informPuppetMaster(action);

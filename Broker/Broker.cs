@@ -154,31 +154,21 @@ namespace SESDAD
         Dictionary<int, SubscriberInterface> subscribers = new Dictionary<int,SubscriberInterface>();
         List<PublisherInterface> publishers = new List<PublisherInterface>();
         //List<BrokerInterface> brokers = new List<BrokerInterface>();
-        Dictionary<string, BrokerInterface> brokerTree = new Dictionary<string, BrokerInterface>();
+
+        Dictionary<string, BrokerInterface> brokerTreeInterface = new Dictionary<string, BrokerInterface>();
+        Dictionary<string, Dictionary<string, int>> brokerTreeIpAndPort = new Dictionary<string, Dictionary<string, int>>();
+
+
         Dictionary<SubscriberInterface, List<string>> subscribersTopics = new Dictionary<SubscriberInterface, List<string>>();
 
         //FIFO
         Dictionary<string, Tuple<int, int>> fifoManager = new Dictionary<string, Tuple<int, int>>();
         Dictionary<string, List<Tuple<int, string>>> fifoQueue = new Dictionary<string, List<Tuple<int, string>>>();
 
-        public bool isBroker(object source)
-        {
-            BrokerInterface broTest;
-            try
-            {
-                broTest = (BrokerInterface)source;
-                //Console.WriteLine("It's a broker");
-                return true;
-            }
-            catch (Exception)
-            {
-                //Console.WriteLine("It's not a broker");
-                return false;
-            }
-        }
+        
 
-
-        public string brokerType(object source)
+        /*
+        public string brokerType(string ip, int port)
         {
             BrokerInterface broTest;
 
@@ -202,74 +192,43 @@ namespace SESDAD
             //Console.WriteLine("WEIRD, maybe the broker isn't registred in the local tree (brokers DC to this broker)");
             return UNKOWN;
         }
+        */
 
-        public string getSourceType(object source)
+        public string sourceType (string ip, int port)
         {
-
-            // if it not a broker it is a publisher
-            if (!isBroker(source)) 
+            if (brokerTreeIpAndPort.ContainsKey("sonL"))
             {
-                return PUBLISHER;
-            }
-
-            return brokerType(source);
-
-
-
-        }
-
-        //used for the PuppetMaster to request a broker to flood a message
-        public void receiveOrderToFlood(string topic, string message, object source)
-        {
-
-
-            BrokerInterface broTest;
-            
-            // sourceType cases: {publisher, sonL, sonR, parent}
-            string sourceType = getSourceType(source);
-
-
-            if (string.Compare(OrderingType.FIFO, ordering) == 0)
-            {
-                //START
-                //     ORDERING FIFO
-                //
-                string pubName = "";
-                Tuple<int, int> msg = new Tuple<int, int>(0, 0);
-
-                parseMessage(ref pubName, ref msg, message);
-
-
-                Tuple<int, int> msgMngmt = new Tuple<int, int>(0, 0);
-
-
-                if (checkIfIsNext(msg, pubName, topic))
+                if(brokerTreeIpAndPort["sonL"].ContainsKey(ip))
                 {
-                    do
+                    if(brokerTreeIpAndPort["sonL"][ip] == port)
                     {
-                        flood(sourceType, topic, message);
-                        if (getFromQueue(pubName + topic, msg.Item1, ref message))
-                        {
-                            break;
-                        }
-                    } while (true);
+                        return "sonL";
+                    }
                 }
-                else
+            }
+            if (brokerTreeIpAndPort.ContainsKey("sonR"))
+            {
+                if (brokerTreeIpAndPort["sonR"].ContainsKey(ip))
                 {
-                    // Just add to queue
-                    addToQueue(pubName + topic, msg.Item1, message);
+                    if (brokerTreeIpAndPort["sonR"][ip] == port)
+                    {
+                        return "sonR";
+                    }
                 }
             }
-            else if (string.Compare(OrderingType.TOTAL, ordering) == 0)
+            if (brokerTreeIpAndPort.ContainsKey("parent"))
             {
-                //TODO 
+                if (brokerTreeIpAndPort["parent"].ContainsKey(ip))
+                {
+                    if (brokerTreeIpAndPort["parent"][ip] == port)
+                    {
+                        return "parent";
+                    }
+                }
             }
-            else
-            {
-                flood(sourceType, topic, message);
-            }
-
+            return "publisher";
         }
+       
 
         public bool canFilterFlood(string sourceType, string topic, string relation)
         {
@@ -307,22 +266,22 @@ namespace SESDAD
 
             //                      1st                                                   2nd
             if ((string.Compare(sourceType, BROKER_SONR) != 0) &&
-                                    brokerTree.TryGetValue(BROKER_SONR, out broTest) &&
+                                    brokerTreeInterface.TryGetValue(BROKER_SONR, out broTest) &&
                                                     canFilterFlood(sourceType, topic, BROKER_SONR))
             {
-                broTest.receiveOrderToFlood(topic, message, this);
+                broTest.receiveOrderToFlood(topic, message, myName, myPort);
             }
-            if ((string.Compare(sourceType, BROKER_SONL) != 0) && 
-                                    brokerTree.TryGetValue(BROKER_SONL, out broTest) &&
+            if ((string.Compare(sourceType, BROKER_SONL) != 0) &&
+                                    brokerTreeInterface.TryGetValue(BROKER_SONL, out broTest) &&
                                                     canFilterFlood(sourceType, topic, BROKER_SONL))
             {
-                broTest.receiveOrderToFlood(topic, message, this);
+                broTest.receiveOrderToFlood(topic, message, myName, myPort);
             }
-            if ((string.Compare(sourceType, BROKER_PARENT) != 0) && 
-                                    brokerTree.TryGetValue(BROKER_PARENT, out broTest) &&
+            if ((string.Compare(sourceType, BROKER_PARENT) != 0) &&
+                                    brokerTreeInterface.TryGetValue(BROKER_PARENT, out broTest) &&
                                                     canFilterFlood(sourceType, topic, BROKER_PARENT))
             {
-                broTest.receiveOrderToFlood(topic, message, this);
+                broTest.receiveOrderToFlood(topic, message, myName, myPort);
             }
             
 
@@ -475,7 +434,7 @@ namespace SESDAD
                 delegates[topic].Add(subReqID);
             }
 
-            filterSubscriptionFlood(topic, this);
+            filterSubscriptionFlood(topic, myName, myPort);
 
 
             string action = "BroEvent Added subscriber at port " + port + " for the topic " + topic;
@@ -484,27 +443,6 @@ namespace SESDAD
 
         }
 
-        public void filterSubscriptionFlood(string topic, BrokerInterface source)
-        {
-            string relation = brokerType(source);
-
-            BrokerInterface broTest;
-            if (string.Compare(RoutingPolicyType.FILTER, routing) == 0)
-            {
-                if (brokerTree.TryGetValue(BROKER_SONL, out broTest) && (string.Compare(relation, BROKER_SONL) != 0))
-                {
-                    broTest.filterSubscription(topic, this);
-                }
-                if (brokerTree.TryGetValue(BROKER_SONR, out broTest) && (string.Compare(relation, BROKER_SONR) != 0))
-                {
-                    broTest.filterSubscription(topic, this);
-                }
-                if (brokerTree.TryGetValue(BROKER_PARENT, out broTest) && (string.Compare(relation, BROKER_PARENT) != 0))
-                {
-                    broTest.filterSubscription(topic, this);
-                }
-            }
-        }
 
 
         public void unSubscribeRequest(string topic, int port)
@@ -527,6 +465,27 @@ namespace SESDAD
 
 
         }
+        public void filterSubscriptionFlood(string topic, string ip, int port)
+        {
+            string relation = sourceType(ip, port);
+
+            BrokerInterface broTest;
+            if (string.Compare(RoutingPolicyType.FILTER, routing) == 0)
+            {
+                if (brokerTreeInterface.TryGetValue(BROKER_SONL, out broTest) && (string.Compare(relation, BROKER_SONL) != 0))
+                {
+                    broTest.filterSubscription(topic, myName, myPort);
+                }
+                if (brokerTreeInterface.TryGetValue(BROKER_SONR, out broTest) && (string.Compare(relation, BROKER_SONR) != 0))
+                {
+                    broTest.filterSubscription(topic, myName, myPort);
+                }
+                if (brokerTreeInterface.TryGetValue(BROKER_PARENT, out broTest) && (string.Compare(relation, BROKER_PARENT) != 0))
+                {
+                    broTest.filterSubscription(topic, myName, myPort);
+                }
+            }
+        }
 
 
         public void filterUnsubscriptionFlood(string topic)
@@ -534,20 +493,162 @@ namespace SESDAD
             BrokerInterface broTest;
             if (string.Compare(RoutingPolicyType.FILTER, routing) == 0)
             {
-                if (brokerTree.TryGetValue(BROKER_SONL, out broTest))
+                if (brokerTreeInterface.TryGetValue(BROKER_SONL, out broTest))
                 {
-                    broTest.filterUnsubscription(topic, this);
+                    broTest.filterUnsubscription(topic, myName, myPort);
                 }
-                if (brokerTree.TryGetValue(BROKER_SONR, out broTest))
+                if (brokerTreeInterface.TryGetValue(BROKER_SONR, out broTest))
                 {
-                    broTest.filterUnsubscription(topic, this);
+                    broTest.filterUnsubscription(topic, myName, myPort);
                 }
-                if (brokerTree.TryGetValue(BROKER_PARENT, out broTest))
+                if (brokerTreeInterface.TryGetValue(BROKER_PARENT, out broTest))
                 {
-                    broTest.filterUnsubscription(topic, this);
+                    broTest.filterUnsubscription(topic, myName, myPort);
                 }
             }
         }
+
+
+        /*
+        
+            Methods to be executed in Threads
+
+        */
+
+
+        // flood
+        public Thread receiveOrderToFlood(string topic, string message, string ip, int port)
+        {
+            var t = new Thread(() => RealreceiveOrderToFlood(topic, message, ip, port));
+            t.Start();
+            return t;
+        }
+
+        //used for the PuppetMaster to request a broker to flood a message
+        public void RealreceiveOrderToFlood(string topic, string message, string ip, int port)
+        {
+
+
+            // sourceType cases: {publisher, sonL, sonR, parent}
+            string source = sourceType(ip, port);
+
+
+            if (string.Compare(OrderingType.FIFO, ordering) == 0)
+            {
+                //START
+                //     ORDERING FIFO
+                //
+                string pubName = "";
+                Tuple<int, int> msg = new Tuple<int, int>(0, 0);
+
+                parseMessage(ref pubName, ref msg, message);
+
+
+                Tuple<int, int> msgMngmt = new Tuple<int, int>(0, 0);
+
+
+                if (checkIfIsNext(msg, pubName, topic))
+                {
+                    do
+                    {
+                        flood(source, topic, message);
+                        if (getFromQueue(pubName + topic, msg.Item1, ref message))
+                        {
+                            break;
+                        }
+                    } while (true);
+                }
+                else
+                {
+                    // Just add to queue
+                    addToQueue(pubName + topic, msg.Item1, message);
+                }
+            }
+            else if (string.Compare(OrderingType.TOTAL, ordering) == 0)
+            {
+                //TODO 
+            }
+            else
+            {
+                flood(source, topic, message);
+            }
+
+        }
+
+        // Subscription
+        public Thread filterSubscription(string topic, string ip, int port)
+        {
+            var t = new Thread(() => RealfilterSubscription(topic, ip, port));
+            t.Start();
+            return t;
+        }
+
+        public void RealfilterSubscription(string topic, string ip, int port)
+        {
+            string relation = sourceType(ip, port);
+            TopicsTable testTable = new TopicsTable();
+
+            //foreach (string t in filteringTable[relation].getTopicDict().Keys)
+            //{
+            //    Console.WriteLine("t:  " + t);
+            //}
+
+            if (filteringTable.TryGetValue(relation, out testTable))
+            {
+                if (filteringTable[relation].containsTopic(topic))
+                {
+                    filteringTable[relation].addSubNumber(topic);
+                }
+                else
+                {
+                    filteringTable[relation].AddTopic(topic);
+                    filterSubscriptionFlood(topic, myName, myPort);
+                }
+            }
+            else
+            {
+                filteringTable.Add(relation, testTable);
+                filteringTable[relation].AddTopic(topic);
+                filterSubscriptionFlood(topic, myName, myPort);
+            }
+        }
+
+        // Unsubscription
+
+        public Thread filterUnsubscription(string topic, string ip, int port)
+        {
+            var t = new Thread(() => RealfilterUnsubscription(topic, ip, port));
+            t.Start();
+            return t;
+        }
+
+        private void RealfilterUnsubscription(string topic, string ip , int port)
+        {
+            string relation = sourceType(ip, port);
+            TopicsTable testTable = new TopicsTable();
+
+            if (filteringTable.TryGetValue(relation, out testTable))
+            {
+                if (filteringTable[relation].containsTopic(topic))
+                {
+
+                    if (filteringTable[relation].remSubNumber(topic) == 0)
+                    {
+                        filterUnsubscriptionFlood(topic);
+                    }
+                }
+            }
+        }
+
+
+        /*
+        
+            end of thread executed methods
+        */
+
+
+        
+
 
         // PuppetMaster envia ordem para o broker para adicionar um subscriber que esta conectado
         public void addSubscriber(int port)
@@ -573,13 +674,22 @@ namespace SESDAD
             switch (relation)
             {
                 case "sonL":
-                    brokerTree.Add("sonL", broker);
+                    brokerTreeInterface.Add("sonL", broker);
+                    Dictionary<string, int> ipAndPortL = new Dictionary<string, int>();
+                    ipAndPortL.Add(ip, port);
+                    brokerTreeIpAndPort.Add("sonL",ipAndPortL);
                     break;
                 case "sonR":
-                    brokerTree.Add("sonR", broker);
+                    brokerTreeInterface.Add("sonR", broker);
+                    Dictionary<string, int> ipAndPortR = new Dictionary<string, int>();
+                    ipAndPortR.Add(ip, port);
+                    brokerTreeIpAndPort.Add("sonR", ipAndPortR);
                     break;
                 case "parent":
-                    brokerTree.Add("parent", broker);
+                    brokerTreeInterface.Add("parent", broker);
+                    Dictionary<string, int> ipAndPortP = new Dictionary<string, int>();
+                    ipAndPortP.Add(ip, port);
+                    brokerTreeIpAndPort.Add("sonL", ipAndPortP);
                     break;
             }
         }
@@ -625,57 +735,6 @@ namespace SESDAD
             myPort = port;
         }
 
-        public void filterSubscription(string topic, BrokerInterface source)
-        {
-            string relation = brokerType(source);
-            TopicsTable testTable = new TopicsTable();
-            Console.WriteLine("FILTER SUBSCRIPTION   ");
-
-            //foreach (string t in filteringTable[relation].getTopicDict().Keys)
-            //{
-            //    Console.WriteLine("t:  " + t);
-            //}
-
-            if (filteringTable.TryGetValue(relation, out testTable))
-            {
-                if (filteringTable[relation].containsTopic(topic))
-                {
-                    filteringTable[relation].addSubNumber(topic);
-                }
-                else
-                {
-                    filteringTable[relation].AddTopic(topic);
-                    filterSubscriptionFlood(topic, this);
-                }
-            }
-            else
-            {
-                filteringTable.Add(relation, testTable);
-                filteringTable[relation].AddTopic(topic);
-                filterSubscriptionFlood(topic, this);
-            }
-                foreach(string t in filteringTable[relation].getTopicDict().Keys)
-                {
-                    Console.WriteLine("t222:  " + t);
-                }
-        }
-
-        public void filterUnsubscription(string topic, BrokerInterface source)
-        {
-            string relation = brokerType(source);
-            TopicsTable testTable = new TopicsTable();
-
-            if (filteringTable.TryGetValue(relation, out testTable))
-            {
-                if (filteringTable[relation].containsTopic(topic))
-                {
-                    
-                    if (filteringTable[relation].remSubNumber(topic) == 0)
-                    {
-                        filterUnsubscriptionFlood(topic);
-                    }
-                }
-            }
-        }
+       
     }
 }
