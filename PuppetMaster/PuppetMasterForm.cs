@@ -266,12 +266,12 @@ namespace SESDAD
             switch (parsedLine[0])
             {
                 case "Subscriber":
-                    if (parsedLine[2] == "Subscribe")
+                    if (string.Compare(parsedLine[2], "Subscribe") == 0)
                     {
                         addMessageToLog("Subscriber " + parsedLine[1] + " Subscribe " + parsedLine[3]);
                         subscribe(parsedLine[1], parsedLine[3]);//1 - process; 3 - topic
                     }
-                    else if (parsedLine[2] == "Unsubscribe")
+                    else if (string.Compare(parsedLine[2], "Unsubscribe") == 0)
                     {
                         addMessageToLog("Subscriber " + parsedLine[1] + " Unsubscribe " + parsedLine[3]);
                         unsubscribe(parsedLine[1], parsedLine[3]);
