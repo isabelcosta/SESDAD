@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{20511DF5-B2D2-43A2-B15A-95230B46F3AE}</ProjectGuid>
+    <ProjectGuid>{1F8C8203-8F49-41FC-9658-55310F5D4667}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>PuppetMaster</RootNamespace>
@@ -51,6 +51,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Runtime.Remoting" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -63,7 +64,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
-    <Compile Include="PuppetMasterForm.cs" />
+    <Compile Include="PuppetMasterForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="PuppetMasterForm.Designer.cs">
       <DependentUpon>PuppetMasterForm.cs</DependentUpon>
     </Compile>

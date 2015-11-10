@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 
 namespace SESDADInterfaces
 {
-    //*********************************************************************
+    //**********************************************************************
     //                              CONSTANTS
-    //*********************************************************************
+    //**********************************************************************
 
     public class RoutingPolicyType
     {
@@ -36,9 +36,9 @@ namespace SESDADInterfaces
 
     public class BrokerNeighbours
     {
-        public const string SONL = "SonL";
-        public const string SONR = "SonR";
-        public const string PARENT = "Parent";
+        public const string SONL = "sonL";
+        public const string SONR = "sonR";
+        public const string PARENT = "parent";
     }
 
     public interface PuppetInterface
@@ -46,15 +46,16 @@ namespace SESDADInterfaces
         void receiveOrderToCrash(string processName);
         void receiveOrderToFreeze(string processName);
         void receiveOrderToUnfreeze(string processName);
-        void receiveOrderToPublish(string processName); //mais cenas
-        void receiveOrderToSubscribe(string processName); //mais cenas
-        void receiveOrderToUnsubscribe(string processName); //mais cenas
-        void receiveOrderToShowStatus(string processName);
-        //void receiveOrderToStartProcess(string processName, string processType, string args);
-        void sendLogsToMaster(string logInfo);
-        void informMyMaster(string logInfo);
+        void receiveOrderToPublish(string processName, string topic, int numberOfEvents, int interval_x_ms);
+        void receiveOrderToSubscribe(string processName, string topic);
+        void receiveOrderToUnsubscribe(string processName, string topic);
+        void receiveOrderToShowStatus();
+        void informAction(string action);
+        void slaveIsReady();
+        int getNumberOfSlaves();
+        void slavesAreUp();
+        bool areAllSlavesUp();
     }
-
     [Serializable]
     public class MessageArgs : EventArgs
     {
@@ -73,32 +74,76 @@ namespace SESDADInterfaces
 
     public interface PublisherInterface
     {
-        void recieveOrderToPublish(string topic, string message);
+        void receiveOrderToPublish(string topic, int numeberOfEvents, int interval_x_ms);
 
-        void registerLocalBroker(string BrokerName, int Brokerport);
+        // network config
+        void registerLocalBroker(int Brokerport);
+
+        // network config
+        void registerLocalPuppetMaster(string name, int port);
+
+        // network config
+        void policies(string routing, string ordering, string logging);
+
+        // network config
+        void giveInfo(string name, int port);
+
+        void status();
     }
     public interface SubscriberInterface
     {
-        void recieveOrderToSubscribe(string topic, string subName, int subPort);
+        void receiveOrderToSubscribe(string topic);
 
+        void receiveOrderToUnSubscribe(string topic);
 
+        // network config
+        void registerLocalBroker(int Brokerport);
 
-        void registerLocalBroker(string BrokerName, int Brokerport);
+        void printReceivedMessages();
 
-        void printRecievedMessages();
         void Callback(object sender, MessageArgs m);
 
+        // network config
+        void registerLocalPuppetMaster(string name, int port);
+
+        // network config
+        void policies(string routing, string ordering, string logging);
+
+        // network config
+        void giveInfo(string name, int port);
+
+        void status();
     }
     public interface BrokerInterface
     {
-        void recieveOrderToFlood(string topic, string message);
+        void receiveOrderToFlood(string topic, string message, object source);
 
-        void subscribeRequest(string topic, string subscriberName, int port);
+        void subscribeRequest(string topic, int port);
 
-        void addSubscriber(string name, int port);
+        void unSubscribeRequest(string topic, int port);
 
-        void addPublisher(string name, int port);
+        void filterSubscription(string topic, BrokerInterface source);
 
-        void addBroker(string name, int port);
+        void filterUnsubscription(string topic, BrokerInterface source);
+
+        // network config
+        void addSubscriber(int port);
+
+        // network config
+        void addPublisher(int port);
+
+        // network config
+        void addBroker(int port, string ip, string relation);
+
+        // network config
+        void registerLocalPuppetMaster(int port);
+
+        // network config
+        void policies(string routing, string ordering, string logging);
+
+        // network config
+        void giveInfo(string name, int port);
+
+        void status();
     }
 }

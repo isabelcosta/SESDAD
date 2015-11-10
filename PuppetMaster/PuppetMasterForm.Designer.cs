@@ -26,7 +26,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent(string id)
+        private void InitializeComponent()
         {
             this.tb_Command = new System.Windows.Forms.TextBox();
             this.bt_Command = new System.Windows.Forms.Button();
@@ -42,13 +42,12 @@
             // 
             this.tb_Command.Location = new System.Drawing.Point(20, 55);
             this.tb_Command.Name = "tb_Command";
-            this.tb_Command.Size = new System.Drawing.Size(367, 20);
+            this.tb_Command.Size = new System.Drawing.Size(495, 20);
             this.tb_Command.TabIndex = 0;
-            this.tb_Command.ReadOnly = !isMaster();
             // 
             // bt_Command
             // 
-            this.bt_Command.Location = new System.Drawing.Point(411, 52);
+            this.bt_Command.Location = new System.Drawing.Point(521, 55);
             this.bt_Command.Name = "bt_Command";
             this.bt_Command.Size = new System.Drawing.Size(75, 23);
             this.bt_Command.TabIndex = 1;
@@ -63,7 +62,6 @@
             this.tb_Script.Name = "tb_Script";
             this.tb_Script.Size = new System.Drawing.Size(213, 248);
             this.tb_Script.TabIndex = 2;
-            this.tb_Script.ReadOnly = !isMaster();
             // 
             // bt_Script
             // 
@@ -82,7 +80,7 @@
             this.tb_Log.Name = "tb_Log";
             this.tb_Log.ReadOnly = true;
             this.tb_Log.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.tb_Log.Size = new System.Drawing.Size(222, 248);
+            this.tb_Log.Size = new System.Drawing.Size(332, 248);
             this.tb_Log.TabIndex = 4;
             // 
             // lb_Command
@@ -116,7 +114,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(512, 419);
+            this.ClientSize = new System.Drawing.Size(619, 419);
             this.Controls.Add(this.lb_Log);
             this.Controls.Add(this.lb_Script);
             this.Controls.Add(this.lb_Command);
@@ -126,7 +124,6 @@
             this.Controls.Add(this.bt_Command);
             this.Controls.Add(this.tb_Command);
             this.Name = "PuppetMasterForm";
-            this.Text = "Puppet " + (isMaster() ? "Master" : "Slave") + " on site" + id;
             this.ResumeLayout(false);
             this.PerformLayout();
 
