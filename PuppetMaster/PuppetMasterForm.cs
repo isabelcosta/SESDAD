@@ -18,8 +18,15 @@ using System.Runtime.Serialization.Formatters;
 
 namespace SESDAD
 {
+    
     public partial class PuppetMasterForm : Form
     {
+        public override object InitializeLifetimeService()
+        {
+
+            return null;
+
+        }
 
         //*********************************************************************
         //                              ATTRIBUTES
@@ -662,6 +669,13 @@ namespace SESDAD
 
     class PuppetServices : MarshalByRefObject, PuppetInterface
     {
+        public override object InitializeLifetimeService()
+        {
+
+            return null;
+
+        }
+
         public static PuppetMasterForm form;
 
         //for PuppetMaster

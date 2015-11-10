@@ -44,7 +44,6 @@ namespace SESDAD
 
 
 
-
     public class SubscriberRequestID
     {
         private int subID;
@@ -119,7 +118,7 @@ namespace SESDAD
             return topics;
         }
     }
-
+    [Serializable]
     class BrokerServices : MarshalByRefObject, BrokerInterface
     {
 
@@ -288,11 +287,16 @@ namespace SESDAD
             //callback
             foreach (string subTopic in delegates.Keys)
             {
+                Console.WriteLine("1 lvl");
                     // checks if the TOPIC BEING PUBLISHED is INCLUDED in the TOPIC SUBSCRIBED
                 if (topicsMatch(topic, subTopic))
                 {
+                    Console.WriteLine("2 lvl");
+
                     foreach (SubscriberRequestID subReqID in delegates[subTopic])
                     {
+                        Console.WriteLine("3 lvl");
+
                         subReqID.SubDelegate(this, new MessageArgs(topic, message));
                     }
 
@@ -321,6 +325,16 @@ namespace SESDAD
 
             if (msg.Item1 == 1 )
             {
+
+                /*
+                if(fifoManager.ContainsKey(pubName+topic) && fifoQueue(pubName+topic)-> tiver enviado todas as mensagens (exemplo 12/12)) {
+
+                    fifoManager.Remove(pubName+topic);
+                    &&
+                    limpar a fifoQueue(pubName+topic)?
+
+                }
+                */
                 fifoManager.Add(pubName + topic, msg);
                 return true;
             }
@@ -413,7 +427,7 @@ namespace SESDAD
             if (!delegates.ContainsKey(topic))
             {
                 delegates.Add(topic, new List<SubscriberRequestID>());
-
+ 
             }
 
             bool alreadySubscribed= false;
@@ -517,13 +531,13 @@ namespace SESDAD
 
 
         // flood
-        public Thread receiveOrderToFlood(string topic, string message, string ip, int port)
+        public void receiveOrderToFlood(string topic, string message, string ip, int port)
         {
+            
             var t = new Thread(() => RealreceiveOrderToFlood(topic, message, ip, port));
             t.Start();
-            return t;
+            //return t;
         }
-
         //used for the PuppetMaster to request a broker to flood a message
         public void RealreceiveOrderToFlood(string topic, string message, string ip, int port)
         {
@@ -576,11 +590,11 @@ namespace SESDAD
         }
 
         // Subscription
-        public Thread filterSubscription(string topic, string ip, int port)
+        public void filterSubscription(string topic, string ip, int port)
         {
             var t = new Thread(() => RealfilterSubscription(topic, ip, port));
             t.Start();
-            return t;
+            //return t;
         }
 
         public void RealfilterSubscription(string topic, string ip, int port)
@@ -615,11 +629,11 @@ namespace SESDAD
 
         // Unsubscription
 
-        public Thread filterUnsubscription(string topic, string ip, int port)
+        public void filterUnsubscription(string topic, string ip, int port)
         {
             var t = new Thread(() => RealfilterUnsubscription(topic, ip, port));
             t.Start();
-            return t;
+            //return t;
         }
 
         private void RealfilterUnsubscription(string topic, string ip , int port)

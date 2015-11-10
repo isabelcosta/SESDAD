@@ -10,6 +10,7 @@ using System.Runtime.Serialization.Formatters;
 
 namespace SESDAD
 {
+
     class Publisher
     {
         [STAThread]
@@ -37,7 +38,7 @@ namespace SESDAD
         }
     }
 
-
+    [Serializable]
     class PublisherServices: MarshalByRefObject, PublisherInterface
     {
 
@@ -89,9 +90,9 @@ namespace SESDAD
 
 
         }
-
         public void publish()
         {
+
             int numOfEv = this.numberOfEvents;
             int intv_x_ms = this.interval_x_ms;
             string topicLocal = this.topic;
@@ -102,6 +103,7 @@ namespace SESDAD
                 content = myName + " " + i + "/" + numOfEv;
                                                 
                                             // Exe: Publisher1 1/10
+                                            // localBroker fica a null de vez em quando
                 localBroker.receiveOrderToFlood(topicLocal, content, myName, myPort);
 
                 string action = "PubEvent - " + myName + " publishes " + topic + " : " + content; //TODO: as mensagens vao como PubEvent certo?
