@@ -231,7 +231,6 @@ namespace SESDAD
 
         public bool canFilterFlood(string sourceType, string topic, string relation)
         {
-            Console.WriteLine("Inicio do canFilterFlood");
 
             if (string.Compare(RoutingPolicyType.FILTER, routing) == 0)
             {
@@ -239,7 +238,6 @@ namespace SESDAD
                 
                 if (filteringTable.TryGetValue(relation, out testTable))
                 {
-                    Console.WriteLine("canFilterFlood: access filtering table");
                     //dictionary<string, int>
                     return filteringTable[relation].containsTopic(topic);
                 }
@@ -287,15 +285,12 @@ namespace SESDAD
             //callback
             foreach (string subTopic in delegates.Keys)
             {
-                Console.WriteLine("1 lvl");
                     // checks if the TOPIC BEING PUBLISHED is INCLUDED in the TOPIC SUBSCRIBED
                 if (topicsMatch(topic, subTopic))
                 {
-                    Console.WriteLine("2 lvl");
 
                     foreach (SubscriberRequestID subReqID in delegates[subTopic])
                     {
-                        Console.WriteLine("3 lvl");
 
                         subReqID.SubDelegate(this, new MessageArgs(topic, message));
                     }
@@ -303,8 +298,8 @@ namespace SESDAD
                 }
             }
             string action = "BroEvent - " + myName + " Flooded message on topic " + topic;
-            informPuppetMaster(action);
-            //Console.WriteLine(action);
+            //informPuppetMaster(action);
+            Console.WriteLine(action);
         }
         
 
@@ -335,6 +330,14 @@ namespace SESDAD
 
                 }
                 */
+                if (fifoManager.ContainsKey(pubName + topic))
+                {
+                    fifoManager.Remove(pubName + topic);
+                    if(fifoQueue.ContainsKey(pubName + topic)) {
+                        fifoQueue.Remove(pubName + topic);
+
+                    }
+                }
                 fifoManager.Add(pubName + topic, msg);
                 return true;
             }
@@ -362,6 +365,8 @@ namespace SESDAD
             Tuple<int, string> msgNPlusMsg = new Tuple<int, string>(msgNumber, message);
             if (!fifoQueue.TryGetValue(pubPlusTopic, out msgList))
             {
+
+                msgList = new List<Tuple<int, string>>();
                 // Key wasn't in dictionary; "value" is now 0
                 msgList.Add(msgNPlusMsg);
                 fifoQueue.Add(pubPlusTopic, msgList);
@@ -453,7 +458,7 @@ namespace SESDAD
 
             string action = "BroEvent Added subscriber at port " + port + " for the topic " + topic;
             //informPuppetMaster(action);
-            //Console.WriteLine(action);
+            Console.WriteLine(action);
 
         }
 
@@ -475,7 +480,7 @@ namespace SESDAD
 
             string action = "BroEvent Removed subscriber at port " + port + " for the topic " + topic;
             //informPuppetMaster(action);
-            //Console.WriteLine(action);
+            Console.WriteLine(action);
 
 
         }
@@ -721,7 +726,7 @@ namespace SESDAD
                     brokerTreeInterface.Add("parent", broker);
                     Dictionary<string, int> ipAndPortP = new Dictionary<string, int>();
                     ipAndPortP.Add(ip, port);
-                    brokerTreeIpAndPort.Add("sonL", ipAndPortP);
+                    brokerTreeIpAndPort.Add("parent", ipAndPortP);
                     break;
             }
         }
@@ -769,7 +774,7 @@ namespace SESDAD
         {
             if (string.Compare(logging,LoggingLevelType.FULL)==0)
             {
-                localPuppetMaster.informAction(action);
+                //localPuppetMaster.informAction(action);
             }
         }
 
