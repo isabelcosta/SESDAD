@@ -86,7 +86,7 @@ namespace SESDAD
         public void Callback(object sender, MessageArgs m)
         {
             string action = "SubEvent - " + this.myName + " received " + m.Topic + " : " + m.Body;
-            informPuppetMaster(action);
+            //informPuppetMaster(action);
             Console.WriteLine(action);
 
             messages.Add(new Tuple<string, string>(m.Topic, m.Body));

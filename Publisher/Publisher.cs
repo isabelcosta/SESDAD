@@ -107,8 +107,8 @@ namespace SESDAD
                 localBroker.receiveOrderToFlood(topicLocal, content, myName, myPort);
 
                 string action = "PubEvent - " + myName + " publishes " + topic + " : " + content; //TODO: as mensagens vao como PubEvent certo?
-                informPuppetMaster(action);
-                //Console.WriteLine(action);
+                //informPuppetMaster(action);
+                Console.WriteLine(action);
 
                 Thread.Sleep(intv_x_ms);
             }
@@ -136,7 +136,7 @@ namespace SESDAD
 
         private void informPuppetMaster(string action)
         {
-            localPuppetMaster.informAction(action);
+            //localPuppetMaster.informAction(action);
         }
 
 
