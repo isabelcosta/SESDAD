@@ -661,11 +661,18 @@ namespace SESDAD
         */
 
 
-        
+
 
 
         // PuppetMaster envia ordem para o broker para adicionar um subscriber que esta conectado
+
+
         public void addSubscriber(int port)
+        {
+            var t = new Thread(() => RealaddSubscriber(port));
+            t.Start();
+        }
+        public void RealaddSubscriber(int port)
         {
             Console.WriteLine("Subscriber adicionado " + port);
             SubscriberInterface subscriber = (SubscriberInterface)Activator.GetObject(typeof(SubscriberInterface), "tcp://localhost:" + port + "/sub");
@@ -675,12 +682,23 @@ namespace SESDAD
 
         public void addPublisher(int port)
         {
+            var t = new Thread(() => RealaddPublisher(port));
+            t.Start();
+        }
+        public void RealaddPublisher(int port)
+        {
             Console.WriteLine("Publisher adicionado " + port);
             PublisherInterface publisher = (PublisherInterface)Activator.GetObject(typeof(PublisherInterface), "tcp://localhost:" + port + "/pub");
             publishers.Add(publisher);
         }
 
-        public void addBroker(int port, string ip, string relation)
+        public void addBroker (int port, string ip, string relation)
+        {
+            var t = new Thread(() => RealaddBroker(port, ip, relation));
+            t.Start();
+        }
+
+        public void RealaddBroker(int port, string ip, string relation)
         {
             Console.WriteLine("Broker adicionado " + port);
             BrokerInterface broker = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), "tcp://" + ip + ":" + port + "/broker");
@@ -710,6 +728,12 @@ namespace SESDAD
 
         public void status()
         {
+            var t = new Thread(() => Realstatus());
+            t.Start();
+        }
+
+        public void Realstatus()
+        {
             Console.WriteLine("- Status:");
             Console.WriteLine("I'm Alive");
             foreach (int sub in subscribers.Keys)
@@ -720,14 +744,28 @@ namespace SESDAD
             Console.WriteLine("- End of Status.");
         }
 
-        public void registerLocalPuppetMaster(int port)
+        public void registerLocalPuppetMaster( int port)
+        {
+            var t = new Thread(() => RealregisterLocalPuppetMaster(port));
+            t.Start();
+        }
+
+        public void RealregisterLocalPuppetMaster(int port)
         {
             PuppetInterface puppetMaster = (PuppetInterface)Activator.GetObject(typeof(PuppetInterface), "tcp://localhost:" + port + "/puppet");
             localPuppetMaster = puppetMaster;
             Console.WriteLine("PuppetMasterLocal adicionado " + port);
         }
 
+
+
         private void informPuppetMaster(string action)
+        {
+            var t = new Thread(() => RealinformPuppetMaster(action));
+            t.Start();
+        }
+
+        private void RealinformPuppetMaster(string action)
         {
             if (string.Compare(logging,LoggingLevelType.FULL)==0)
             {
@@ -738,6 +776,13 @@ namespace SESDAD
 
         public void policies(string routing, string ordering, string logging)
         {
+            var t = new Thread(() => Realpolicies(routing, ordering, logging));
+            t.Start();
+        }
+
+
+        public void Realpolicies(string routing, string ordering, string logging)
+        {
             this.routing = routing;
             this.ordering = ordering;
             this.logging = logging;
@@ -745,10 +790,16 @@ namespace SESDAD
 
         public void giveInfo(string name, int port)
         {
-            myName = name;
-            myPort = port;
+            var t = new Thread(() => RealgiveInfo(name, port));
+            t.Start();
         }
 
-       
+        public void RealgiveInfo(string name, int port)
+        {
+            this.myPort = port;
+            this.myName = name;
+        }
+
+
     }
 }
