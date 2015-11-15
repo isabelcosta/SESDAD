@@ -74,9 +74,9 @@ namespace SESDAD
 
             //informar o local broker que subscreveu
             localBroker.subscribeRequest(topic, myPort);
-            //string action = "Subscribed to " + topic;
+            string action = "Subscribed to " + topic;
             
-            //informPuppetMaster(action);
+            informPuppetMaster(action);
             //Console.WriteLine(action);
         }
 

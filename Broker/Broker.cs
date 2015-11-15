@@ -826,12 +826,12 @@ namespace SESDAD
         {
             if (string.Compare(logging,LoggingLevelType.FULL)==0)
             {
-                /*
-                lock(localPuppetMaster)
+
+                lock (localPuppetMaster)
                 {
                     localPuppetMaster.informAction(action);
                 }
-                */
+
             }
         }
 
