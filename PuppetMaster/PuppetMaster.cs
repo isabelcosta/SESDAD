@@ -20,7 +20,7 @@ namespace SESDAD
             int portBro0 = 3330;
 
             Process procBro0 = new Process();
-            procBro0.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Broker\bin\Debug\Broker.exe";
+            procBro0.StartInfo.FileName = @"C:\Users\vicente\Documents\GitHubVisualStudio\SESDAD\Broker\bin\Debug\Broker.exe";
             procBro0.StartInfo.Arguments = portBro0.ToString();
             procBro0.Start();
 
@@ -35,7 +35,7 @@ namespace SESDAD
             int portBro1 = 3331;
 
             Process procBro1 = new Process();
-            procBro1.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Broker\bin\Debug\Broker.exe";
+            procBro1.StartInfo.FileName = @"C:\Users\vicente\Documents\GitHubVisualStudio\SESDAD\Broker\bin\Debug\Broker.exe";
             procBro1.StartInfo.Arguments = portBro1.ToString();
             procBro1.Start();
 
@@ -50,7 +50,7 @@ namespace SESDAD
             int portBro2 = 3332;
 
             Process procBro2 = new Process();
-            procBro2.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Broker\bin\Debug\Broker.exe";
+            procBro2.StartInfo.FileName = @"C:\Users\vicente\Documents\GitHubVisualStudio\SESDAD\Broker\bin\Debug\Broker.exe";
             procBro2.StartInfo.Arguments = portBro2.ToString();
             procBro2.Start();
 
@@ -67,7 +67,7 @@ namespace SESDAD
             int portBro3 = 3333;
 
             Process procBro3 = new Process();
-            procBro3.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Broker\bin\Debug\Broker.exe";
+            procBro3.StartInfo.FileName = @"C:\Users\vicente\Documents\GitHubVisualStudio\SESDAD\Broker\bin\Debug\Broker.exe";
             procBro3.StartInfo.Arguments = portBro3.ToString();
             procBro3.Start();
 
@@ -84,7 +84,7 @@ namespace SESDAD
             int portBro4 = 3334;
 
             Process procBro4 = new Process();
-            procBro4.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Broker\bin\Debug\Broker.exe";
+            procBro4.StartInfo.FileName = @"C:\Users\vicente\Documents\GitHubVisualStudio\SESDAD\Broker\bin\Debug\Broker.exe";
             procBro4.StartInfo.Arguments = portBro4.ToString();
             procBro4.Start();
 
@@ -101,7 +101,7 @@ namespace SESDAD
 
 
             Process procPub00 = new Process();
-            procPub00.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Publisher\bin\Debug\Publisher.exe";
+            procPub00.StartInfo.FileName = @"C:\Users\vicente\Documents\GitHubVisualStudio\SESDAD\Publisher\bin\Debug\Publisher.exe";
             procPub00.StartInfo.Arguments = portPub00.ToString();
             procPub00.Start();
 
@@ -119,7 +119,7 @@ namespace SESDAD
 
 
             Process procPub01 = new Process();
-            procPub01.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Publisher\bin\Debug\Publisher.exe";
+            procPub01.StartInfo.FileName = @"C:\Users\vicente\Documents\GitHubVisualStudio\SESDAD\Publisher\bin\Debug\Publisher.exe";
             procPub01.StartInfo.Arguments = portPub01.ToString();
             procPub01.Start();
 
@@ -138,7 +138,7 @@ namespace SESDAD
 
 
             Process procSub1 = new Process();
-            procSub1.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Subscriber\bin\Debug\Subscriber.exe";
+            procSub1.StartInfo.FileName = @"C:\Users\vicente\Documents\GitHubVisualStudio\SESDAD\Subscriber\bin\Debug\Subscriber.exe";
             procSub1.StartInfo.Arguments = portSub1.ToString();
             procSub1.Start();
 
@@ -156,7 +156,7 @@ namespace SESDAD
             int portSub2 = 1112;
 
             Process procSub2 = new Process();
-            procSub2.StartInfo.FileName = @"G:\vicente\tecnico\4ano\DAD\proj\testeInicial\Subscriber\Subscriber\bin\Debug\Subscriber.exe";
+            procSub2.StartInfo.FileName = @"C:\Users\vicente\Documents\GitHubVisualStudio\SESDAD\Subscriber\bin\Debug\Subscriber.exe";
             procSub2.StartInfo.Arguments = portSub2.ToString();
             procSub2.Start();
 
@@ -169,19 +169,19 @@ namespace SESDAD
 
 
 
-            broker0.policies(RoutingPolicyType.FLOODING, OrderingType.FIFO, LoggingLevelType.FULL);
+            broker0.policies(RoutingPolicyType.FLOODING, OrderingType.NO, LoggingLevelType.FULL);
             broker0.addPublisher(2220);
             broker0.addBroker(3331, "localhost", "sonL");
             broker0.addBroker(3332, "localhost", "sonR");
             broker0.giveInfo(nameBro0, portBro0);
 
-            broker1.policies(RoutingPolicyType.FLOODING, OrderingType.FIFO, LoggingLevelType.FULL);
+            broker1.policies(RoutingPolicyType.FLOODING, OrderingType.NO, LoggingLevelType.FULL);
             broker1.addPublisher(2221);
             broker1.addBroker(3330, "localhost", "parent");
             broker1.giveInfo(nameBro1, portBro1);
 
 
-            broker2.policies(RoutingPolicyType.FLOODING, OrderingType.FIFO, LoggingLevelType.FULL);
+            broker2.policies(RoutingPolicyType.FLOODING, OrderingType.NO, LoggingLevelType.FULL);
             broker2.addBroker(3330, "localhost", "parent");
             broker2.addBroker(3333, "localhost", "sonL");
             broker2.addBroker(3334, "localhost", "sonR");
@@ -189,35 +189,35 @@ namespace SESDAD
 
 
 
-            broker3.policies(RoutingPolicyType.FLOODING, OrderingType.FIFO, LoggingLevelType.FULL);
+            broker3.policies(RoutingPolicyType.FLOODING, OrderingType.NO, LoggingLevelType.FULL);
             broker3.addBroker(3332, "localhost", "parent");
             broker3.addSubscriber(1111);
             broker3.giveInfo(nameBro3, portBro3);
 
 
-            broker4.policies(RoutingPolicyType.FLOODING, OrderingType.FIFO, LoggingLevelType.FULL);
+            broker4.policies(RoutingPolicyType.FLOODING, OrderingType.NO, LoggingLevelType.FULL);
             broker4.addBroker(3332, "localhost", "parent");
             broker4.addSubscriber(1112);
             broker4.giveInfo(nameBro4, portBro4);
 
 
-            publisher00.policies(RoutingPolicyType.FLOODING, OrderingType.FIFO, LoggingLevelType.FULL);
+            publisher00.policies(RoutingPolicyType.FLOODING, OrderingType.NO, LoggingLevelType.FULL);
             publisher00.registerLocalBroker(3330);
             publisher00.giveInfo(namePub00, portPub00);
 
 
             
-            publisher01.policies(RoutingPolicyType.FLOODING, OrderingType.FIFO, LoggingLevelType.FULL);
+            publisher01.policies(RoutingPolicyType.FLOODING, OrderingType.NO, LoggingLevelType.FULL);
             publisher01.registerLocalBroker(3331);
             publisher01.giveInfo(namePub01, portPub01);
 
-            subscriber1.policies(RoutingPolicyType.FLOODING, OrderingType.FIFO, LoggingLevelType.FULL);
+            subscriber1.policies(RoutingPolicyType.FLOODING, OrderingType.NO, LoggingLevelType.FULL);
             subscriber1.registerLocalBroker(3333);
             subscriber1.giveInfo(nameSub1, portSub1);
 
 
 
-            subscriber2.policies(RoutingPolicyType.FLOODING, OrderingType.FIFO, LoggingLevelType.FULL);
+            subscriber2.policies(RoutingPolicyType.FLOODING, OrderingType.NO, LoggingLevelType.FULL);
             subscriber2.registerLocalBroker(3334);
             subscriber2.giveInfo(nameSub2, portSub2);
 

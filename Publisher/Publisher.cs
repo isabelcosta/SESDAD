@@ -139,7 +139,7 @@ namespace SESDAD
         }
         private void RealinformPuppetMaster(string action)
         {
-            localPuppetMaster.informAction(action);
+            //localPuppetMaster.informAction(action);
         }
 
 
