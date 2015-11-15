@@ -167,31 +167,24 @@ namespace SESDAD
         
 
         /*
-        public string brokerType(string ip, int port)
-        {
-            BrokerInterface broTest;
+        
+            Shared Objects
+            
+                - localPuppetMaster
+                - filteringTable
+                - delegates
+                - subscribers
+                - publishers
+                - brokerTreeInterface
+                - brokerTreeIpAndPort
+                - subscribersTopics
+                - fifoManager
+                - fifoQueue
+                
 
-            // check if broker is in the tree (parent, sonL ou sonR) 
-            //      and
-            //             get the type of broker
 
-            if ((brokerTree.TryGetValue(BROKER_SONL, out broTest)) && BrokerInterface.ReferenceEquals(broTest, brokerTree[BROKER_SONL]))
-            {
-                return BROKER_SONL;
-            }
-            else if ((brokerTree.TryGetValue(BROKER_SONR, out broTest)) && BrokerInterface.ReferenceEquals(broTest, brokerTree[BROKER_SONR]))
-            {
-                return BROKER_SONR;
-            }
-            else if ((brokerTree.TryGetValue(BROKER_PARENT, out broTest)) && BrokerInterface.ReferenceEquals(broTest, brokerTree[BROKER_PARENT]))
-            {
-                return BROKER_PARENT;
-            }
-            // should NEVER get here! (weird behavior)
-            //Console.WriteLine("WEIRD, maybe the broker isn't registred in the local tree (brokers DC to this broker)");
-            return UNKOWN;
-        }
-        */
+
+            */
 
         public string sourceType (string ip, int port)
         {
@@ -262,6 +255,8 @@ namespace SESDAD
 
 
             //                      1st                                                   2nd
+
+            // lock(brokerTreeInterface)
             if ((string.Compare(sourceType, BROKER_SONR) != 0) &&
                                     brokerTreeInterface.TryGetValue(BROKER_SONR, out broTest) &&
                                                     canFilterFlood(sourceType, topic, BROKER_SONR))
