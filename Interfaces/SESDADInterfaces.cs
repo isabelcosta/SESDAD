@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using System.Threading;
 
 namespace SESDADInterfaces
 {
@@ -71,7 +71,7 @@ namespace SESDADInterfaces
         public string Body { get { return body; } }
         public string Topic { get { return topic; } }
     }
-
+    
     public interface PublisherInterface
     {
         void receiveOrderToPublish(string topic, int numeberOfEvents, int interval_x_ms);
@@ -116,15 +116,15 @@ namespace SESDADInterfaces
     }
     public interface BrokerInterface
     {
-        void receiveOrderToFlood(string topic, string message, object source);
+        void receiveOrderToFlood(string topic, string message, string ip, int port);
 
         void subscribeRequest(string topic, int port);
 
         void unSubscribeRequest(string topic, int port);
 
-        void filterSubscription(string topic, BrokerInterface source);
+        void filterSubscription(string topic, string ip, int port);
 
-        void filterUnsubscription(string topic, BrokerInterface source);
+        void filterUnsubscription(string topic, string ip, int port);
 
         // network config
         void addSubscriber(int port);

@@ -10,6 +10,7 @@ using System.Runtime.Serialization.Formatters;
 
 namespace SESDAD
 {
+
     class Publisher
     {
         [STAThread]
@@ -37,7 +38,7 @@ namespace SESDAD
         }
     }
 
-
+    [Serializable]
     class PublisherServices: MarshalByRefObject, PublisherInterface
     {
 
@@ -56,65 +57,58 @@ namespace SESDAD
         /*
         message
             */
-        string topic;
-        int numberOfEvents;
-        int interval_x_ms;
         List<string> topicsPublishing = new List<string>();
 
 
-
         public void registerLocalPuppetMaster(string name, int port)
+        {
+            var t = new Thread(() => RealregisterLocalPuppetMaster(name, port));
+            t.Start();
+        }
+
+        public void RealregisterLocalPuppetMaster(string name, int port)
         {
             Console.WriteLine("PuppetMasterLocal adicionado " + port);
             PuppetInterface puppetMaster = (PuppetInterface)Activator.GetObject(typeof(PuppetInterface), "tcp://localhost:" + port + "/puppet");
             localPuppetMaster = puppetMaster;
         }
 
-
         public void receiveOrderToPublish(string topic, int numberOfEvents, int interval_x_ms)
         {
-            // Formato da mensagem : PubName SeqNumber/Total
-            this.numberOfEvents = numberOfEvents;
-            this.topic = topic;
-            this.interval_x_ms = interval_x_ms;
-
-            if (!topicsPublishing.Contains(topic))
-            {
-                topicsPublishing.Add(topic);
-            }
-
-            ThreadStart ts = new ThreadStart(this.publish);
-            Thread t = new Thread(ts);
+            var t = new Thread(() => RealreceiveOrderToPublish(topic, numberOfEvents, interval_x_ms));
             t.Start();
-
-
         }
-
-        public void publish()
+        public void RealreceiveOrderToPublish(string topic, int numberOfEvents, int interval_x_ms)
         {
-            int numOfEv = this.numberOfEvents;
-            int intv_x_ms = this.interval_x_ms;
-            string topicLocal = this.topic;
-            string content;
+            // Formato da mensagem : PubName SeqNumber/Total
 
-            for (int i = 1; i <= numOfEv; i++)
+            string content;
+            for (int i = 1; i <= numberOfEvents; i++)
             {
-                content = myName + " " + i + "/" + numOfEv;
+                content = myName + " " + i + "/" + numberOfEvents;
                                                 
                                             // Exe: Publisher1 1/10
-                localBroker.receiveOrderToFlood(topicLocal, content, this);
+                                            // localBroker fica a null de vez em quando
+                localBroker.receiveOrderToFlood(topic, content, myName, myPort);
 
                 string action = "PubEvent - " + myName + " publishes " + topic + " : " + content; //TODO: as mensagens vao como PubEvent certo?
                 informPuppetMaster(action);
                 //Console.WriteLine(action);
 
-                Thread.Sleep(intv_x_ms);
+                Thread.Sleep(interval_x_ms);
             }
-            topicsPublishing.Remove(topicLocal);
+            topicsPublishing.Remove(topic);
 
         }
 
+
         public void registerLocalBroker(int BrokerPort)
+        {
+            var t = new Thread(() => RealregisterLocalBroker(BrokerPort));
+            t.Start();
+        }
+
+        public void RealregisterLocalBroker(int BrokerPort)
         {
             Console.WriteLine("Broker local registado no Publisher: " + "tcp://localhost:" + BrokerPort + "/broker");
             localBroker =
@@ -123,6 +117,12 @@ namespace SESDAD
         }
 
         public void status()
+        {
+            var t = new Thread(() => Realstatus());
+            t.Start();
+        }
+
+        public void Realstatus()
         {
             Console.WriteLine("- Status:");
             foreach (string top in topicsPublishing)
@@ -134,20 +134,39 @@ namespace SESDAD
 
         private void informPuppetMaster(string action)
         {
-            localPuppetMaster.informAction(action);
+            var t = new Thread(() => RealinformPuppetMaster(action));
+            t.Start();
         }
-
-
-        public void giveInfo(string name, int port)
+        private void RealinformPuppetMaster(string action)
         {
-            myName = name;
-            myPort = port;
+            //localPuppetMaster.informAction(action);
         }
+
+
         public void policies(string routing, string ordering, string logging)
+        {
+            var t = new Thread(() => Realpolicies(routing, ordering, logging));
+            t.Start();
+        }
+
+
+        public void Realpolicies(string routing, string ordering, string logging)
         {
             this.routing = routing;
             this.ordering = ordering;
             this.logging = logging;
+        }
+
+        public void giveInfo(string name, int port)
+        {
+            var t = new Thread(() => RealgiveInfo(name, port));
+            t.Start();
+        }
+
+        public void RealgiveInfo(string name, int port)
+        {
+            this.myPort = port;
+            this.myName = name;
         }
     }
 

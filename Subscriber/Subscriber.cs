@@ -34,7 +34,7 @@ namespace SESDAD
         }
     }
 
-
+    [Serializable]
     class SubscriberServices : MarshalByRefObject, SubscriberInterface
     {
         BrokerInterface localBroker;
@@ -51,9 +51,20 @@ namespace SESDAD
         List<string> subscriptions = new List<string>();
         List<Tuple<string,string>> messages = new List<Tuple<string, string>>();
 
+        /*
+        Thread Methods
+            */
+
+
+        public void receiveOrderToSubscribe(string topic)
+        {
+
+            var t = new Thread(() => RealreceiveOrderToSubscribe(topic));
+            t.Start();
+        }
 
         //invocado pelo PuppetMaster para subscrever a um topico e informar o local broker
-        public void receiveOrderToSubscribe(string topic)
+        public void RealreceiveOrderToSubscribe(string topic)
         {
             if (topic == null || topic.Equals(""))
                 throw new Exception("topic is empty");
@@ -71,6 +82,12 @@ namespace SESDAD
 
         public void receiveOrderToUnSubscribe(string topic)
         {
+            var t = new Thread(() => RealreceiveOrderToUnSubscribe(topic));
+            t.Start();
+        }
+
+        public void RealreceiveOrderToUnSubscribe(string topic)
+        {
             //adicionar as subscricoes a lista
             subscriptions.Remove(topic);
 
@@ -85,16 +102,26 @@ namespace SESDAD
 
         public void Callback(object sender, MessageArgs m)
         {
+            var t = new Thread(() => RealCallback(sender, m));
+            t.Start();
+        }
+
+        public void RealCallback(object sender, MessageArgs m)
+        {
             string action = "SubEvent - " + this.myName + " received " + m.Topic + " : " + m.Body;
-            informPuppetMaster(action);
-            //Console.WriteLine(action);
+            //informPuppetMaster(action);
+            Console.WriteLine(action);
 
             messages.Add(new Tuple<string, string>(m.Topic, m.Body));
         }
 
-        
+        public void registerLocalBroker(int brokerPort)
+        {
+            var t = new Thread(() => RealregisterLocalBroker(brokerPort));
+            t.Start();
+        }
         //  invocado pelo PuppetMaster para registar o broker local 
-        public void registerLocalBroker(int brokerPort) 
+        public void RealregisterLocalBroker(int brokerPort) 
         {
             Console.WriteLine("Broker local registado no Subscriber: " + "tcp://localhost:" + brokerPort + "/broker");
             localBroker =
@@ -115,6 +142,11 @@ namespace SESDAD
 
         public void status()
         {
+            var t = new Thread(() => Realstatus());
+            t.Start();
+        }
+        public void Realstatus()
+        {
             Console.WriteLine("- Status:");
             foreach (string sub in subscriptions)
             {
@@ -124,6 +156,12 @@ namespace SESDAD
         }
 
         public void registerLocalPuppetMaster(string name, int port)
+        {
+            var t = new Thread(() => RealregisterLocalPuppetMaster(name, port));
+            t.Start();
+        }
+
+        public void RealregisterLocalPuppetMaster(string name, int port)
         {
             Console.WriteLine("PuppetMasterLocal adicionado " + port);
             this.myName = name;
@@ -138,8 +176,14 @@ namespace SESDAD
                 localPuppetMaster.informAction(action);
             //}
         }
-
         public void policies(string routing, string ordering, string logging)
+        {
+            var t = new Thread(() => Realpolicies(routing, ordering, logging));
+            t.Start();
+        }
+
+
+        public void Realpolicies(string routing, string ordering, string logging)
         {
             this.routing = routing;
             this.ordering = ordering;
@@ -147,6 +191,12 @@ namespace SESDAD
         }
 
         public void giveInfo(string name, int port)
+        {
+            var t = new Thread(() => RealgiveInfo(name, port));
+            t.Start();
+        }
+
+        public void RealgiveInfo(string name, int port)
         {
             this.myPort = port;
             this.myName = name;
