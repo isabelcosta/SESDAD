@@ -308,7 +308,7 @@ namespace SESDAD
             }
             }
             string action = "BroEvent - " + myName + " Flooded message on topic " + topic;
-            //informPuppetMaster(action);
+            informPuppetMaster(action);
             Console.WriteLine(action);
         }
         

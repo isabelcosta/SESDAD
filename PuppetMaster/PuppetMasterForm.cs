@@ -318,7 +318,7 @@ namespace SESDAD
 
         private void addNeighboursToMyBroker()
         {
-            String[] lines = System.IO.File.ReadAllLines(this.configPuppetPath);
+            String[] lines = System.IO.File.ReadAllLines(this.configFilePath);
 
             String[] blankSpace = { " " };
 
@@ -339,6 +339,7 @@ namespace SESDAD
                     }
                     if (myBrokerinfo.ContainsKey(BrokerNeighbours.SONR)) //se o broker for filho direito do meu broker
                     {
+
                         if ((String.Compare(parsed[5], myBrokerinfo[BrokerNeighbours.SONR]) == 0) && (String.Compare(parsed[3], ProcessType.BROKER) == 0))
                         {
                             myBroker.addBroker(int.Parse(brokerPort), brokerIp, BrokerNeighbours.SONR);

@@ -74,9 +74,9 @@ namespace SESDAD
 
             //informar o local broker que subscreveu
             localBroker.subscribeRequest(topic, myPort);
-            string action = "Subscribed to " + topic;
+            //string action = "Subscribed to " + topic;
             
-            informPuppetMaster(action);
+            //informPuppetMaster(action);
             //Console.WriteLine(action);
         }
 
@@ -109,7 +109,7 @@ namespace SESDAD
         public void RealCallback(object sender, MessageArgs m)
         {
             string action = "SubEvent - " + this.myName + " received " + m.Topic + " : " + m.Body;
-            //informPuppetMaster(action);
+            informPuppetMaster(action);
             Console.WriteLine(action);
 
             messages.Add(new Tuple<string, string>(m.Topic, m.Body));
