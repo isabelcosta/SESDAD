@@ -653,13 +653,13 @@ namespace SESDAD
                     if (filteringTable[relation].containsTopic(topic))
                     {
                         filteringTable[relation].addSubNumber(topic);
-                        Console.WriteLine(topic + " adicionou Sub Number " + filteringTable[relation].getTopicDict()[topic]);
+                        Console.WriteLine(topic + " adicionou " + topic + " Sub Number " + filteringTable[relation].getTopicDict()[topic]);
                     }
                     else
                     {
                         filteringTable[relation].AddTopic(topic);
                         filterSubscriptionFlood(topic, myName, myPort);
-                        Console.WriteLine(topic + " novo LOL " + filteringTable[relation].getTopicDict()[topic]);
+                        Console.WriteLine(topic + " novo " + topic + " LOL " + filteringTable[relation].getTopicDict()[topic]);
 
                     }
                 }
@@ -670,7 +670,7 @@ namespace SESDAD
                     filteringTable.TryAdd(relation, testTable);
                     //filteringTable[relation].AddTopic(topic);
                     filterSubscriptionFlood(topic, myName, myPort);
-                    Console.WriteLine(topic + " novo topico " + filteringTable[relation].getTopicDict()[topic]);
+                    Console.WriteLine(topic + " novo  " + topic + " topico " + filteringTable[relation].getTopicDict()[topic]);
 
                 }
             }
