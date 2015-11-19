@@ -139,6 +139,7 @@ namespace SESDAD
 
         string myName;
         int myPort;
+        string myIp;
 
         PuppetInterface localPuppetMaster;
 
@@ -650,16 +651,23 @@ namespace SESDAD
             {
                 if (filteringTable.TryGetValue(relation, out testTable))
                 {
+                    foreach (string rel in filteringTable.Keys)
+                    {
+                        foreach (var top in filteringTable[rel].getTopicDict().Keys)
+                        {
+                            Console.WriteLine("relation : {0} and topic {1}", rel, top );
+                        }
+                    }
                     if (filteringTable[relation].containsTopic(topic))
                     {
                         filteringTable[relation].addSubNumber(topic);
-                        Console.WriteLine(topic + " adicionou " + topic + " Sub Number " + filteringTable[relation].getTopicDict()[topic]);
+                        Console.WriteLine(relation + " adicionou " + topic + " Sub Number " + filteringTable[relation].getTopicDict()[topic]);
                     }
                     else
                     {
                         filteringTable[relation].AddTopic(topic);
-                        filterSubscriptionFlood(topic, myName, myPort);
-                        Console.WriteLine(topic + " novo " + topic + " LOL " + filteringTable[relation].getTopicDict()[topic]);
+                        filterSubscriptionFlood(topic, ip, port);
+                        Console.WriteLine(relation + " novo " + topic + " LOL " + filteringTable[relation].getTopicDict()[topic]);
 
                     }
                 }
@@ -669,8 +677,8 @@ namespace SESDAD
                     testTable.AddTopic(topic);
                     filteringTable.TryAdd(relation, testTable);
                     //filteringTable[relation].AddTopic(topic);
-                    filterSubscriptionFlood(topic, myName, myPort);
-                    Console.WriteLine(topic + " novo  " + topic + " topico " + filteringTable[relation].getTopicDict()[topic]);
+                    filterSubscriptionFlood(topic, ip, port);
+                    Console.WriteLine(relation + " novo  " + topic + " topico " + filteringTable[relation].getTopicDict()[topic]);
 
                 }
             }
