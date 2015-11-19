@@ -586,32 +586,55 @@ namespace SESDAD
             //suspend(process)
             if (isMaster())
             {
-                slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToFreeze(processName);
+                if (LocalProcesses.ContainsKey(processName))
+                {
+                    if (!LocalProcesses[processName].HasExited)
+                    {
+                        LocalProcesses[processName].Suspend();
+                    }
+                }
+                else
+                {
+                    slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToFreeze(processName);
+                }
             }
             else
             {
                 if (LocalProcesses.ContainsKey(processName))
                 {
-                    //LocalProcesses[processName].Suspend();
+                    if (!LocalProcesses[processName].HasExited)
+                    {
+                        LocalProcesses[processName].Suspend();
+                    }
                 }
-                else { return; } // TALVEZ DESNECESSARIO
             }
         }
 
         public void unfreeze(string processName)
-        {
-            //resume(process)
+        {       
             if (isMaster())
             {
-                slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToUnfreeze(processName);
+                if (LocalProcesses.ContainsKey(processName))
+                {
+                    if (!LocalProcesses[processName].HasExited)
+                    {
+                        LocalProcesses[processName].Resume();
+                    }
+                }
+                else
+                {
+                    slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToUnfreeze(processName);
+                }
             }
             else
             {
                 if (LocalProcesses.ContainsKey(processName))
                 {
-                    //LocalProcesses[processName].ResumeThread();
+                    if (!LocalProcesses[processName].HasExited)
+                    {
+                        LocalProcesses[processName].Resume();
+                    }
                 }
-                else { return; } // TALVEZ DESNECESSARIO
             }
         }
 
