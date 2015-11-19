@@ -6,6 +6,7 @@ using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using SESDADInterfaces;
 using System.Runtime.Serialization.Formatters;
 // ReSharper disable InconsistentNaming
@@ -67,9 +68,10 @@ namespace SESDAD
 
     class TopicsTable
     {
-        Dictionary<string, int> topics = new Dictionary<string, int>();
+        ConcurrentDictionary<string, int> topics = new ConcurrentDictionary<string, int>();
 
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public int addSubNumber(string topic)
         {
             if (topics.ContainsKey(topic))
@@ -84,6 +86,8 @@ namespace SESDAD
                 return -1;
             }
         }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public int remSubNumber(string topic)
         {
             if (topics.ContainsKey(topic))
@@ -98,6 +102,7 @@ namespace SESDAD
             }
         }
  
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool containsTopic (string topicNew)
         {
             foreach (string topicList in topics.Keys)
@@ -109,29 +114,28 @@ namespace SESDAD
             }
             return false;
         }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void AddTopic(string topic)
         {
-            topics.Add(topic, 1);
+            topics.TryAdd(topic, 1);
         }
 
-        public Dictionary<string, int> getTopicDict()
+        /*
+        public ConcurrentDictionary<string, int> getTopicDict()
         {
-            return topics;
+            return this.topics;
         }
+        */
     }
     [Serializable]
     class BrokerServices : MarshalByRefObject, BrokerInterface
     {
 
-        const string PUBLISHER = "publisher";
-        const string SUBSCRIBER = "subscriber";
-        const string BROKER = "broker";
-
         const string BROKER_SONL = "sonL";
         const string BROKER_SONR = "sonR";
         const string BROKER_PARENT = "parent";
 
-        const string UNKOWN = "unkown";
 
         /* Policies*/
         string routing;
@@ -145,7 +149,7 @@ namespace SESDAD
 
         //Filtering
         //filteringTable{relation, list of topics to flood there}
-        Dictionary<string, TopicsTable> filteringTable = new Dictionary<string, TopicsTable>();
+        ConcurrentDictionary<string, TopicsTable> filteringTable = new ConcurrentDictionary<string, TopicsTable>();
         
         Dictionary<string, List<SubscriberRequestID>> delegates = new Dictionary<string, List<SubscriberRequestID>>();
 
@@ -156,7 +160,7 @@ namespace SESDAD
         //List<BrokerInterface> brokers = new List<BrokerInterface>();
 
         Dictionary<string, BrokerInterface> brokerTreeInterface = new Dictionary<string, BrokerInterface>();
-        ConcurrentDictionary<string, ConcurrentDictionary<string, int>> brokerTreeIpAndPort = new ConcurrentDictionary<string, ConcurrentDictionary<string, int>>();
+        Dictionary<string, Tuple<string, int>> brokerTreeIpAndPort = new Dictionary<string, Tuple<string, int>>();
 
 
         Dictionary<SubscriberInterface, List<string>> subscribersTopics = new Dictionary<SubscriberInterface, List<string>>();
@@ -192,47 +196,27 @@ namespace SESDAD
 
             lock (brokerTreeIpAndPort)
             {
+                Tuple<string, int> ipAndPort = new Tuple<string, int>(ip, port);
+
                 if (brokerTreeIpAndPort.ContainsKey("sonL"))
                 {
-                    Console.WriteLine(brokerTreeIpAndPort["sonL"][ip] + "LOOOOOOOOOOOOLL");
-                    if(brokerTreeIpAndPort["sonL"].ContainsKey(ip))
+                    if (brokerTreeIpAndPort["sonL"].Item2 == port)
                     {
-                        Console.WriteLine("LOLsonL ");
-                        Thread.Sleep(5000);
-                        if (brokerTreeIpAndPort["sonL"][ip] == port)
-                        {
-                            return "sonL";
-                        }
+                        return "sonL";
                     }
                 }
                 if (brokerTreeIpAndPort.ContainsKey("sonR"))
                 {
-                    Console.WriteLine(brokerTreeIpAndPort["sonR"][ip] + "LOOOOOOOOOOOOLR");
-
-                    if (brokerTreeIpAndPort["sonR"].ContainsKey(ip))
+                    if (brokerTreeIpAndPort["sonR"].Item2 == port)
                     {
-                    Console.WriteLine("LOLsonR ");
-                        Thread.Sleep(5000);
-
-                        if (brokerTreeIpAndPort["sonR"][ip] == port)
-                        {
-                            return "sonR";
-                        }
+                        return "sonR";
                     }
                 }
                 if (brokerTreeIpAndPort.ContainsKey("parent"))
                 {
-                    Console.WriteLine(brokerTreeIpAndPort["parent"][ip] + "LOOOOOOOOOOOOLP");
-
-                    if (brokerTreeIpAndPort["parent"].ContainsKey(ip))
+                    if (brokerTreeIpAndPort["parent"].Item2 == port)
                     {
-                    Console.WriteLine("LOLparent");
-                        Thread.Sleep(5000);
-
-                        if (brokerTreeIpAndPort["parent"][ip] == port)
-                        {
-                            return "parent";
-                        }
+                        return "parent";
                     }
                 }
             }
@@ -625,7 +609,6 @@ namespace SESDAD
                 {
                     do
                     {
-                        //Console.WriteLine("source type " + source);
                         flood(source, topic, message);
                         if (getFromQueue(pubName + topic, msg.Item1, ref message))
                         {
@@ -645,8 +628,6 @@ namespace SESDAD
             }
             else
             {
-                //Console.WriteLine("source type " + source);
-
                 flood(source, topic, message);
             }
 
@@ -685,8 +666,10 @@ namespace SESDAD
                 }
                 else
                 {
-                    filteringTable.Add(relation, testTable);
-                    filteringTable[relation].AddTopic(topic);
+                    testTable = new TopicsTable();
+                    testTable.AddTopic(topic);
+                    filteringTable.TryAdd(relation, testTable);
+                    //filteringTable[relation].AddTopic(topic);
                     filterSubscriptionFlood(topic, myName, myPort);
                 }
             }
@@ -794,22 +777,18 @@ namespace SESDAD
                     {
                         case "sonL":
                             brokerTreeInterface.Add("sonL", broker);
-                            ConcurrentDictionary<string, int> ipAndPortL = new ConcurrentDictionary<string, int>();
-                            ipAndPortL.TryAdd(ip, port);
-                            brokerTreeIpAndPort.TryAdd("sonL",ipAndPortL);
-                            Console.WriteLine("port "+ port + " " + brokerTreeIpAndPort["sonL"][ip]);
+                            Tuple<string, int> ipAndPortL = new Tuple<string, int>(ip, port);
+                            brokerTreeIpAndPort.Add("sonL",ipAndPortL);
                             break;
                         case "sonR":
                             brokerTreeInterface.Add("sonR", broker);
-                            ConcurrentDictionary<string, int> ipAndPortR = new ConcurrentDictionary<string, int>();
-                            ipAndPortR.TryAdd(ip, port);
-                            brokerTreeIpAndPort.TryAdd("sonR", ipAndPortR);
+                            Tuple<string, int> ipAndPortR = new Tuple<string, int>(ip, port);
+                            brokerTreeIpAndPort.Add("sonR", ipAndPortR);
                             break;
                         case "parent":
                             brokerTreeInterface.Add("parent", broker);
-                            ConcurrentDictionary<string, int> ipAndPortP = new ConcurrentDictionary<string, int>();
-                            ipAndPortP.TryAdd(ip, port);
-                            brokerTreeIpAndPort.TryAdd("parent", ipAndPortP);
+                            Tuple<string, int> ipAndPortP = new Tuple<string, int>(ip, port);
+                            brokerTreeIpAndPort.Add("parent", ipAndPortP);
                             break;
                     }
                 }

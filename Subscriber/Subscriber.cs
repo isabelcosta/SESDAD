@@ -110,7 +110,7 @@ namespace SESDAD
         {
             string action = "SubEvent - " + this.myName + " received " + m.Topic + " : " + m.Body;
             informPuppetMaster(action);
-            Console.WriteLine(action);
+            //Console.WriteLine(action);
 
             messages.Add(new Tuple<string, string>(m.Topic, m.Body));
         }

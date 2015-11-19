@@ -93,7 +93,7 @@ namespace SESDAD
 
                 string action = "PubEvent - " + myName + " publishes " + topic + " : " + content; //TODO: as mensagens vao como PubEvent certo?
                 informPuppetMaster(action);
-                Console.WriteLine(action);
+                //Console.WriteLine(action);
 
                 Thread.Sleep(interval_x_ms);
             }
