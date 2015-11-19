@@ -137,7 +137,6 @@ namespace SESDAD
         string ordering;
         string logging;
 
-        string myName;
         int myPort;
         string myIp;
 
@@ -264,21 +263,21 @@ namespace SESDAD
                                                         canFilterFlood(sourceType, topic, BrokerNeighbours.SONR))
                 {
                     //lock broker??
-                    brokerTreeInterface[BrokerNeighbours.SONR].receiveOrderToFlood(topic, message, myName, myPort);
+                    brokerTreeInterface[BrokerNeighbours.SONR].receiveOrderToFlood(topic, message, myIp, myPort);
                 }
                 if ((String.CompareOrdinal(sourceType, BrokerNeighbours.SONL) != 0) &&
                                     brokerTreeInterface.TryGetValue(BrokerNeighbours.SONL, out broTest) &&
                                                         canFilterFlood(sourceType, topic, BrokerNeighbours.SONL))
                 {
                     //lock broker??
-                    brokerTreeInterface[BrokerNeighbours.SONL].receiveOrderToFlood(topic, message, myName, myPort);
+                    brokerTreeInterface[BrokerNeighbours.SONL].receiveOrderToFlood(topic, message, myIp, myPort);
                 }
                 if ((String.CompareOrdinal(sourceType, BrokerNeighbours.PARENT) != 0) &&
                                     brokerTreeInterface.TryGetValue(BrokerNeighbours.PARENT, out broTest) &&
                                                         canFilterFlood(sourceType, topic, BrokerNeighbours.PARENT))
                 {
                     //lock broker??
-                    brokerTreeInterface[BrokerNeighbours.PARENT].receiveOrderToFlood(topic, message, myName, myPort);
+                    brokerTreeInterface[BrokerNeighbours.PARENT].receiveOrderToFlood(topic, message, myIp, myPort);
                 }
             }
 
@@ -301,7 +300,7 @@ namespace SESDAD
                 }
             }
             }
-            string action = "BroEvent - " + myName + " Flooded message on topic " + topic;
+            string action = "BroEvent - " + myIp + " Flooded message on topic " + topic;
             informPuppetMaster(action);
             //Console.WriteLine(action);
         }
@@ -478,7 +477,7 @@ namespace SESDAD
                 }
             }
 
-            filterSubscriptionFlood(topic, myName, myPort);
+            filterSubscriptionFlood(topic, myIp, myPort);
 
 
             //string action = "BroEvent Added subscriber at port " + port + " for the topic " + topic;
@@ -520,15 +519,36 @@ namespace SESDAD
                 {
                     if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONL, out broTest) && (String.CompareOrdinal(relation, BrokerNeighbours.SONL) != 0))
                     {
-                        brokerTreeInterface[BrokerNeighbours.SONL].filterSubscription(topic, myName, myPort);
+                        if (myPort == 3333)
+                        {
+                            Console.WriteLine("");
+                            Console.WriteLine("myPort {0} and myIp {1}", myPort, myIp);
+                            Console.WriteLine("sent to SONL " + topic);
+                            Console.WriteLine("");
+                        }
+                        brokerTreeInterface[BrokerNeighbours.SONL].filterSubscription(topic, myIp, myPort);
                     }
                     if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONR, out broTest) && (String.CompareOrdinal(relation, BrokerNeighbours.SONR) != 0))
                     {
-                        brokerTreeInterface[BrokerNeighbours.SONR].filterSubscription(topic, myName, myPort);
+                        if (myPort == 3333)
+                        {
+                            Console.WriteLine("");
+                            Console.WriteLine("myPort {0} and myIp {1}", myPort, myIp);
+                            Console.WriteLine("sent to SONR " + topic);
+                            Console.WriteLine("");
+                        }
+                        brokerTreeInterface[BrokerNeighbours.SONR].filterSubscription(topic, myIp, myPort);
                     }
                     if (brokerTreeInterface.TryGetValue(BrokerNeighbours.PARENT, out broTest) && (String.CompareOrdinal(relation, BrokerNeighbours.PARENT) != 0))
                     {
-                        brokerTreeInterface[BrokerNeighbours.PARENT].filterSubscription(topic, myName, myPort);
+                        if (myPort == 3333)
+                        {
+                            Console.WriteLine("");
+                            Console.WriteLine("myPort {0} and myIp {1}", myPort, myIp);
+                            Console.WriteLine("sent to PARENT " + topic);
+                            Console.WriteLine("");
+                        }
+                        brokerTreeInterface[BrokerNeighbours.PARENT].filterSubscription(topic, myIp, myPort);
                     }
                 }
             }
@@ -549,15 +569,16 @@ namespace SESDAD
                 {
                     if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONL, out broTest) && (string.Compare(relation, BrokerNeighbours.SONL) != 0))
                     {
-                        brokerTreeInterface[BrokerNeighbours.SONL].filterUnsubscription(topic, myName, myPort);
+                        
+                        brokerTreeInterface[BrokerNeighbours.SONL].filterUnsubscription(topic, myIp, myPort);
                     }
                     if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONR, out broTest) && (string.Compare(relation, BrokerNeighbours.SONR) != 0))
                     {
-                        brokerTreeInterface[BrokerNeighbours.SONR].filterUnsubscription(topic, myName, myPort);
+                        brokerTreeInterface[BrokerNeighbours.SONR].filterUnsubscription(topic, myIp, myPort);
                     }
                     if (brokerTreeInterface.TryGetValue(BrokerNeighbours.PARENT, out broTest) && (string.Compare(relation, BrokerNeighbours.PARENT) != 0))
                     {
-                        brokerTreeInterface[BrokerNeighbours.PARENT].filterUnsubscription(topic, myName, myPort);
+                        brokerTreeInterface[BrokerNeighbours.PARENT].filterUnsubscription(topic, myIp, myPort);
                     }
                 }
             }
@@ -666,7 +687,7 @@ namespace SESDAD
                     else
                     {
                         filteringTable[relation].AddTopic(topic);
-                        filterSubscriptionFlood(topic, ip, port);
+                        filterSubscriptionFlood(topic, myIp, myPort);
                         Console.WriteLine(relation + " novo " + topic + " LOL " + filteringTable[relation].getTopicDict()[topic]);
 
                     }
@@ -677,7 +698,7 @@ namespace SESDAD
                     testTable.AddTopic(topic);
                     filteringTable.TryAdd(relation, testTable);
                     //filteringTable[relation].AddTopic(topic);
-                    filterSubscriptionFlood(topic, ip, port);
+                    filterSubscriptionFlood(topic, myIp, myPort);
                     Console.WriteLine(relation + " novo  " + topic + " topico " + filteringTable[relation].getTopicDict()[topic]);
 
                 }
@@ -856,16 +877,16 @@ namespace SESDAD
             this.logging = logging;
         }
 
-        public void giveInfo(string name, int port)
+        public void giveInfo(string ip, int port)
         {
-            var t = new Thread(() => RealgiveInfo(name, port));
+            var t = new Thread(() => RealgiveInfo(ip, port));
             t.Start();
         }
 
-        public void RealgiveInfo(string name, int port)
+        public void RealgiveInfo(string ip, int port)
         {
             this.myPort = port;
-            this.myName = name;
+            this.myIp = ip;
         }
 
 
