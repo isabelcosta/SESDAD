@@ -220,7 +220,7 @@ namespace SESDAD
         }
 
         //Button Run Script method - run every line of script and cleans the text box
-        private void bt_Script_Click(object sender, EventArgs e)
+        private async void bt_Script_Click(object sender, EventArgs e)
         {
             String[] scriptLines = tb_Script.Lines;
 
@@ -245,13 +245,8 @@ namespace SESDAD
                 switch (parsedLine[0]) {
                     case "Wait":
                         addMessageToLog(line);
-                        int timeToSleep = 0;
-                        try {
-                            timeToSleep = Int32.Parse(parsedLine[1]);
-                            Thread.Sleep(timeToSleep);
-                        }
-                        catch (FormatException) { break; }
-                        
+                        int timeToSleep = Int32.Parse(parsedLine[1]);
+                        await Task.Delay(timeToSleep);
                         break;
 
                     default:
@@ -591,32 +586,55 @@ namespace SESDAD
             //suspend(process)
             if (isMaster())
             {
-                slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToFreeze(processName);
+                if (LocalProcesses.ContainsKey(processName))
+                {
+                    if (!LocalProcesses[processName].HasExited)
+                    {
+                        LocalProcesses[processName].Suspend();
+                    }
+                }
+                else
+                {
+                    slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToFreeze(processName);
+                }
             }
             else
             {
                 if (LocalProcesses.ContainsKey(processName))
                 {
-                    //LocalProcesses[processName].Suspend();
+                    if (!LocalProcesses[processName].HasExited)
+                    {
+                        LocalProcesses[processName].Suspend();
+                    }
                 }
-                else { return; } // TALVEZ DESNECESSARIO
             }
         }
 
         public void unfreeze(string processName)
-        {
-            //resume(process)
+        {       
             if (isMaster())
             {
-                slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToUnfreeze(processName);
+                if (LocalProcesses.ContainsKey(processName))
+                {
+                    if (!LocalProcesses[processName].HasExited)
+                    {
+                        LocalProcesses[processName].Resume();
+                    }
+                }
+                else
+                {
+                    slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToUnfreeze(processName);
+                }
             }
             else
             {
                 if (LocalProcesses.ContainsKey(processName))
                 {
-                    //LocalProcesses[processName].ResumeThread();
+                    if (!LocalProcesses[processName].HasExited)
+                    {
+                        LocalProcesses[processName].Resume();
+                    }
                 }
-                else { return; } // TALVEZ DESNECESSARIO
             }
         }
 
