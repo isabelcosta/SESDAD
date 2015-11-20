@@ -78,11 +78,24 @@ namespace SESDAD
             var t = new Thread(() => RealreceiveOrderToPublish(topic, numberOfEvents, interval_x_ms));
             t.Start();
         }
+
         public void RealreceiveOrderToPublish(string topic, int numberOfEvents, int interval_x_ms)
         {
             // Formato da mensagem : PubName SeqNumber/Total
 
             string content;
+
+            //Fifo Testing
+            // content = myName + " " + 2 + "/" + numberOfEvents;
+            // localBroker.receiveOrderToFlood(topic, content, myName, myPort);
+            // content = myName + " " + 3 + "/" + numberOfEvents;
+            // localBroker.receiveOrderToFlood(topic, content, myName, myPort);
+            // content = myName + " " + 7 + "/" + numberOfEvents;
+            // localBroker.receiveOrderToFlood(topic, content, myName, myPort);
+            // content = myName + " " + 8 + "/" + numberOfEvents;
+            // localBroker.receiveOrderToFlood(topic, content, myName, myPort);
+            // Thread.Sleep(5000);
+
             for (int i = 1; i <= numberOfEvents; i++)
             {
                 content = myName + " " + i + "/" + numberOfEvents;

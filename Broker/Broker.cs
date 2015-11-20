@@ -6,6 +6,7 @@ using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Net.Configuration;
 using System.Runtime.CompilerServices;
 using SESDADInterfaces;
 using System.Runtime.Serialization.Formatters;
@@ -308,9 +309,9 @@ namespace SESDAD
 
         public bool checkIfIsNext(Tuple<int, int> msg, string pubName, string topic)
         {
-            Tuple<int, int> msgMngmt = new Tuple<int, int>(0, 0);
             lock (fifoManager)
             {
+                Tuple<int, int> msgMngmt;
                 if (fifoManager.TryGetValue(pubName + topic, out msgMngmt))
                 {
                     // Key was in dictionary; "value" contains corresponding value
@@ -338,7 +339,9 @@ namespace SESDAD
                 */
                 lock (fifoManager)
                 {
-                    
+                    //
+                    // Não faço ideia porque é que se está a verificar isto
+                    //
                     if (fifoManager.ContainsKey(pubName + topic))
                     {
                         fifoManager.Remove(pubName + topic);
@@ -356,6 +359,7 @@ namespace SESDAD
         
         public void parseMessage(ref string pubName, ref Tuple<int, int> msg, string message)
         {
+            if (pubName == null) throw new ArgumentNullException("pubName");
             string[] msgParsed = new string[3];
 
             string[] msgTemp1 = message.Split(' ');
@@ -370,19 +374,16 @@ namespace SESDAD
 
         public void addToQueue(string pubPlusTopic, int msgNumber, string message)
         {
-
-            List<Tuple<int, string>> msgList = new List<Tuple<int, string>>();
             Tuple<int, string> msgNPlusMsg = new Tuple<int, string>(msgNumber, message);
 
             lock (fifoQueue)
             {
-                
+                List<Tuple<int, string>> msgList;
                 if (!fifoQueue.TryGetValue(pubPlusTopic, out msgList))
                 {
 
-                    msgList = new List<Tuple<int, string>>();
+                    msgList = new List<Tuple<int, string>> {msgNPlusMsg};
                     // Key wasn't in dictionary; "value" is now 0
-                    msgList.Add(msgNPlusMsg);
                     fifoQueue.Add(pubPlusTopic, msgList);
                 }
                 else
@@ -392,11 +393,12 @@ namespace SESDAD
                 }
             }
         }
-        public bool getFromQueue(string pubPlusTopic, int msgNumber, ref string message)
+        public bool getFromQueue(string pubPlusTopic, ref string message, ref Tuple<int,int> msg)
 
         {
+            //Console.WriteLine("MESSAGE NUMBER : {0}", msg.Item1);
             List<Tuple<int, string>> msgList = new List<Tuple<int, string>>();
-            Tuple<int, string> msgNPlusMsg = new Tuple<int, string>(msgNumber, message);
+            Tuple<int, string> msgNPlusMsg = new Tuple<int, string>(msg.Item1, message);
             lock (fifoQueue)
             {
                 if (fifoQueue.TryGetValue(pubPlusTopic, out msgList))
@@ -404,15 +406,23 @@ namespace SESDAD
                     // Key was in dictionary; "value" contains corresponding value
                     foreach (Tuple<int, string> currentMsg in fifoQueue[pubPlusTopic])
                     {
-                        if (currentMsg.Item1 == msgNumber + 1)
+                        if (currentMsg.Item1 == msg.Item1 + 1)
                         {
                             message = currentMsg.Item2;
+                            Tuple<int, int> msgMngmt;
+                            if (fifoManager.TryGetValue(pubPlusTopic, out msgMngmt))
+                            {
+                              msgMngmt = new Tuple<int, int>(currentMsg.Item1, msg.Item2);
+                               fifoManager[pubPlusTopic] = msgMngmt;
+                            }
                             //msgList.Remove(currentMsg);
                             fifoQueue[pubPlusTopic].Remove(currentMsg);
                             if (fifoQueue[pubPlusTopic].Count == 0)
                             {
+                                //Console.WriteLine("Entrei aqui para remover");
                                 fifoQueue.Remove(pubPlusTopic);
                             }
+                            msg = msgMngmt;
                             return false;
                         }
                     }
@@ -421,7 +431,7 @@ namespace SESDAD
             return true;
         }
 
-       
+
         public bool topicsMatch (string topicPub, string topicSub)
         {
             /*
@@ -621,16 +631,17 @@ namespace SESDAD
                 parseMessage(ref pubName, ref msg, message);
 
 
-                Tuple<int, int> msgMngmt = new Tuple<int, int>(0, 0);
+                // Tuple<int, int> msgMngmt = new Tuple<int, int>(0, 0);
 
-
+                //Console.WriteLine("PRE-CheckIfIsNext - {0}", msg.Item1);
                 if (checkIfIsNext(msg, pubName, topic))
                 {
                     do
                     {
                         flood(source, topic, message);
-                        if (getFromQueue(pubName + topic, msg.Item1, ref message))
+                        if (getFromQueue(pubName + topic, ref message, ref msg))
                         {
+                            //Console.WriteLine("GETFROMQUEUE - {0}", msg.Item1);
                             break;
                         }
                     } while (true);
@@ -638,6 +649,7 @@ namespace SESDAD
                 else
                 {
                     // Just add to queue
+                    //Console.WriteLine("ADICIONAR À QUEUE - {0}", msg.Item1);
                     addToQueue(pubName + topic, msg.Item1, message);
                 }
             }
