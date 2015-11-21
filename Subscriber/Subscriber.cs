@@ -159,7 +159,7 @@ namespace SESDAD
             Console.WriteLine("");
             Console.WriteLine("");
             Console.WriteLine(".---------------- Status ----------------.");
-            Console.WriteLine("|");
+            Console.WriteLine("| ");
             Console.WriteLine("| ..Topics Subscribed..");
             foreach (string sub in subscriptions)
             {
