@@ -36,6 +36,7 @@
             this.lb_Command = new System.Windows.Forms.Label();
             this.lb_Script = new System.Windows.Forms.Label();
             this.lb_Log = new System.Windows.Forms.Label();
+            this.tb_ClearLog = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // tb_Command
@@ -67,7 +68,7 @@
             // 
             this.bt_Script.Location = new System.Drawing.Point(20, 384);
             this.bt_Script.Name = "bt_Script";
-            this.bt_Script.Size = new System.Drawing.Size(75, 23);
+            this.bt_Script.Size = new System.Drawing.Size(213, 23);
             this.bt_Script.TabIndex = 3;
             this.bt_Script.Text = "Run Script";
             this.bt_Script.UseVisualStyleBackColor = true;
@@ -110,11 +111,22 @@
             this.lb_Log.TabIndex = 7;
             this.lb_Log.Text = "System Log";
             // 
+            // tb_ClearLog
+            // 
+            this.tb_ClearLog.Location = new System.Drawing.Point(264, 384);
+            this.tb_ClearLog.Name = "tb_ClearLog";
+            this.tb_ClearLog.Size = new System.Drawing.Size(332, 23);
+            this.tb_ClearLog.TabIndex = 8;
+            this.tb_ClearLog.Text = "Clear Log";
+            this.tb_ClearLog.UseVisualStyleBackColor = true;
+            this.tb_ClearLog.Click += new System.EventHandler(this.tb_ClearLog_Click);
+            // 
             // PuppetMasterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(619, 419);
+            this.Controls.Add(this.tb_ClearLog);
             this.Controls.Add(this.lb_Log);
             this.Controls.Add(this.lb_Script);
             this.Controls.Add(this.lb_Command);
@@ -139,6 +151,7 @@
         private System.Windows.Forms.Label lb_Command;
         private System.Windows.Forms.Label lb_Script;
         private System.Windows.Forms.Label lb_Log;
+        private System.Windows.Forms.Button tb_ClearLog;
     }
 }
 
