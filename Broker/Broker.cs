@@ -226,15 +226,13 @@ namespace SESDAD
             if (String.CompareOrdinal(RoutingPolicyType.FILTER, routing) == 0)
             {
                 TopicsTable testTable = new TopicsTable();
-                lock (filteringTable)
+               
+                if (filteringTable.TryGetValue(relation, out testTable))
                 {
-                    if (filteringTable.TryGetValue(relation, out testTable))
-                    {
-                        //dictionary<string, int>
-                        return filteringTable[relation].containsTopic(topic);
-                    }
+                    //dictionary<string, int>
+                    return filteringTable[relation].containsTopic(topic);
+                 }
                     
-                }
 
                 return false;
             }
@@ -526,7 +524,7 @@ namespace SESDAD
         {
             string relation = sourceType(ip, port);
             BrokerInterface broTest;
-            Console.WriteLine("FSF " + relation);
+            //Console.WriteLine("FSF " + relation);
             lock (brokerTreeInterface)
             {
                 if (String.CompareOrdinal(RoutingPolicyType.FILTER, routing) == 0)
@@ -536,33 +534,33 @@ namespace SESDAD
                         //if (myPort == 3333)
                         //{
                         Console.WriteLine("");
-                        Console.WriteLine("myPort {0} and myIp {1}", myPort, myIp);
+                        Console.WriteLine("myPort {0} and myIp {1}", port, ip);
                         Console.WriteLine("sent to SONL " + topic);
                         Console.WriteLine("");
                         //}
-                        brokerTreeInterface[BrokerNeighbours.SONL].filterSubscription(topic, ip, port);
+                        brokerTreeInterface[BrokerNeighbours.SONL].filterSubscription(topic, myIp, myPort);
                     }
                     if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONR, out broTest) && (String.CompareOrdinal(relation, BrokerNeighbours.SONR) != 0))
                     {
                         //if (myPort == 3333)
                         //{
                         Console.WriteLine("");
-                        Console.WriteLine("myPort {0} and myIp {1}", myPort, myIp);
+                        Console.WriteLine("myPort {0} and myIp {1}", port, ip);
                         Console.WriteLine("sent to SONR " + topic);
                         Console.WriteLine("");
                         //}
-                        brokerTreeInterface[BrokerNeighbours.SONR].filterSubscription(topic, ip, port);
+                        brokerTreeInterface[BrokerNeighbours.SONR].filterSubscription(topic, myIp, myPort);
                     }
                     if (brokerTreeInterface.TryGetValue(BrokerNeighbours.PARENT, out broTest) && (String.CompareOrdinal(relation, BrokerNeighbours.PARENT) != 0))
                     {
                         //if (myPort == 3333)
                         //{
                         Console.WriteLine("");
-                        Console.WriteLine("myPort {0} and myIp {1}", myPort, myIp);
+                        Console.WriteLine("myPort {0} and myIp {1}", port, ip);
                         Console.WriteLine("sent to PARENT " + topic);
                         Console.WriteLine("");
                         //}
-                        brokerTreeInterface[BrokerNeighbours.PARENT].filterSubscription(topic, ip, port);
+                        brokerTreeInterface[BrokerNeighbours.PARENT].filterSubscription(topic, myIp, myPort);
                     }
                 }
             }
@@ -678,7 +676,7 @@ namespace SESDAD
         public void RealfilterSubscription(string topic, string ip, int port)
         {
             string relation = sourceType(ip, port);
-            Console.WriteLine("FS " + relation);
+            //Console.WriteLine("FS " + relation);
 
             TopicsTable testTable = new TopicsTable();
 
@@ -686,11 +684,10 @@ namespace SESDAD
             //{
             //    Console.WriteLine("t:  " + t);
             //}
-            lock (filteringTable)
-            {
+            Console.WriteLine("asdf " + topic);
                 if (filteringTable.TryGetValue(relation, out testTable))
                 {
-
+                    Console.WriteLine("encontrou a relation para " + topic);
                     //foreach (string rel in filteringTable.Keys)
                     //{
                     //    foreach (var top in filteringTable[rel].getTopicDict().Keys)
@@ -707,7 +704,7 @@ namespace SESDAD
                     else
                     {
                         filteringTable[relation].AddTopic(topic);
-                        filterSubscriptionFlood(topic, myIp, myPort);
+                        filterSubscriptionFlood(topic, ip, port);
                         //Console.WriteLine(relation + " novo " + topic + " LOL " + filteringTable[relation].getTopicDict()[topic]);
 
                     }
@@ -716,14 +713,22 @@ namespace SESDAD
                 {
                     testTable = new TopicsTable();
                     testTable.AddTopic(topic);
-                    filteringTable.TryAdd(relation, testTable);
+                    bool test = filteringTable.TryAdd(relation, testTable);
+                    Console.WriteLine("Resultado do add relation {0} top {1} " + test, relation, topic);
                     //filteringTable[relation].AddTopic(topic);
-                    filterSubscriptionFlood(topic, myIp, myPort);
+                    filterSubscriptionFlood(topic, ip, port);
                     //Console.WriteLine(relation + " novo  " + topic + " topico " + filteringTable[relation].getTopicDict()[topic]);
 
                 }
+                foreach (KeyValuePair<string, TopicsTable> pair in filteringTable)
+                {
+                    Console.WriteLine("relation " + pair.Key);
+                    foreach (KeyValuePair<string, int> asdf in filteringTable[pair.Key].getTopicDict())
+                    {
+                        Console.WriteLine(asdf.Key + " - " + asdf.Value);
+                    }
+                }
             }
-        }
 
         // Unsubscription
 
@@ -738,20 +743,19 @@ namespace SESDAD
             
             string relation = sourceType(ip, port);
             TopicsTable testTable = new TopicsTable();
-            lock (filteringTable)
+            
+            if (filteringTable.TryGetValue(relation, out testTable))
             {
-                if (filteringTable.TryGetValue(relation, out testTable))
+                if (filteringTable[relation].containsTopic(topic))
                 {
-                    if (filteringTable[relation].containsTopic(topic))
-                    {
 
-                        if (filteringTable[relation].remSubNumber(topic) == 0)
-                        {
-                            filterUnsubscriptionFlood(topic, port);
-                        }
+                    if (filteringTable[relation].remSubNumber(topic) == 0)
+                    {
+                        filterUnsubscriptionFlood(topic, port);
                     }
                 }
             }
+            
         }
 
 
