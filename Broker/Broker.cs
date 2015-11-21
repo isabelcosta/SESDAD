@@ -153,7 +153,7 @@ namespace SESDAD
         //public event MySubs E;
 
         Dictionary<int, SubscriberInterface> subscribers = new Dictionary<int,SubscriberInterface>();
-        List<PublisherInterface> publishers = new List<PublisherInterface>();
+        Dictionary<int, PublisherInterface> publishers = new Dictionary<int, PublisherInterface>();
         //List<BrokerInterface> brokers = new List<BrokerInterface>();
 
         Dictionary<string, BrokerInterface> brokerTreeInterface = new Dictionary<string, BrokerInterface>();
@@ -524,42 +524,21 @@ namespace SESDAD
         {
             string relation = sourceType(ip, port);
             BrokerInterface broTest;
-            //Console.WriteLine("FSF " + relation);
+
             lock (brokerTreeInterface)
             {
                 if (String.CompareOrdinal(RoutingPolicyType.FILTER, routing) == 0)
                 {
                     if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONL, out broTest) && (String.CompareOrdinal(relation, BrokerNeighbours.SONL) != 0))
                     {
-                        //if (myPort == 3333)
-                        //{
-                        Console.WriteLine("");
-                        Console.WriteLine("myPort {0} and myIp {1}", port, ip);
-                        Console.WriteLine("sent to SONL " + topic);
-                        Console.WriteLine("");
-                        //}
                         brokerTreeInterface[BrokerNeighbours.SONL].filterSubscription(topic, myIp, myPort);
                     }
                     if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONR, out broTest) && (String.CompareOrdinal(relation, BrokerNeighbours.SONR) != 0))
                     {
-                        //if (myPort == 3333)
-                        //{
-                        Console.WriteLine("");
-                        Console.WriteLine("myPort {0} and myIp {1}", port, ip);
-                        Console.WriteLine("sent to SONR " + topic);
-                        Console.WriteLine("");
-                        //}
                         brokerTreeInterface[BrokerNeighbours.SONR].filterSubscription(topic, myIp, myPort);
                     }
                     if (brokerTreeInterface.TryGetValue(BrokerNeighbours.PARENT, out broTest) && (String.CompareOrdinal(relation, BrokerNeighbours.PARENT) != 0))
                     {
-                        //if (myPort == 3333)
-                        //{
-                        Console.WriteLine("");
-                        Console.WriteLine("myPort {0} and myIp {1}", port, ip);
-                        Console.WriteLine("sent to PARENT " + topic);
-                        Console.WriteLine("");
-                        //}
                         brokerTreeInterface[BrokerNeighbours.PARENT].filterSubscription(topic, myIp, myPort);
                     }
                 }
@@ -676,36 +655,20 @@ namespace SESDAD
         public void RealfilterSubscription(string topic, string ip, int port)
         {
             string relation = sourceType(ip, port);
-            //Console.WriteLine("FS " + relation);
 
             TopicsTable testTable = new TopicsTable();
 
-            //foreach (string t in filteringTable[relation].getTopicDict().Keys)
-            //{
-            //    Console.WriteLine("t:  " + t);
-            //}
-            Console.WriteLine("asdf " + topic);
                 if (filteringTable.TryGetValue(relation, out testTable))
                 {
-                    Console.WriteLine("encontrou a relation para " + topic);
-                    //foreach (string rel in filteringTable.Keys)
-                    //{
-                    //    foreach (var top in filteringTable[rel].getTopicDict().Keys)
-                    //    {
-                    //        Console.WriteLine("relation : {0} and topic {1}", rel, top );
-                    //    }
-                    //}
 
                     if (filteringTable[relation].containsTopic(topic))
                     {
                         filteringTable[relation].addSubNumber(topic);
-                        //Console.WriteLine(relation + " adicionou " + topic + " Sub Number " + filteringTable[relation].getTopicDict()[topic]);
                     }
                     else
                     {
                         filteringTable[relation].AddTopic(topic);
                         filterSubscriptionFlood(topic, ip, port);
-                        //Console.WriteLine(relation + " novo " + topic + " LOL " + filteringTable[relation].getTopicDict()[topic]);
 
                     }
                 }
@@ -714,19 +677,8 @@ namespace SESDAD
                     testTable = new TopicsTable();
                     testTable.AddTopic(topic);
                     bool test = filteringTable.TryAdd(relation, testTable);
-                    Console.WriteLine("Resultado do add relation {0} top {1} " + test, relation, topic);
-                    //filteringTable[relation].AddTopic(topic);
                     filterSubscriptionFlood(topic, ip, port);
-                    //Console.WriteLine(relation + " novo  " + topic + " topico " + filteringTable[relation].getTopicDict()[topic]);
 
-                }
-                foreach (KeyValuePair<string, TopicsTable> pair in filteringTable)
-                {
-                    Console.WriteLine("relation " + pair.Key);
-                    foreach (KeyValuePair<string, int> asdf in filteringTable[pair.Key].getTopicDict())
-                    {
-                        Console.WriteLine(asdf.Key + " - " + asdf.Value);
-                    }
                 }
             }
 
@@ -767,14 +719,40 @@ namespace SESDAD
 
         public void Realstatus()
         {
-            Console.WriteLine("- Status:");
-            Console.WriteLine("I'm Alive");
-            foreach (int sub in subscribers.Keys)
+            Console.WriteLine("");
+            Console.WriteLine("");
+            Console.WriteLine(".---------------- Status ----------------.");
+            Console.WriteLine("|");
+            if (subscribers.Count == 0)
             {
-                Console.WriteLine("Subscribers in port: " + sub);
+                Console.WriteLine("| ..No Subscribers..");
             }
-            Console.WriteLine("Has " + publishers.Count + " Publishers");
-            Console.WriteLine("- End of Status.");
+            else
+            {
+                Console.WriteLine("| ..Subscribers at..");
+                foreach (int sub in subscribers.Keys)
+                {
+                    Console.WriteLine("|     - " + sub);
+                }
+            }
+            Console.WriteLine("| ");
+            Console.WriteLine(".----------------------------------------.");
+            Console.WriteLine("| ");
+            if (publishers.Count == 0)
+            {
+                Console.WriteLine("| ..No Publishers..");
+            }
+            else
+            {
+                Console.WriteLine("| ..Publishers");
+                foreach (int pub in publishers.Keys)
+                {
+                    Console.WriteLine("|     - " + pub);
+                }
+            }
+            Console.WriteLine("| ");
+            Console.WriteLine(".----------------------------------------.");
+            Console.WriteLine("");
         }
         /*
         
@@ -810,7 +788,7 @@ namespace SESDAD
         {
             Console.WriteLine("Publisher adicionado " + port);
             PublisherInterface publisher = (PublisherInterface)Activator.GetObject(typeof(PublisherInterface), "tcp://localhost:" + port + "/pub");
-            publishers.Add(publisher);
+            publishers.Add(port, publisher);
         }
 
         public void addBroker (int port, string ip, string relation)

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Collections.Generic;
 using SESDADInterfaces;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Runtime.Serialization.Formatters;
 
 namespace SESDAD
@@ -57,7 +58,7 @@ namespace SESDAD
         /*
         message
             */
-        List<string> topicsPublishing = new List<string>();
+        ConcurrentDictionary<string, int> topicsPublishing = new ConcurrentDictionary<string, int>();
 
 
         public void registerLocalPuppetMaster(string name, int port)
@@ -95,6 +96,9 @@ namespace SESDAD
             // content = myName + " " + 8 + "/" + numberOfEvents;
             // localBroker.receiveOrderToFlood(topic, content, myName, myPort);
             // Thread.Sleep(5000);
+            topicsPublishing.TryAdd(topic, 0);
+            
+            
 
             for (int i = 1; i <= numberOfEvents; i++)
             {
@@ -107,10 +111,11 @@ namespace SESDAD
                 string action = "PubEvent - " + myName + " publishes " + topic + " : " + content; //TODO: as mensagens vao como PubEvent certo?
                 informPuppetMaster(action);
                 //Console.WriteLine(action);
-
+                topicsPublishing[topic]++;
                 Thread.Sleep(interval_x_ms);
             }
-            topicsPublishing.Remove(topic);
+
+            //topicsPublishing.Remove(topic);
 
         }
 
@@ -137,12 +142,26 @@ namespace SESDAD
 
         public void Realstatus()
         {
-            Console.WriteLine("- Status:");
-            foreach (string top in topicsPublishing)
+            Console.WriteLine("");
+            Console.WriteLine("");
+            Console.WriteLine(".---------------- Status ----------------.");
+            Console.WriteLine("|");
+            if (topicsPublishing.Count == 0)
             {
-                Console.WriteLine("Publishing: " + top);
+                Console.WriteLine("| " + myName + " has not published any topics..");
             }
-            Console.WriteLine("- End of Status.");
+            else
+            {
+                Console.WriteLine("| ..Published..");
+                foreach (string top in topicsPublishing.Keys)
+                {
+                    Console.WriteLine("|   - " + top + " -> " + topicsPublishing[top] + " messages sent");
+                }
+                
+            }
+            Console.WriteLine("| ");
+            Console.WriteLine(".----------------------------------------.");
+            Console.WriteLine("");
         }
 
         private void informPuppetMaster(string action)

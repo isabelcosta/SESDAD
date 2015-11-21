@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
@@ -50,7 +51,7 @@ namespace SESDAD
 
         List<string> subscriptions = new List<string>();
         List<Tuple<string,string>> messages = new List<Tuple<string, string>>();
-
+        ConcurrentDictionary<string, int> messagesReceived = new ConcurrentDictionary<string, int>(); 
         /*
         Thread Methods
             */
@@ -110,9 +111,17 @@ namespace SESDAD
         {
             string action = "SubEvent - " + this.myName + " received " + m.Topic + " : " + m.Body;
             informPuppetMaster(action);
+            if (messagesReceived.ContainsKey(m.Topic))
+            {
+                messagesReceived[m.Topic]++;
+            }
+            else
+            {
+                messagesReceived.TryAdd(m.Topic, 1);
+            }
             //Console.WriteLine(action);
 
-            messages.Add(new Tuple<string, string>(m.Topic, m.Body));
+            //messages.Add(new Tuple<string, string>(m.Topic, m.Body));
         }
 
         public void registerLocalBroker(int brokerPort)
@@ -147,12 +156,19 @@ namespace SESDAD
         }
         public void Realstatus()
         {
-            Console.WriteLine("- Status:");
+            Console.WriteLine("");
+            Console.WriteLine("");
+            Console.WriteLine(".---------------- Status ----------------.");
+            Console.WriteLine("|");
+            Console.WriteLine("| ..Topics Subscribed..");
             foreach (string sub in subscriptions)
             {
-                Console.WriteLine("Subscribed: " + sub);
+                Console.WriteLine("|    - " + sub + " -> " + messagesReceived[sub] + " messages received");
             }
-            Console.WriteLine("- End of Status.");
+            Console.WriteLine("|");
+            Console.WriteLine(".----------------------------------------.");
+            Console.WriteLine("");
+
         }
 
         public void registerLocalPuppetMaster(string name, int port)
