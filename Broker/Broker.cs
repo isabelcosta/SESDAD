@@ -410,10 +410,13 @@ namespace SESDAD
                         {
                             message = currentMsg.Item2;
                             Tuple<int, int> msgMngmt;
-                            if (fifoManager.TryGetValue(pubPlusTopic, out msgMngmt))
+                            lock (fifoManager)
                             {
-                              msgMngmt = new Tuple<int, int>(currentMsg.Item1, msg.Item2);
-                               fifoManager[pubPlusTopic] = msgMngmt;
+                                if (fifoManager.TryGetValue(pubPlusTopic, out msgMngmt))
+                                {
+                                  msgMngmt = new Tuple<int, int>(currentMsg.Item1, msg.Item2);
+                                   fifoManager[pubPlusTopic] = msgMngmt;
+                                }
                             }
                             //msgList.Remove(currentMsg);
                             fifoQueue[pubPlusTopic].Remove(currentMsg);
