@@ -656,6 +656,11 @@ namespace SESDAD
             tb_Log.AppendText(Environment.NewLine);
         }
 
+        private void tb_ClearLog_Click(object sender, EventArgs e)
+        {
+            tb_Log.Clear();
+        }
+
         private String[] portAndIpFromURL(string url) { //melhorar codigo - returns port and processType
             String[] spliter = { ":" };
 
