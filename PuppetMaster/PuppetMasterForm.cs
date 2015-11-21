@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
@@ -407,7 +408,7 @@ namespace SESDAD
                             BrokerInterface bro = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), URL);
                             myBroker = bro;
                             myBrokerPort = int.Parse(processPort);
-                            myBroker.giveInfo(processIp, myBrokerPort);
+                            myBroker.giveInfo(processIp, myBrokerPort, parsed[1]);
                         }
 
                     } else if (String.Compare(parsed[3], ProcessType.PUBLISHER) == 0) {

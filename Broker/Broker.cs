@@ -140,6 +140,7 @@ namespace SESDAD
 
         int myPort;
         string myIp;
+        string myName;
 
         PuppetInterface localPuppetMaster;
 
@@ -165,7 +166,6 @@ namespace SESDAD
         Dictionary<string, Tuple<int, int>> fifoManager = new Dictionary<string, Tuple<int, int>>();
         Dictionary<string, List<Tuple<int, string>>> fifoQueue = new Dictionary<string, List<Tuple<int, string>>>();
 
-        
 
         /*
         
@@ -301,7 +301,7 @@ namespace SESDAD
                 }
             }
             }
-            string action = "BroEvent - " + myIp + " Flooded message on topic " + topic;
+            string action = "BroEvent - " + myName + " Flooded message on topic " + topic;
             informPuppetMaster(action);
             //Console.WriteLine(action);
         }
@@ -897,16 +897,17 @@ namespace SESDAD
             this.logging = logging;
         }
 
-        public void giveInfo(string ip, int port)
+        public void giveInfo(string ip, int port, string name)
         {
-            var t = new Thread(() => RealgiveInfo(ip, port));
+            var t = new Thread(() => RealgiveInfo(ip, port, name));
             t.Start();
         }
 
-        public void RealgiveInfo(string ip, int port)
+        public void RealgiveInfo(string ip, int port, string name)
         {
             this.myPort = port;
             this.myIp = ip;
+            this.myName = name;
         }
 
 

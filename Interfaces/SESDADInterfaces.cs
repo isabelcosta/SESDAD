@@ -145,7 +145,7 @@ namespace SESDADInterfaces
         void policies(string routing, string ordering, string logging);
 
         // network config
-        void giveInfo(string name, int port);
+        void giveInfo(string ip, int port, string name);
 
         void status();
     }
