@@ -125,13 +125,13 @@ namespace SESDAD
 
             for (int i = 1; i <= numberOfEvents; i++)
             {
+                //check
                 lock (seqNb)
                 {
                     content = myName + " " + seqNb.SeqN + "/" + numberOfEvents;
                     seqNb.SeqN += 1;
 
                     int num;
-
                     if (topicsPublishing.TryGetValue(topic, out num))
                     {
                         topicsPublishing[topic] += 1;
