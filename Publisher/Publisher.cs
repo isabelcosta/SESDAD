@@ -128,6 +128,13 @@ namespace SESDAD
                 lock (seqNb)
                 {
                     content = myName + " " + seqNb.SeqN + "/" + numberOfEvents;
+                    seqNb.SeqN += 1;
+
+                    int num;
+                    if (topicsPublishing.TryGetValue(topic, out num))
+                    {
+                        topicsPublishing[topic] += 1;
+                    }
                 }
                                                 
                                             // Exe: Publisher1 1/10
@@ -137,16 +144,6 @@ namespace SESDAD
                 string action = "PubEvent - " + myName + " publishes " + topic + " : " + content; //TODO: as mensagens vao como PubEvent certo?
                 informPuppetMaster(action);
                 
-                //seqNumber++;
-                lock (seqNb)
-                {
-                    seqNb.SeqN += 1;
-                }
-                int num;
-                if (topicsPublishing.TryGetValue(topic, out num))
-                {
-                    topicsPublishing[topic] += 1;
-                }
                 //Console.WriteLine(action);
                 Thread.Sleep(interval_x_ms);
             }
