@@ -142,7 +142,11 @@ namespace SESDAD
                 {
                     seqNb.SeqN += 1;
                 }
-                
+                int num;
+                if (topicsPublishing.TryGetValue(topic, out num))
+                {
+                    topicsPublishing[topic] += 1;
+                }
                 //Console.WriteLine(action);
                 Thread.Sleep(interval_x_ms);
             }
