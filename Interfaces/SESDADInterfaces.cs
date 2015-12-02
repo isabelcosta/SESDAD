@@ -121,6 +121,10 @@ namespace SESDADInterfaces
     {
         void receiveOrderToFlood(string topic, string message, string ip, int port);
 
+        void totalOrderFloodRoot(string topic, string message);
+
+        void totalOrderFlood(string topic, string message);
+
         void subscribeRequest(string topic, int port);
 
         void unSubscribeRequest(string topic, int port);
@@ -137,6 +141,8 @@ namespace SESDADInterfaces
 
         // network config
         void addBroker(int port, string ip, string relation);
+
+        void addRootBroker(int port, string ip);
 
         // network config
         void registerLocalPuppetMaster(int port);

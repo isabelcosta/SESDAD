@@ -451,6 +451,11 @@ namespace SESDAD
         }
 
 
+        public void totalOrderFlood(string topic, string message)
+        {
+            throw new NotImplementedException();
+        }
+
         public void subscribeRequest(string topic, int port)
         {
 
@@ -591,6 +596,12 @@ namespace SESDAD
             t.Start();
             //return t;
         }
+
+        public void totalOrderFloodRoot(string topic, string message)
+        {
+            throw new NotImplementedException();
+        }
+
         //used for the PuppetMaster to request a broker to flood a message
         public void RealreceiveOrderToFlood(string topic, string message, string ip, int port)
         {
@@ -793,6 +804,17 @@ namespace SESDAD
             Console.WriteLine("Publisher adicionado " + port);
             PublisherInterface publisher = (PublisherInterface)Activator.GetObject(typeof(PublisherInterface), "tcp://localhost:" + port + "/pub");
             publishers.TryAdd(port, publisher);
+        }
+
+        public void addRootBroker(int port, string ip)
+        {
+            var t = new Thread(() => RealaddRootBroker(port, ip));
+            t.Start();
+        }
+
+        public void RealaddRootBroker(int port, string ip)
+        {
+            throw new NotImplementedException();
         }
 
         public void addBroker (int port, string ip, string relation)
