@@ -39,9 +39,25 @@ namespace SESDAD
         }
     }
 
+    class seqNumber
+    {
+        private int seqN;
+        public seqNumber()
+        {
+            seqN = 1;
+        }
+        
+        public int SeqN
+        {
+            get { return seqN; }
+            set { seqN = value; }
+        }
+    }
+
     [Serializable]
     class PublisherServices: MarshalByRefObject, PublisherInterface
     {
+
 
         BrokerInterface localBroker;
         PuppetInterface localPuppetMaster;
@@ -54,11 +70,18 @@ namespace SESDAD
         /*Publisher Info*/
         string myName;
         int myPort;
+
+        
+        
+        private seqNumber seqNb = new seqNumber();
+        
+        
+        
+        ConcurrentDictionary<string, int> topicsPublishing = new ConcurrentDictionary<string, int>();
         
         /*
         message
             */
-        ConcurrentDictionary<string, int> topicsPublishing = new ConcurrentDictionary<string, int>();
 
 
         public void registerLocalPuppetMaster(string name, int port)
@@ -76,6 +99,7 @@ namespace SESDAD
 
         public void receiveOrderToPublish(string topic, int numberOfEvents, int interval_x_ms)
         {
+            topicsPublishing.TryAdd(topic, 0);
             var t = new Thread(() => RealreceiveOrderToPublish(topic, numberOfEvents, interval_x_ms));
             t.Start();
         }
@@ -96,13 +120,15 @@ namespace SESDAD
             // content = myName + " " + 8 + "/" + numberOfEvents;
             // localBroker.receiveOrderToFlood(topic, content, myName, myPort);
             // Thread.Sleep(5000);
-            topicsPublishing.TryAdd(topic, 0);
             
             
 
             for (int i = 1; i <= numberOfEvents; i++)
             {
-                content = myName + " " + i + "/" + numberOfEvents;
+                lock (seqNb)
+                {
+                    content = myName + " " + seqNb.SeqN + "/" + numberOfEvents;
+                }
                                                 
                                             // Exe: Publisher1 1/10
                                             // localBroker fica a null de vez em quando
@@ -110,12 +136,18 @@ namespace SESDAD
 
                 string action = "PubEvent - " + myName + " publishes " + topic + " : " + content; //TODO: as mensagens vao como PubEvent certo?
                 informPuppetMaster(action);
+                
+                //seqNumber++;
+                lock (seqNb)
+                {
+                    seqNb.SeqN += 1;
+                }
+                
                 //Console.WriteLine(action);
-                topicsPublishing[topic]++;
                 Thread.Sleep(interval_x_ms);
             }
-
-            //topicsPublishing.Remove(topic);
+            int temp;
+            topicsPublishing.TryRemove(topic, out temp);
 
         }
 
@@ -146,6 +178,7 @@ namespace SESDAD
             Console.WriteLine("");
             Console.WriteLine(".---------------- Status ----------------.");
             Console.WriteLine("|");
+
             if (topicsPublishing.Count == 0)
             {
                 Console.WriteLine("| " + myName + " has not published any topics..");
@@ -153,9 +186,9 @@ namespace SESDAD
             else
             {
                 Console.WriteLine("| ..Published..");
-                foreach (string top in topicsPublishing.Keys)
+                foreach (KeyValuePair<string, int> pair in topicsPublishing)
                 {
-                    Console.WriteLine("|   - " + top + " -> " + topicsPublishing[top] + " messages sent");
+                    Console.WriteLine("|   -" + pair.Key + " -> " + pair.Value + " messages sent");
                 }
                 
             }

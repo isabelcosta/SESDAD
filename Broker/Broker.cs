@@ -152,8 +152,8 @@ namespace SESDAD
 
         //public event MySubs E;
 
-        Dictionary<int, SubscriberInterface> subscribers = new Dictionary<int,SubscriberInterface>();
-        Dictionary<int, PublisherInterface> publishers = new Dictionary<int, PublisherInterface>();
+        ConcurrentDictionary<int, SubscriberInterface> subscribers = new ConcurrentDictionary<int,SubscriberInterface>();
+        ConcurrentDictionary<int, PublisherInterface> publishers = new ConcurrentDictionary<int, PublisherInterface>();
         //List<BrokerInterface> brokers = new List<BrokerInterface>();
 
         Dictionary<string, BrokerInterface> brokerTreeInterface = new Dictionary<string, BrokerInterface>();
@@ -730,9 +730,12 @@ namespace SESDAD
             else
             {
                 Console.WriteLine("| ..Subscribers at..");
-                foreach (int sub in subscribers.Keys)
+                lock (subscribers)
                 {
-                    Console.WriteLine("|     - " + sub);
+                    foreach (KeyValuePair<int, SubscriberInterface> pair in subscribers)
+                    {
+                        Console.WriteLine("|     - " + pair.Key);
+                    }
                 }
             }
             Console.WriteLine("| ");
@@ -745,11 +748,12 @@ namespace SESDAD
             else
             {
                 Console.WriteLine("| ..Publishers");
-                foreach (int pub in publishers.Keys)
+                foreach (KeyValuePair<int, PublisherInterface> pair in publishers)
                 {
-                    Console.WriteLine("|     - " + pub);
+                    Console.WriteLine("|     - " + pair.Key);
                 }
             }
+            
             Console.WriteLine("| ");
             Console.WriteLine(".----------------------------------------.");
             Console.WriteLine("");
@@ -776,7 +780,7 @@ namespace SESDAD
             Console.WriteLine("Subscriber adicionado " + port);
             SubscriberInterface subscriber = (SubscriberInterface)Activator.GetObject(typeof(SubscriberInterface), "tcp://localhost:" + port + "/sub");
 
-            subscribers.Add(port, subscriber);
+            subscribers.TryAdd(port, subscriber);
         }
 
         public void addPublisher(int port)
@@ -788,7 +792,7 @@ namespace SESDAD
         {
             Console.WriteLine("Publisher adicionado " + port);
             PublisherInterface publisher = (PublisherInterface)Activator.GetObject(typeof(PublisherInterface), "tcp://localhost:" + port + "/pub");
-            publishers.Add(port, publisher);
+            publishers.TryAdd(port, publisher);
         }
 
         public void addBroker (int port, string ip, string relation)

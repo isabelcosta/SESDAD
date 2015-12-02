@@ -161,10 +161,12 @@ namespace SESDAD
             Console.WriteLine(".---------------- Status ----------------.");
             Console.WriteLine("| ");
             Console.WriteLine("| ..Topics Subscribed..");
-            foreach (string sub in subscriptions)
+           
+            foreach (KeyValuePair<string, int> pair in messagesReceived)
             {
-                Console.WriteLine("|    - " + sub + " -> " + messagesReceived[sub] + " messages received");
+                Console.WriteLine("|    - " + pair.Key + " -> " + pair.Value + " messages received");
             }
+
             Console.WriteLine("|");
             Console.WriteLine(".----------------------------------------.");
             Console.WriteLine("");
