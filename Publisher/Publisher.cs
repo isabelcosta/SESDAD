@@ -131,6 +131,7 @@ namespace SESDAD
                     seqNb.SeqN += 1;
 
                     int num;
+
                     if (topicsPublishing.TryGetValue(topic, out num))
                     {
                         topicsPublishing[topic] += 1;
