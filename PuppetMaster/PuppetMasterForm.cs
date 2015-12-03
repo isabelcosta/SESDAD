@@ -59,7 +59,7 @@ namespace SESDAD
 
         //Only to slave
         private PuppetInterface puppetMasterRemote = null;
-
+        private String[] rootBrokerPortAndIp;
 
         /// <summary>
         /// Puppet Master Constructor
@@ -166,7 +166,7 @@ namespace SESDAD
                             typeof(PuppetInterface),
                             allPuppetURL[puppetIndex]
                         );
-                    slavesRemoteObjects.Add(puppetIndex, slave);
+                    this.slavesRemoteObjects.Add(puppetIndex, slave);
                     slave.slavesAreUp();
                 }
 
@@ -187,7 +187,7 @@ namespace SESDAD
                 pubI.registerLocalPuppetMaster(entry.Key, puppetPort);
                 pubI.giveInfo(entry.Key, pubPort);
                 pubI.policies(this.routingPolicy, this.ordering, this.loggingLevel);
-                myBroker.addPublisher(pubPort);
+                this.myBroker.addPublisher(pubPort);
 
             }
             foreach (KeyValuePair<string, Tuple<int, SubscriberInterface>> entry in mySubs)
@@ -200,8 +200,9 @@ namespace SESDAD
                 subI.policies(this.routingPolicy, this.ordering, this.loggingLevel);
                 myBroker.addSubscriber(subPort);
             }
-            myBroker.registerLocalPuppetMaster(puppetPort);
-            myBroker.policies(this.routingPolicy, this.ordering, this.loggingLevel);
+            this.myBroker.registerLocalPuppetMaster(puppetPort);
+            this.myBroker.policies(this.routingPolicy, this.ordering, this.loggingLevel);
+            this.myBroker.addRootBroker(int.Parse(this.rootBrokerPortAndIp[0]), this.rootBrokerPortAndIp[1]);
         }
 
         //************************************************************************************
@@ -406,7 +407,7 @@ namespace SESDAD
                     if (this.isMaster())
                     {
                         string slaveID = parsed[5].Replace("site", ""); //removes the "site" from string
-                        slavesProcesses.Add(parsed[1], int.Parse(slaveID)); //processName -> slaveID
+                        this.slavesProcesses.Add(parsed[1], int.Parse(slaveID)); //processName -> slaveID
                     }
 
                     if (String.Compare(parsed[3], ProcessType.BROKER) == 0)
@@ -414,7 +415,8 @@ namespace SESDAD
 
                         if (String.Compare("site0", parsed[5]) == 0) //obtenho o porto e IP do broker root
                         {
-                            myBroker.addRootBroker(int.Parse(processPort), processIp);
+                            this.rootBrokerPortAndIp[0] = processPort;
+                            this.rootBrokerPortAndIp[1] = processIp;
                         }
 
                         if (String.Compare("site" + this.puppetID, parsed[5]) == 0) //se for o meu broker
@@ -427,9 +429,9 @@ namespace SESDAD
                             addMessageToLog("Broker " + parsed[1] + " at " + URL);
 
                             BrokerInterface bro = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), URL);
-                            myBroker = bro;
-                            myBrokerPort = int.Parse(processPort);
-                            myBroker.giveInfo(processIp, myBrokerPort, parsed[1]);
+                            this.myBroker = bro;
+                            this.myBrokerPort = int.Parse(processPort);
+                            this.myBroker.giveInfo(processIp, myBrokerPort, parsed[1]);
                         }
 
                     }
@@ -447,7 +449,7 @@ namespace SESDAD
                         }
                         addMessageToLog("Publisher " + parsed[1] + " at " + URL);
                         PublisherInterface publisher = (PublisherInterface)Activator.GetObject(typeof(PublisherInterface), URL);
-                        myPubs.Add(parsed[1], new Tuple<int, PublisherInterface>(int.Parse(processPort), publisher));
+                        this.myPubs.Add(parsed[1], new Tuple<int, PublisherInterface>(int.Parse(processPort), publisher));
 
                     }
                     else if (String.Compare(parsed[3], ProcessType.SUBSCRIBER) == 0)
@@ -464,7 +466,7 @@ namespace SESDAD
                         }
                         addMessageToLog("Subscriber " + parsed[1] + " at " + URL);
                         SubscriberInterface subscriber = (SubscriberInterface)Activator.GetObject(typeof(SubscriberInterface), URL);
-                        mySubs.Add(parsed[1], new Tuple<int, SubscriberInterface>(int.Parse(processPort), subscriber));
+                        this.mySubs.Add(parsed[1], new Tuple<int, SubscriberInterface>(int.Parse(processPort), subscriber));
                     }
                     break;
 
