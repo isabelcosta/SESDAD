@@ -1,5 +1,5 @@
 RoutingPolicy flooding
-Ordering FIFO
+Ordering TOTAL
 LoggingLevel full
 Site site0 Parent none
 Site site1 Parent site0

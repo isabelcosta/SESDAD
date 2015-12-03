@@ -615,27 +615,10 @@ namespace SESDAD
                 TODO: ACTUALIZAR CONSOANTE AS SUBSCRICOES ABAIXO
             
             */
-
-
-
-            // pubName + " " + seqNb.SeqN + "/" + numberOfEvents
-
-            string[] msgParsed = new string[3];
-
-            // { pubName , SeqNb.SeqN/NumberOfEvents }
+            
+            // { pubName , SeqNb.SeqN }
             string[] msgTemp1 = message.Split(' ');
 
-            //msgParsed[0] = pubName
-            msgParsed[0] = msgTemp1[0];
-
-            // { SeqNb.SeqN , NumberOfEvents }
-            string[] msgTemp2 = msgTemp1[1].Split('/');
-
-            //msgParsed[1] = seqNb.SeqN
-            msgParsed[1] = msgTemp2[0];
-
-            //msgParsed[2] = numberOfEvents
-            msgParsed[2] = msgTemp2[1];
 
 
             string newMessage;
@@ -645,13 +628,13 @@ namespace SESDAD
 
                 if (seqNbToDecrement.TryGetValue(relation, out numToDec))
                 {
-                    numToDec = int.Parse(msgParsed[1]) - seqNbToDecrement[relation];
+                    numToDec = int.Parse(msgTemp1[1]) - seqNbToDecrement[relation];
                 }
                 else
                 {
-                    numToDec = int.Parse(msgParsed[1]);
+                    numToDec = int.Parse(msgTemp1[1]);
                 }
-                newMessage = msgParsed[0] + " " + numToDec + "/" + msgParsed[2];
+                newMessage = msgTemp1[0] + " " + numToDec;
             }
             else // e' a root
             {
@@ -666,7 +649,7 @@ namespace SESDAD
 
                 lock (seqNb)
                 {
-                    newMessage = msgParsed[0] + " " + numToDec + "/" + msgParsed[2];
+                    newMessage = msgTemp1[0] + " " + numToDec;
                     seqNb.SeqN += 1;
                 }
             }
