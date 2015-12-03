@@ -25,7 +25,7 @@ namespace SESDAD
             props["port"] = subscriberPort;
             TcpChannel channel = new TcpChannel(props, null, provider);
 
-          //  TcpChannel channel = new TcpChannel(8087);
+            //  TcpChannel channel = new TcpChannel(8087);
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(
                 typeof(SubscriberServices), "sub",
@@ -50,8 +50,8 @@ namespace SESDAD
         string myName;
 
         List<string> subscriptions = new List<string>();
-        List<Tuple<string,string>> messages = new List<Tuple<string, string>>();
-        ConcurrentDictionary<string, int> messagesReceived = new ConcurrentDictionary<string, int>(); 
+        List<Tuple<string, string>> messages = new List<Tuple<string, string>>();
+        ConcurrentDictionary<string, int> messagesReceived = new ConcurrentDictionary<string, int>();
         /*
         Thread Methods
             */
@@ -76,7 +76,7 @@ namespace SESDAD
             //informar o local broker que subscreveu
             localBroker.subscribeRequest(topic, myPort);
             //string action = "Subscribed to " + topic;
-            
+
             //informPuppetMaster(action);
             //Console.WriteLine(action);
         }
@@ -94,7 +94,7 @@ namespace SESDAD
 
             //informar o local broker que subscreveu
             localBroker.unSubscribeRequest(topic, myPort);
- 
+
             //string action = "Unsubscribed to " + topic;
             //informPuppetMaster(action);
             //Console.WriteLine(action);
@@ -130,23 +130,24 @@ namespace SESDAD
             t.Start();
         }
         //  invocado pelo PuppetMaster para registar o broker local 
-        public void RealregisterLocalBroker(int brokerPort) 
+        public void RealregisterLocalBroker(int brokerPort)
         {
             Console.WriteLine("Broker local registado no Subscriber: " + "tcp://localhost:" + brokerPort + "/broker");
             localBroker =
                 (BrokerInterface)Activator.GetObject(
                        typeof(BrokerInterface), "tcp://localhost:" + brokerPort + "/broker");
-            
+
         }
 
         public void printReceivedMessages()
         {
-            foreach (Tuple<string, string> msg in messages) {
+            foreach (Tuple<string, string> msg in messages)
+            {
                 Console.WriteLine("--");
                 Console.WriteLine("Topic: {0}", msg.Item1);
                 Console.WriteLine("Message: {0}", msg.Item2);
             }
-                Console.WriteLine("--");
+            Console.WriteLine("--");
         }
 
         public void status()
@@ -161,7 +162,7 @@ namespace SESDAD
             Console.WriteLine(".---------------- Status ----------------.");
             Console.WriteLine("| ");
             Console.WriteLine("| ..Topics Subscribed..");
-           
+
             foreach (KeyValuePair<string, int> pair in messagesReceived)
             {
                 Console.WriteLine("|    - " + pair.Key + " -> " + pair.Value + " messages received");
@@ -191,7 +192,7 @@ namespace SESDAD
         {
             //if (string.Compare(logging, LoggingLevelType.FULL) == 0)
             //{
-                localPuppetMaster.informAction(action);
+            localPuppetMaster.informAction(action);
             //}
         }
         public void policies(string routing, string ordering, string logging)
@@ -221,4 +222,3 @@ namespace SESDAD
         }
     }
 }
-

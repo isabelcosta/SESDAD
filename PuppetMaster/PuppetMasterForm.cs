@@ -19,7 +19,7 @@ using System.Runtime.Serialization.Formatters;
 
 namespace SESDAD
 {
-    
+
     public partial class PuppetMasterForm : Form
     {
         public override object InitializeLifetimeService()
@@ -54,7 +54,7 @@ namespace SESDAD
         private IDictionary<string, string> myBrokerinfo = new Dictionary<string, string>();
 
         //Only PuppetMaster's use, to access the Puppet Master Slaves
-        private IDictionary<string, int> slavesProcesses  = new Dictionary<string, int>(); //Hashtable please <processName, slaveURL>
+        private IDictionary<string, int> slavesProcesses = new Dictionary<string, int>(); //Hashtable please <processName, slaveURL>
         private IDictionary<int, PuppetInterface> slavesRemoteObjects = new Dictionary<int, PuppetInterface>(); //Hashtable please <processName, slaveURL>
 
         //Only to slave
@@ -67,13 +67,16 @@ namespace SESDAD
         /// <param name="args"></param>
         public PuppetMasterForm(String[] args)
         {
-            try {
+            try
+            {
                 this.puppetID = int.Parse(args[0]);
-            } catch {
+            }
+            catch
+            {
                 MessageBox.Show("Puppet Master doesn't understand his ID... \nI'll exit for you. Try again!");
                 Environment.Exit(0);
             }
-            
+
             //Builds the Puppet Master GUI
             InitializeComponent();
             this.tb_Command.ReadOnly = !isMaster();
@@ -108,16 +111,16 @@ namespace SESDAD
                     Environment.Exit(0);
                 }
             }
-            
+
             String[] allPuppetURL = System.IO.File.ReadAllLines(this.configPuppetPath);
             this.puppetURL = allPuppetURL[puppetID];
 
             int puppetPort = 30000 + puppetID;
-            
+
             //Single Mode: PuppetMaster reads and processes all processes
             //Multiple Mode: Each Puppet Master/Slave processes its processes 
             this.readConfigFile();
-            
+
             PuppetServices.form = this;
 
             if (!isMaster())
@@ -142,18 +145,21 @@ namespace SESDAD
             }
 
             //Being the puppetMaster, he stores the puppetSlaves remote objects, when they are all up
-            if (this.isMaster()) {
+            if (this.isMaster())
+            {
                 PuppetInterface me =
                         (PuppetInterface)Activator.GetObject(
                             typeof(PuppetInterface),
                             allPuppetURL[0]
                         );
 
-                while (me.getNumberOfSlaves() != slaves) {
+                while (me.getNumberOfSlaves() != slaves)
+                {
                     Thread.Sleep(2000);
                 }
 
-                for (int puppetIndex = 1; puppetIndex <= this.slaves; puppetIndex++) {
+                for (int puppetIndex = 1; puppetIndex <= this.slaves; puppetIndex++)
+                {
 
                     PuppetInterface slave =
                         (PuppetInterface)Activator.GetObject(
@@ -163,7 +169,7 @@ namespace SESDAD
                     slavesRemoteObjects.Add(puppetIndex, slave);
                     slave.slavesAreUp();
                 }
-                
+
             }
 
             //configuring network
@@ -206,9 +212,10 @@ namespace SESDAD
         private void bt_Command_Click(object sender, EventArgs e)
         {
             String singleCommand = tb_Command.Text;
-            
-            if (singleCommand == "") {
-                    return;
+
+            if (singleCommand == "")
+            {
+                return;
             }
 
             //erases command after clicking the button
@@ -225,25 +232,30 @@ namespace SESDAD
         {
             String[] scriptLines = tb_Script.Lines;
 
-            try {
+            try
+            {
                 if (scriptLines[0] == "")
                 {
                     return;
                 }
-            } catch (IndexOutOfRangeException) {
+            }
+            catch (IndexOutOfRangeException)
+            {
                 return;
             }
-            
+
             //erases command after clicking the button
             tb_Script.Clear();
 
             String[] blankSpace = { " " };
             String[] parsedLine = null;
-            
-            foreach (String line in scriptLines) {
+
+            foreach (String line in scriptLines)
+            {
                 parsedLine = line.Split(blankSpace, StringSplitOptions.None);
 
-                switch (parsedLine[0]) {
+                switch (parsedLine[0])
+                {
                     case "Wait":
                         addMessageToLog(line);
                         int timeToSleep = Int32.Parse(parsedLine[1]);
@@ -302,10 +314,11 @@ namespace SESDAD
         //************************************************************************************
 
         //Reads and process the configFile.txt
-        private void readConfigFile() {
+        private void readConfigFile()
+        {
 
             String[] lines = System.IO.File.ReadAllLines(this.configFilePath);
-            
+
             foreach (string line in lines)
             {
                 processConfigFileLines(line);
@@ -329,7 +342,8 @@ namespace SESDAD
 
                     if (myBrokerinfo.ContainsKey(BrokerNeighbours.PARENT) && (String.Compare("none", myBrokerinfo[BrokerNeighbours.PARENT]) != 0)) //se o broker for pai do meu broker
                     {
-                        if ((String.Compare(parsed[5], myBrokerinfo[BrokerNeighbours.PARENT]) == 0) && (String.Compare(parsed[3], ProcessType.BROKER) == 0)) {
+                        if ((String.Compare(parsed[5], myBrokerinfo[BrokerNeighbours.PARENT]) == 0) && (String.Compare(parsed[3], ProcessType.BROKER) == 0))
+                        {
                             myBroker.addBroker(int.Parse(brokerPort), brokerIp, BrokerNeighbours.PARENT);
                         }
                     }
@@ -355,7 +369,8 @@ namespace SESDAD
         /********************************************/
         //          PROCESSES CONFIG FILE
         /*******************************************/
-        private void processConfigFileLines(String line) {
+        private void processConfigFileLines(String line)
+        {
             String[] blankSpace = { " " };
             String[] parsed = line.Split(blankSpace, StringSplitOptions.None);
 
@@ -367,35 +382,46 @@ namespace SESDAD
                         myBrokerinfo[BrokerNeighbours.PARENT] = parsed[3];
 
                     }
-           
-                    else if (String.Compare("site" + this.puppetID, parsed[3]) == 0) { //primeiro defino o filho SonL depois o SonR
-                        if (myBrokerinfo.ContainsKey(BrokerNeighbours.SONL)) {
+
+                    else if (String.Compare("site" + this.puppetID, parsed[3]) == 0)
+                    { //primeiro defino o filho SonL depois o SonR
+                        if (myBrokerinfo.ContainsKey(BrokerNeighbours.SONL))
+                        {
                             myBrokerinfo.Add(BrokerNeighbours.SONR, parsed[1]);
                         }
-                        else {
+                        else
+                        {
                             myBrokerinfo.Add(BrokerNeighbours.SONL, parsed[1]);
                         }
                     }
                     break;
 
                 case "Process": //Process processname Is publisher|subscriber|broker On sitename URL process-url REFATORIZAR REFATORIZAR REFATORIZAR
-                    
+
                     string URL = parsed[7];
                     Process process = null;
                     string processPort = portAndIpFromURL(URL)[0];
                     string processIp = portAndIpFromURL(URL)[1];
 
-                    if (this.isMaster()) {
+                    if (this.isMaster())
+                    {
                         string slaveID = parsed[5].Replace("site", ""); //removes the "site" from string
                         slavesProcesses.Add(parsed[1], int.Parse(slaveID)); //processName -> slaveID
                     }
 
-                    if (String.Compare(parsed[3], ProcessType.BROKER) == 0) {
+                    if (String.Compare(parsed[3], ProcessType.BROKER) == 0)
+                    {
+
+                        if (String.Compare("site0", parsed[5]) == 0) //obtenho o porto e IP do broker root
+                        {
+                            myBroker.addRootBroker(int.Parse(processPort), processIp);
+                        }
 
                         if (String.Compare("site" + this.puppetID, parsed[5]) == 0) //se for o meu broker
                         {
                             process = startProcess(parsed[1], ProcessType.BROKER, processPort);
-                            if (process == null) {
+                            if (process == null)
+                            {
                                 addMessageToLog("Couldn't start " + parsed[1]);
                             }
                             addMessageToLog("Broker " + parsed[1] + " at " + URL);
@@ -406,28 +432,34 @@ namespace SESDAD
                             myBroker.giveInfo(processIp, myBrokerPort, parsed[1]);
                         }
 
-                    } else if (String.Compare(parsed[3], ProcessType.PUBLISHER) == 0) {
+                    }
+                    else if (String.Compare(parsed[3], ProcessType.PUBLISHER) == 0)
+                    {
                         if (String.Compare("site" + this.puppetID, parsed[5]) != 0)
                         { //se não pertence ao meu site nao me interessa
                             break;
                         }
 
                         process = startProcess(parsed[1], ProcessType.PUBLISHER, processPort);
-                        if (process == null) {
+                        if (process == null)
+                        {
                             addMessageToLog("Couldn't start " + parsed[1]);
                         }
                         addMessageToLog("Publisher " + parsed[1] + " at " + URL);
                         PublisherInterface publisher = (PublisherInterface)Activator.GetObject(typeof(PublisherInterface), URL);
                         myPubs.Add(parsed[1], new Tuple<int, PublisherInterface>(int.Parse(processPort), publisher));
 
-                    } else if (String.Compare(parsed[3], ProcessType.SUBSCRIBER) == 0) {
+                    }
+                    else if (String.Compare(parsed[3], ProcessType.SUBSCRIBER) == 0)
+                    {
                         if (String.Compare("site" + this.puppetID, parsed[5]) != 0)
                         { //se não pertence ao meu site nao me interessa
                             break;
                         }
 
                         process = startProcess(parsed[1], ProcessType.SUBSCRIBER, processPort);
-                        if (process == null) {
+                        if (process == null)
+                        {
                             addMessageToLog("Couldn't start " + parsed[1]);
                         }
                         addMessageToLog("Subscriber " + parsed[1] + " at " + URL);
@@ -453,11 +485,12 @@ namespace SESDAD
         /********************************************/
         //          START A SINGLE PROCESS
         /*******************************************/
-        public Process startProcess(string processName, string processType, string args) {
+        public Process startProcess(string processName, string processType, string args)
+        {
 
             string processTypeDirectory = processType.First().ToString().ToUpper() + processType.Substring(1);
             string processPath = Environment.CurrentDirectory.Replace("PuppetMaster", processTypeDirectory); //Broker | Subscriber | Publisher
-            
+
             processPath += @"\" + processType + ".exe";
 
             ProcessStartInfo startInfo = new ProcessStartInfo();
@@ -521,7 +554,8 @@ namespace SESDAD
                 {
                     myPubs[processName].Item2.receiveOrderToPublish(topic, nEvents, interval);
                 }
-                else { //if not my publisher calls slave to order publish command
+                else
+                { //if not my publisher calls slave to order publish command
                     slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToPublish(processName, topic, nEvents, interval);
                 }
             }
@@ -535,7 +569,8 @@ namespace SESDAD
 
         }
 
-        public void crash(String processName) {
+        public void crash(String processName)
+        {
             if (isMaster())
             {
                 if (LocalProcesses.ContainsKey(processName))
@@ -545,11 +580,13 @@ namespace SESDAD
                         LocalProcesses[processName].Kill();
                     }
                 }
-                else {
+                else
+                {
                     slavesRemoteObjects[slavesProcesses[processName]].receiveOrderToCrash(processName);
                 }
             }
-            else {
+            else
+            {
                 if (LocalProcesses.ContainsKey(processName))
                 {
                     if (!LocalProcesses[processName].HasExited)
@@ -557,14 +594,15 @@ namespace SESDAD
                         LocalProcesses[processName].Kill();
                     }
                 }
-            }  
+            }
         }
 
         public void status()
         {
             if (isMaster())
             {
-                foreach (PuppetInterface puppet in slavesRemoteObjects.Values) {
+                foreach (PuppetInterface puppet in slavesRemoteObjects.Values)
+                {
                     puppet.receiveOrderToShowStatus();
                 }
             }
@@ -639,7 +677,8 @@ namespace SESDAD
             }
         }
 
-        public void receiveLogs(string action) {
+        public void receiveLogs(string action)
+        {
             if (isMaster())
             {
                 addMessageToLog(action);
@@ -650,8 +689,9 @@ namespace SESDAD
             }
         }
 
-        public void addMessageToLog(string message) {
-            
+        public void addMessageToLog(string message)
+        {
+
             tb_Log.AppendText(message);
             tb_Log.AppendText(Environment.NewLine);
         }
@@ -661,7 +701,8 @@ namespace SESDAD
             tb_Log.Clear();
         }
 
-        private String[] portAndIpFromURL(string url) { //melhorar codigo - returns port and processType
+        private String[] portAndIpFromURL(string url)
+        { //melhorar codigo - returns port and processType
             String[] spliter = { ":" };
 
             String[] portAndProcess = url.Split(spliter, StringSplitOptions.None);
@@ -671,11 +712,12 @@ namespace SESDAD
 
             String ip = portAndProcess[1].Substring(2);
 
-            String[] portAndIpFromURL = {port, ip};
+            String[] portAndIpFromURL = { port, ip };
             return portAndIpFromURL;
         }
 
-        private bool isMaster() {
+        private bool isMaster()
+        {
             return puppetID == 0;
         }
     }
@@ -717,31 +759,38 @@ namespace SESDAD
             form.Invoke(new DelCrashProcess(form.crash), processName);
         }
 
-        public void receiveOrderToFreeze(string processName) {
+        public void receiveOrderToFreeze(string processName)
+        {
             // thread-safe access to form
             form.Invoke(new DelFreezeProcess(form.freeze), processName);
         }
 
-        public void receiveOrderToUnfreeze(string processName) {
+        public void receiveOrderToUnfreeze(string processName)
+        {
             // thread-safe access to form
             form.Invoke(new DelUnfreezeProcess(form.unfreeze), processName);
         }
-        
-        public void receiveOrderToPublish(string processName, string topic, int numberOfEvents, int interval_x_ms) {
+
+        public void receiveOrderToPublish(string processName, string topic, int numberOfEvents, int interval_x_ms)
+        {
             // thread-safe access to form
             form.Invoke(new DelPublish(form.publish), processName, topic, numberOfEvents, interval_x_ms);
         }
-        public void receiveOrderToSubscribe(string processName, string topic) {
+        public void receiveOrderToSubscribe(string processName, string topic)
+        {
             form.Invoke(new DelSubscribe(form.subscribe), processName, topic);
         }
-        public void receiveOrderToUnsubscribe(string processName, string topic) {
+        public void receiveOrderToUnsubscribe(string processName, string topic)
+        {
             form.Invoke(new DelUnsubscribe(form.unsubscribe), processName, topic);
         }
-        public void receiveOrderToShowStatus() {
+        public void receiveOrderToShowStatus()
+        {
             form.Invoke(new DelShowStatus(form.status));
         }
 
-        public void informAction(string action) {
+        public void informAction(string action)
+        {
             form.Invoke(new DelReceiveLogs(form.receiveLogs), action);
         }
 

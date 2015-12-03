@@ -4,6 +4,7 @@ using System.Threading;
 using System.Runtime.InteropServices;
 
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace SESDADInterfaces
 {
@@ -44,6 +45,26 @@ namespace SESDADInterfaces
         public const string PARENT = "parent";
     }
 
+    public class seqNumber
+    {
+        private int seqN;
+        public seqNumber()
+        {
+            seqN = 1;
+        }
+
+        public int SeqN
+        {
+            [MethodImpl(MethodImplOptions.Synchronized)]
+            get
+            { return seqN; }
+
+            [MethodImpl(MethodImplOptions.Synchronized)]
+            set
+            { seqN = value; }
+        }
+    }
+
     public interface PuppetInterface
     {
         void receiveOrderToCrash(string processName);
@@ -74,7 +95,7 @@ namespace SESDADInterfaces
         public string Body { get { return body; } }
         public string Topic { get { return topic; } }
     }
-    
+
     public interface PublisherInterface
     {
         void receiveOrderToPublish(string topic, int numeberOfEvents, int interval_x_ms);
@@ -121,6 +142,8 @@ namespace SESDADInterfaces
     {
         void receiveOrderToFlood(string topic, string message, string ip, int port);
 
+        void totalOrderFlood(string topic, string message);
+
         void subscribeRequest(string topic, int port);
 
         void unSubscribeRequest(string topic, int port);
@@ -137,6 +160,8 @@ namespace SESDADInterfaces
 
         // network config
         void addBroker(int port, string ip, string relation);
+
+        void addRootBroker(int port, string ip);
 
         // network config
         void registerLocalPuppetMaster(int port);

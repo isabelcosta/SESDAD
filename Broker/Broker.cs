@@ -46,7 +46,6 @@ namespace SESDAD
     }
 
 
-
     public class SubscriberRequestID
     {
         private int subID;
@@ -56,11 +55,11 @@ namespace SESDAD
         {
             this.subID = subID;
         }
-        public int SubID { get { return subID;} }
-        
-        public MySubs SubDelegate {  get { return subDelegate; } }
+        public int SubID { get { return subID; } }
 
-        public void addSubscription (MySubs subscription)
+        public MySubs SubDelegate { get { return subDelegate; } }
+
+        public void addSubscription(MySubs subscription)
         {
             subDelegate += subscription;
         }
@@ -102,9 +101,9 @@ namespace SESDAD
                 return -1;
             }
         }
- 
+
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool containsTopic (string topicNew)
+        public bool containsTopic(string topicNew)
         {
             foreach (string topicList in topics.Keys)
             {
@@ -122,12 +121,12 @@ namespace SESDAD
             topics.TryAdd(topic, 1);
         }
 
-        
+
         public ConcurrentDictionary<string, int> getTopicDict()
         {
             return this.topics;
         }
-        
+
     }
     [Serializable]
     class BrokerServices : MarshalByRefObject, BrokerInterface
@@ -142,17 +141,26 @@ namespace SESDAD
         string myIp;
         string myName;
 
+        private seqNumber seqNb = new seqNumber();
+
+
         PuppetInterface localPuppetMaster;
+        BrokerInterface rootBroker;
 
         //Filtering
         //filteringTable{relation, list of topics to flood there}
         ConcurrentDictionary<string, TopicsTable> filteringTable = new ConcurrentDictionary<string, TopicsTable>();
-        
+
+        //Total Order
+        // { relation , number to decrement }
+        ConcurrentDictionary<string, int> seqNbToDecrement = new ConcurrentDictionary<string, int>();
+
+
         Dictionary<string, List<SubscriberRequestID>> delegates = new Dictionary<string, List<SubscriberRequestID>>();
 
         //public event MySubs E;
 
-        ConcurrentDictionary<int, SubscriberInterface> subscribers = new ConcurrentDictionary<int,SubscriberInterface>();
+        ConcurrentDictionary<int, SubscriberInterface> subscribers = new ConcurrentDictionary<int, SubscriberInterface>();
         ConcurrentDictionary<int, PublisherInterface> publishers = new ConcurrentDictionary<int, PublisherInterface>();
         //List<BrokerInterface> brokers = new List<BrokerInterface>();
 
@@ -182,12 +190,9 @@ namespace SESDAD
                 - fifoManager
                 - fifoQueue
                 
-
-
-
             */
 
-        public string sourceType (string ip, int port)
+        public string sourceType(string ip, int port)
         {
 
             lock (brokerTreeIpAndPort)
@@ -220,26 +225,26 @@ namespace SESDAD
         }
 
 
-        public bool canFilterFlood(string sourceType, string topic, string relation)
+        public bool canFilterFlood(string topic, string relation)
         {
 
             if (String.CompareOrdinal(RoutingPolicyType.FILTER, routing) == 0)
             {
                 TopicsTable testTable = new TopicsTable();
-               
+
                 if (filteringTable.TryGetValue(relation, out testTable))
                 {
                     //dictionary<string, int>
                     return filteringTable[relation].containsTopic(topic);
-                 }
-                    
+                }
+
 
                 return false;
             }
             return true;
         }
 
-        public void flood (string sourceType, string topic, string message)
+        public void flood(string sourceType, string topic, string message)
         {
 
             BrokerInterface broTest;
@@ -259,21 +264,21 @@ namespace SESDAD
             {
                 if ((String.CompareOrdinal(sourceType, BrokerNeighbours.SONR) != 0) &&
                                     brokerTreeInterface.TryGetValue(BrokerNeighbours.SONR, out broTest) &&
-                                                        canFilterFlood(sourceType, topic, BrokerNeighbours.SONR))
+                                                        canFilterFlood(topic, BrokerNeighbours.SONR))
                 {
                     //lock broker??
                     brokerTreeInterface[BrokerNeighbours.SONR].receiveOrderToFlood(topic, message, myIp, myPort);
                 }
                 if ((String.CompareOrdinal(sourceType, BrokerNeighbours.SONL) != 0) &&
                                     brokerTreeInterface.TryGetValue(BrokerNeighbours.SONL, out broTest) &&
-                                                        canFilterFlood(sourceType, topic, BrokerNeighbours.SONL))
+                                                        canFilterFlood(topic, BrokerNeighbours.SONL))
                 {
                     //lock broker??
                     brokerTreeInterface[BrokerNeighbours.SONL].receiveOrderToFlood(topic, message, myIp, myPort);
                 }
                 if ((String.CompareOrdinal(sourceType, BrokerNeighbours.PARENT) != 0) &&
                                     brokerTreeInterface.TryGetValue(BrokerNeighbours.PARENT, out broTest) &&
-                                                        canFilterFlood(sourceType, topic, BrokerNeighbours.PARENT))
+                                                        canFilterFlood(topic, BrokerNeighbours.PARENT))
                 {
                     //lock broker??
                     brokerTreeInterface[BrokerNeighbours.PARENT].receiveOrderToFlood(topic, message, myIp, myPort);
@@ -282,28 +287,28 @@ namespace SESDAD
 
             lock (delegates)
             {
-                
-            //callback
-            foreach (string subTopic in delegates.Keys)
-            {
-                    // checks if the TOPIC BEING PUBLISHED is INCLUDED in the TOPIC SUBSCRIBED
-                if (topicsMatch(topic, subTopic))
-                {
 
-                    foreach (SubscriberRequestID subReqID in delegates[subTopic])
+                //callback
+                foreach (string subTopic in delegates.Keys)
+                {
+                    // checks if the TOPIC BEING PUBLISHED is INCLUDED in the TOPIC SUBSCRIBED
+                    if (topicsMatch(topic, subTopic))
                     {
 
-                        subReqID.SubDelegate(this, new MessageArgs(topic, message));
-                    }
+                        foreach (SubscriberRequestID subReqID in delegates[subTopic])
+                        {
 
+                            subReqID.SubDelegate(this, new MessageArgs(topic, message));
+                        }
+
+                    }
                 }
-            }
             }
             string action = "BroEvent - " + myName + " Flooded message on topic " + topic;
             informPuppetMaster(action);
             //Console.WriteLine(action);
         }
-        
+
 
         public bool checkIfIsNext(Tuple<int, int> msg, string pubName, string topic)
         {
@@ -323,16 +328,14 @@ namespace SESDAD
             }
 
 
-            if (msg.Item1 == 1 )
+            if (msg.Item1 == 1)
             {
 
                 /*
                 if(fifoManager.ContainsKey(pubName+topic) && fifoQueue(pubName+topic)-> tiver enviado todas as mensagens (exemplo 12/12)) {
-
                     fifoManager.Remove(pubName+topic);
                     &&
                     limpar a fifoQueue(pubName+topic)?
-
                 }
                 */
                 lock (fifoManager)
@@ -343,18 +346,18 @@ namespace SESDAD
                     if (fifoManager.ContainsKey(pubName + topic))
                     {
                         fifoManager.Remove(pubName + topic);
-                        if(fifoQueue.ContainsKey(pubName + topic))
+                        if (fifoQueue.ContainsKey(pubName + topic))
                         {
                             fifoQueue.Remove(pubName + topic);
                         }
                     }
                     fifoManager.Add(pubName + topic, msg);
                 }
-                    return true;
+                return true;
             }
             return false;
         }
-        
+
         public void parseMessage(ref string pubName, ref Tuple<int, int> msg, string message)
         {
             if (pubName == null) throw new ArgumentNullException("pubName");
@@ -367,6 +370,8 @@ namespace SESDAD
             msgParsed[2] = msgTemp2[1];
 
             pubName = msgParsed[0];
+
+            // myName + " " + seqNb.SeqN + "/" + numberOfEvents
             msg = new Tuple<int, int>(int.Parse(msgParsed[1]), int.Parse(msgParsed[2]));
         }
 
@@ -380,7 +385,7 @@ namespace SESDAD
                 if (!fifoQueue.TryGetValue(pubPlusTopic, out msgList))
                 {
 
-                    msgList = new List<Tuple<int, string>> {msgNPlusMsg};
+                    msgList = new List<Tuple<int, string>> { msgNPlusMsg };
                     // Key wasn't in dictionary; "value" is now 0
                     fifoQueue.Add(pubPlusTopic, msgList);
                 }
@@ -391,7 +396,7 @@ namespace SESDAD
                 }
             }
         }
-        public bool getFromQueue(string pubPlusTopic, ref string message, ref Tuple<int,int> msg)
+        public bool getFromQueue(string pubPlusTopic, ref string message, ref Tuple<int, int> msg)
 
         {
             //Console.WriteLine("MESSAGE NUMBER : {0}", msg.Item1);
@@ -412,8 +417,8 @@ namespace SESDAD
                             {
                                 if (fifoManager.TryGetValue(pubPlusTopic, out msgMngmt))
                                 {
-                                  msgMngmt = new Tuple<int, int>(currentMsg.Item1, msg.Item2);
-                                   fifoManager[pubPlusTopic] = msgMngmt;
+                                    msgMngmt = new Tuple<int, int>(currentMsg.Item1, msg.Item2);
+                                    fifoManager[pubPlusTopic] = msgMngmt;
                                 }
                             }
                             //msgList.Remove(currentMsg);
@@ -433,23 +438,21 @@ namespace SESDAD
         }
 
 
-        public bool topicsMatch (string topicPub, string topicSub)
+        public bool topicsMatch(string topicPub, string topicSub)
         {
             /*
-
                     compare the topic published with the topic subscribed without the * character
                 
             */
-            
+
             if (topicSub.EndsWith("*"))
             {
                 topicSub = topicSub.Remove(topicSub.Length - 1);
             }
             return topicPub.Contains(topicSub);
-            
-            
-        }
 
+
+        }
 
         public void subscribeRequest(string topic, int port)
         {
@@ -548,7 +551,6 @@ namespace SESDAD
         /*
         
             porque 'e que nao 'e igual ao subscription???
-
             */
         public void filterUnsubscriptionFlood(string topic, int port)
         {
@@ -560,7 +562,7 @@ namespace SESDAD
                 {
                     if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONL, out broTest) && (string.Compare(relation, BrokerNeighbours.SONL) != 0))
                     {
-                        
+
                         brokerTreeInterface[BrokerNeighbours.SONL].filterUnsubscription(topic, myIp, myPort);
                     }
                     if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONR, out broTest) && (string.Compare(relation, BrokerNeighbours.SONR) != 0))
@@ -579,18 +581,171 @@ namespace SESDAD
         /*
         
             Methods to be executed in Threads
-
         */
 
 
         // flood
         public void receiveOrderToFlood(string topic, string message, string ip, int port)
         {
-            
+
             var t = new Thread(() => RealreceiveOrderToFlood(topic, message, ip, port));
             t.Start();
             //return t;
         }
+
+        private string totalOrderMessage(string message, string relation)
+        {
+            /*
+                
+                TODO: ACTUALIZAR CONSOANTE AS SUBSCRICOES ABAIXO
+            
+            */
+
+
+
+            // pubName + " " + seqNb.SeqN + "/" + numberOfEvents
+
+            string[] msgParsed = new string[3];
+
+            // { pubName , SeqNb.SeqN/NumberOfEvents }
+            string[] msgTemp1 = message.Split(' ');
+
+            //msgParsed[0] = pubName
+            msgParsed[0] = msgTemp1[0];
+
+            // { SeqNb.SeqN , NumberOfEvents }
+            string[] msgTemp2 = msgTemp1[1].Split('/');
+
+            //msgParsed[1] = seqNb.SeqN
+            msgParsed[1] = msgTemp2[0];
+
+            //msgParsed[2] = numberOfEvents
+            msgParsed[2] = msgTemp2[1];
+
+
+            string newMessage;
+            int numToDec;
+            if (brokerTreeInterface.ContainsKey(BrokerNeighbours.PARENT))   // nao e' a root
+            {
+
+                if (seqNbToDecrement.TryGetValue(relation, out numToDec))
+                {
+                    numToDec = int.Parse(msgParsed[1]) - seqNbToDecrement[relation];
+                }
+                else
+                {
+                    numToDec = int.Parse(msgParsed[1]);
+                }
+                newMessage = msgParsed[0] + " " + numToDec + "/" + msgParsed[2];
+            }
+            else // e' a root
+            {
+                if (seqNbToDecrement.TryGetValue(relation, out numToDec))
+                {
+                    numToDec = seqNb.SeqN - seqNbToDecrement[relation];
+                }
+                else
+                {
+                    numToDec = seqNb.SeqN;
+                }
+
+                lock (seqNb)
+                {
+                    newMessage = msgParsed[0] + " " + numToDec + "/" + msgParsed[2];
+                    seqNb.SeqN += 1;
+                }
+            }
+
+
+            return newMessage;
+        }
+
+        public void totalOrderFlood(string topic, string message)
+        {
+            BrokerInterface broTest;
+            // will be updated -> with the real sequence number, wich is set by the root and updated by the other brokers
+            string newMessage;
+
+            bool sentSonL = false;
+            bool sentSonR = false;
+
+            lock (brokerTreeInterface)
+            {
+                if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONR, out broTest) &&
+                                        canFilterFlood(topic, BrokerNeighbours.SONR))
+                {
+                    newMessage = totalOrderMessage(message, BrokerNeighbours.SONR);
+                    brokerTreeInterface[BrokerNeighbours.SONR].totalOrderFlood(topic, newMessage);
+                    sentSonR = true;
+                }
+
+                if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONL, out broTest) &&
+                                        canFilterFlood(topic, BrokerNeighbours.SONL))
+                {
+                    newMessage = totalOrderMessage(message, BrokerNeighbours.SONL);
+                    brokerTreeInterface[BrokerNeighbours.SONL].totalOrderFlood(topic, newMessage);
+                    sentSonL = true;
+                }
+
+            }
+
+            if (!sentSonR)
+            {
+                int temp;
+                if (seqNbToDecrement.TryGetValue(BrokerNeighbours.SONR, out temp))
+                {
+                    seqNbToDecrement[BrokerNeighbours.SONR] += 1;
+                }
+                else
+                {
+                    seqNbToDecrement.TryAdd(BrokerNeighbours.SONR, 1);
+                }
+            }
+
+            if (!sentSonL)
+            {
+                int temp;
+                if (seqNbToDecrement.TryGetValue(BrokerNeighbours.SONL, out temp))
+                {
+                    seqNbToDecrement[BrokerNeighbours.SONL] += 1;
+                }
+                else
+                {
+                    seqNbToDecrement.TryAdd(BrokerNeighbours.SONL, 1);
+                }
+            }
+
+            /*
+            
+                TODO : AQUI FALTA FAZER A ENTREGA ORDEIRA DAS MENSAGENS AOS SUBS
+            
+            */
+            lock (delegates)
+            {
+
+                //callback
+                foreach (string subTopic in delegates.Keys)
+                {
+                    // checks if the TOPIC BEING PUBLISHED is INCLUDED in the TOPIC SUBSCRIBED
+                    if (topicsMatch(topic, subTopic))
+                    {
+
+                        foreach (SubscriberRequestID subReqID in delegates[subTopic])
+                        {
+                            newMessage = totalOrderMessage(message, ProcessType.SUBSCRIBER);
+                            subReqID.SubDelegate(this, new MessageArgs(topic, newMessage));
+                        }
+
+                    }
+                }
+            }
+
+            string action = "BroEvent - " + myName + " Flooded message on topic with TotalOrder " + topic;
+            informPuppetMaster(action);
+            //Console.WriteLine(action);
+
+        }
+
         //used for the PuppetMaster to request a broker to flood a message
         public void RealreceiveOrderToFlood(string topic, string message, string ip, int port)
         {
@@ -635,7 +790,25 @@ namespace SESDAD
             }
             else if (String.CompareOrdinal(OrderingType.TOTAL, ordering) == 0)
             {
-                //TODO 
+
+                if (String.CompareOrdinal(source, ProcessType.PUBLISHER) == 0)
+                {
+                    if (brokerTreeInterface.ContainsKey(BrokerNeighbours.PARENT)) // nao e' root
+                    {
+                        rootBroker.totalOrderFlood(topic, message);
+                    }
+                    else // e' root
+                    {
+                        totalOrderFlood(topic, message);
+                    }
+                }
+                else
+                {
+                    /*
+                        NADA ??
+                    */
+                }
+
             }
             else
             {
@@ -658,29 +831,29 @@ namespace SESDAD
 
             TopicsTable testTable = new TopicsTable();
 
-                if (filteringTable.TryGetValue(relation, out testTable))
+            if (filteringTable.TryGetValue(relation, out testTable))
+            {
+
+                if (filteringTable[relation].containsTopic(topic))
                 {
-
-                    if (filteringTable[relation].containsTopic(topic))
-                    {
-                        filteringTable[relation].addSubNumber(topic);
-                    }
-                    else
-                    {
-                        filteringTable[relation].AddTopic(topic);
-                        filterSubscriptionFlood(topic, ip, port);
-
-                    }
+                    filteringTable[relation].addSubNumber(topic);
                 }
                 else
                 {
-                    testTable = new TopicsTable();
-                    testTable.AddTopic(topic);
-                    bool test = filteringTable.TryAdd(relation, testTable);
+                    filteringTable[relation].AddTopic(topic);
                     filterSubscriptionFlood(topic, ip, port);
 
                 }
             }
+            else
+            {
+                testTable = new TopicsTable();
+                testTable.AddTopic(topic);
+                bool test = filteringTable.TryAdd(relation, testTable);
+                filterSubscriptionFlood(topic, ip, port);
+
+            }
+        }
 
         // Unsubscription
 
@@ -690,12 +863,12 @@ namespace SESDAD
             t.Start();
         }
 
-        private void RealfilterUnsubscription(string topic, string ip , int port)
+        private void RealfilterUnsubscription(string topic, string ip, int port)
         {
-            
+
             string relation = sourceType(ip, port);
             TopicsTable testTable = new TopicsTable();
-            
+
             if (filteringTable.TryGetValue(relation, out testTable))
             {
                 if (filteringTable[relation].containsTopic(topic))
@@ -707,7 +880,7 @@ namespace SESDAD
                     }
                 }
             }
-            
+
         }
 
 
@@ -753,7 +926,7 @@ namespace SESDAD
                     Console.WriteLine("|     - " + pair.Key);
                 }
             }
-            
+
             Console.WriteLine("| ");
             Console.WriteLine(".----------------------------------------.");
             Console.WriteLine("");
@@ -795,7 +968,20 @@ namespace SESDAD
             publishers.TryAdd(port, publisher);
         }
 
-        public void addBroker (int port, string ip, string relation)
+        public void addRootBroker(int port, string ip)
+        {
+            var t = new Thread(() => RealaddRootBroker(port, ip));
+            t.Start();
+        }
+
+        public void RealaddRootBroker(int port, string ip)
+        {
+            BrokerInterface rootB = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), "tcp://" + ip + ":" + port + "/broker");
+            this.rootBroker = rootB;
+            Console.WriteLine("Root Broker adicionado " + port);
+        }
+
+        public void addBroker(int port, string ip, string relation)
         {
             var t = new Thread(() => RealaddBroker(port, ip, relation));
             t.Start();
@@ -814,7 +1000,7 @@ namespace SESDAD
                         case BrokerNeighbours.SONL:
                             brokerTreeInterface.Add(BrokerNeighbours.SONL, broker);
                             Tuple<string, int> ipAndPortL = new Tuple<string, int>(ip, port);
-                            brokerTreeIpAndPort.Add(BrokerNeighbours.SONL,ipAndPortL);
+                            brokerTreeIpAndPort.Add(BrokerNeighbours.SONL, ipAndPortL);
                             break;
                         case BrokerNeighbours.SONR:
                             brokerTreeInterface.Add(BrokerNeighbours.SONR, broker);
@@ -834,7 +1020,7 @@ namespace SESDAD
 
 
 
-        public void registerLocalPuppetMaster( int port)
+        public void registerLocalPuppetMaster(int port)
         {
             var t = new Thread(() => RealregisterLocalPuppetMaster(port));
             t.Start();
@@ -857,7 +1043,7 @@ namespace SESDAD
 
         private void RealinformPuppetMaster(string action)
         {
-            if (string.Compare(logging,LoggingLevelType.FULL)==0)
+            if (string.Compare(logging, LoggingLevelType.FULL) == 0)
             {
 
                 lock (localPuppetMaster)
