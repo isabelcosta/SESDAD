@@ -39,20 +39,6 @@ namespace SESDAD
         }
     }
 
-    class seqNumber
-    {
-        private int seqN;
-        public seqNumber()
-        {
-            seqN = 1;
-        }
-        
-        public int SeqN
-        {
-            get { return seqN; }
-            set { seqN = value; }
-        }
-    }
 
     [Serializable]
     class PublisherServices: MarshalByRefObject, PublisherInterface
