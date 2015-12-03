@@ -61,6 +61,7 @@ namespace SESDAD
         private PuppetInterface puppetMasterRemote = null;
         private String[] rootBrokerPortAndIp;
 
+
         /// <summary>
         /// Puppet Master Constructor
         /// </summary>
@@ -202,7 +203,9 @@ namespace SESDAD
             }
             this.myBroker.registerLocalPuppetMaster(puppetPort);
             this.myBroker.policies(this.routingPolicy, this.ordering, this.loggingLevel);
+
             this.myBroker.addRootBroker(int.Parse(this.rootBrokerPortAndIp[0]), this.rootBrokerPortAndIp[1]);
+
         }
 
         //************************************************************************************
@@ -411,13 +414,14 @@ namespace SESDAD
 
                     if (String.Compare(parsed[3], ProcessType.BROKER) == 0)
                     {
-                        /*
+                        
                         if (String.Compare("site0", parsed[5]) == 0) //obtenho o porto e IP do broker root
                         {
-                            this.rootBrokerPortAndIp[0] = processPort;
-                            this.rootBrokerPortAndIp[1] = processIp;
+                            String[] tempVect = { processPort, processIp };
+
+                            this.rootBrokerPortAndIp = tempVect;
                         }
-                        */
+                        
                         if (String.Compare("site" + this.puppetID, parsed[5]) == 0) //se for o meu broker
                         {
                             process = startProcess(parsed[1], ProcessType.BROKER, processPort);

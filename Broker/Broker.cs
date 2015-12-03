@@ -685,7 +685,7 @@ namespace SESDAD
         {
             BrokerInterface broTest;
             // will be updated -> with the real sequence number, wich is set by the root and updated by the other brokers
-            string newMessage;
+            string newMessage = message;
 
             bool sentSonL = false;
             bool sentSonR = false;
@@ -753,7 +753,7 @@ namespace SESDAD
 
                         foreach (SubscriberRequestID subReqID in delegates[subTopic])
                         {
-                            newMessage = totalOrderMessage(message, ProcessType.SUBSCRIBER);
+                            //newMessage = totalOrderMessage(message, ProcessType.SUBSCRIBER);
                             subReqID.SubDelegate(this, new MessageArgs(topic, newMessage));
                         }
 
@@ -991,15 +991,22 @@ namespace SESDAD
 
         public void addRootBroker(int port, string ip)
         {
+            Console.WriteLine("mega LEL");
             var t = new Thread(() => RealaddRootBroker(port, ip));
             t.Start();
         }
 
         public void RealaddRootBroker(int port, string ip)
         {
-            BrokerInterface rootB = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), "tcp://" + ip + ":" + port + "/broker");
-            this.rootBroker = rootB;
-            Console.WriteLine("Root Broker adicionado " + port);
+            Console.WriteLine("LEEEL");
+
+            if (myPort != port)
+            {
+                Console.WriteLine("LEL");
+                BrokerInterface rootB = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), "tcp://" + ip + ":" + port + "/broker");
+                this.rootBroker = rootB;
+                Console.WriteLine("Root Broker adicionado " + port);
+            }
         }
 
         public void addBroker(int port, string ip, string relation)
