@@ -128,7 +128,7 @@ namespace SESDAD
                 //check
                 lock (seqNb)
                 {
-                    content = myName + " " + seqNb.SeqN + "/" + numberOfEvents;
+                    content = myName + " " + seqNb.SeqN;
                     seqNb.SeqN += 1;
 
                     int num;

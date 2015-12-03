@@ -163,7 +163,7 @@ namespace SESDAD
         Dictionary<SubscriberInterface, List<string>> subscribersTopics = new Dictionary<SubscriberInterface, List<string>>();
 
         //FIFO
-        Dictionary<string, Tuple<int, int>> fifoManager = new Dictionary<string, Tuple<int, int>>();
+        Dictionary<string, int> fifoManager = new Dictionary<string, int>();
         Dictionary<string, List<Tuple<int, string>>> fifoQueue = new Dictionary<string, List<Tuple<int, string>>>();
 
 
@@ -305,25 +305,25 @@ namespace SESDAD
         }
         
 
-        public bool checkIfIsNext(Tuple<int, int> msg, string pubName, string topic)
+        public bool checkIfIsNext(int msg, string pubName, string topic)
         {
             lock (fifoManager)
             {
-                Tuple<int, int> msgMngmt;
-                if (fifoManager.TryGetValue(pubName + topic, out msgMngmt))
+                int msgMngmt;
+                if (fifoManager.TryGetValue(pubName, out msgMngmt))
                 {
                     // Key was in dictionary; "value" contains corresponding value
 
-                    if (fifoManager[pubName + topic].Item1 + 1 == msg.Item1)
+                    if (fifoManager[pubName] + 1 == msg)
                     {
-                        fifoManager[pubName + topic] = msg;
+                        fifoManager[pubName] = msg;
                         return true;
                     }
                 }
             }
 
 
-            if (msg.Item1 == 1 )
+            if (msg == 1 )
             {
 
                 /*
@@ -355,19 +355,15 @@ namespace SESDAD
             return false;
         }
         
-        public void parseMessage(ref string pubName, ref Tuple<int, int> msg, string message)
+        public void parseMessage(ref string pubName, ref int msg, string message)
         {
             if (pubName == null) throw new ArgumentNullException("pubName");
-            string[] msgParsed = new string[3];
+            string[] msgParsed = new string[2];
 
             string[] msgTemp1 = message.Split(' ');
-            msgParsed[0] = msgTemp1[0];
-            string[] msgTemp2 = msgTemp1[1].Split('/');
-            msgParsed[1] = msgTemp2[0];
-            msgParsed[2] = msgTemp2[1];
 
             pubName = msgParsed[0];
-            msg = new Tuple<int, int>(int.Parse(msgParsed[1]), int.Parse(msgParsed[2]));
+            msg = int.Parse(msgTemp1[1]);
         }
 
         public void addToQueue(string pubPlusTopic, int msgNumber, string message)
@@ -606,7 +602,7 @@ namespace SESDAD
                 //     ORDERING FIFO
                 //
                 string pubName = "";
-                Tuple<int, int> msg = new Tuple<int, int>(0, 0);
+                int msg = 0;
 
                 parseMessage(ref pubName, ref msg, message);
 
