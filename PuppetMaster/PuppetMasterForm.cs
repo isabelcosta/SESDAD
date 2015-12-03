@@ -196,7 +196,6 @@ namespace SESDAD
             }
             myBroker.registerLocalPuppetMaster(puppetPort);
             myBroker.policies(this.routingPolicy, this.ordering, this.loggingLevel);
-            myBroker.addRootBroker()
         }
 
         //************************************************************************************

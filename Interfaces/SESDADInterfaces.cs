@@ -4,6 +4,7 @@ using System.Threading;
 using System.Runtime.InteropServices;
 
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace SESDADInterfaces
 {
@@ -42,6 +43,26 @@ namespace SESDADInterfaces
         public const string SONL = "sonL";
         public const string SONR = "sonR";
         public const string PARENT = "parent";
+    }
+
+    public class seqNumber
+    {
+        private int seqN;
+        public seqNumber()
+        {
+            seqN = 1;
+        }
+
+        public int SeqN
+        {
+            [MethodImpl(MethodImplOptions.Synchronized)]
+            get
+            { return seqN; }
+
+            [MethodImpl(MethodImplOptions.Synchronized)]
+            set
+            { seqN = value; }
+        }
     }
 
     public interface PuppetInterface
@@ -120,8 +141,6 @@ namespace SESDADInterfaces
     public interface BrokerInterface
     {
         void receiveOrderToFlood(string topic, string message, string ip, int port);
-
-        void totalOrderFloodRoot(string topic, string message);
 
         void totalOrderFlood(string topic, string message);
 
