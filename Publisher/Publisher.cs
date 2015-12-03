@@ -71,8 +71,8 @@ namespace SESDAD
         string myName;
         int myPort;
 
-        
-        
+        bool freezeFlag = false;
+
         private seqNumber seqNb = new seqNumber();
         
         

@@ -142,6 +142,8 @@ namespace SESDAD
         string myIp;
         string myName;
 
+        bool freezeFlag = false;
+
         PuppetInterface localPuppetMaster;
 
         //Filtering
