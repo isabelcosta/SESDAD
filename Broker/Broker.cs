@@ -386,7 +386,7 @@ namespace SESDAD
                 }
             }
         }
-
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool getFromQueue(string pubName, ref string message, ref int msg)
 
         {
@@ -588,6 +588,7 @@ namespace SESDAD
             //return t;
         }
         //used for the PuppetMaster to request a broker to flood a message
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void RealreceiveOrderToFlood(string topic, string message, string ip, int port)
         {
 
