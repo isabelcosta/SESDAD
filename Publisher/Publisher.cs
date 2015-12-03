@@ -39,7 +39,7 @@ namespace SESDAD
         }
     }
 
-
+        
 
     [Serializable]
     class PublisherServices : MarshalByRefObject, PublisherInterface
@@ -58,14 +58,13 @@ namespace SESDAD
         string myName;
         int myPort;
 
-
-
+        
+        
         private seqNumber seqNb = new seqNumber();
-
-
-
+        
+        
         ConcurrentDictionary<string, int> topicsPublishing = new ConcurrentDictionary<string, int>();
-
+        
         /*
         message
             */
@@ -107,15 +106,15 @@ namespace SESDAD
             // content = myName + " " + 8 + "/" + numberOfEvents;
             // localBroker.receiveOrderToFlood(topic, content, myName, myPort);
             // Thread.Sleep(5000);
-
-
+            
+            
 
             for (int i = 1; i <= numberOfEvents; i++)
             {
                 //check
                 lock (seqNb)
                 {
-                    content = myName + " " + seqNb.SeqN + "/" + numberOfEvents;
+                    content = myName + " " + seqNb.SeqN;
                     seqNb.SeqN += 1;
 
                     int num;
@@ -124,14 +123,14 @@ namespace SESDAD
                         topicsPublishing[topic] += 1;
                     }
                 }
-
-                // Exe: Publisher1 1/10
-                // localBroker fica a null de vez em quando
+                                                
+                                            // Exe: Publisher1 1/10
+                                            // localBroker fica a null de vez em quando
                 localBroker.receiveOrderToFlood(topic, content, myName, myPort);
 
                 string action = "PubEvent - " + myName + " publishes " + topic + " : " + content; //TODO: as mensagens vao como PubEvent certo?
                 informPuppetMaster(action);
-
+                
                 //Console.WriteLine(action);
                 Thread.Sleep(interval_x_ms);
             }
@@ -179,7 +178,7 @@ namespace SESDAD
                 {
                     Console.WriteLine("|   -" + pair.Key + " -> " + pair.Value + " messages sent");
                 }
-
+                
             }
             Console.WriteLine("| ");
             Console.WriteLine(".----------------------------------------.");

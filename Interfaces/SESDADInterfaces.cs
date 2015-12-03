@@ -95,7 +95,7 @@ namespace SESDADInterfaces
         public string Body { get { return body; } }
         public string Topic { get { return topic; } }
     }
-
+    
     public interface PublisherInterface
     {
         void receiveOrderToPublish(string topic, int numeberOfEvents, int interval_x_ms);

@@ -56,7 +56,7 @@ namespace SESDAD
             this.subID = subID;
         }
         public int SubID { get { return subID; } }
-
+        
         public MySubs SubDelegate { get { return subDelegate; } }
 
         public void addSubscription(MySubs subscription)
@@ -101,7 +101,7 @@ namespace SESDAD
                 return -1;
             }
         }
-
+ 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool containsTopic(string topicNew)
         {
@@ -121,12 +121,12 @@ namespace SESDAD
             topics.TryAdd(topic, 1);
         }
 
-
+        
         public ConcurrentDictionary<string, int> getTopicDict()
         {
             return this.topics;
         }
-
+        
     }
     [Serializable]
     class BrokerServices : MarshalByRefObject, BrokerInterface
@@ -150,7 +150,7 @@ namespace SESDAD
         //Filtering
         //filteringTable{relation, list of topics to flood there}
         ConcurrentDictionary<string, TopicsTable> filteringTable = new ConcurrentDictionary<string, TopicsTable>();
-
+        
         //Total Order
         // { relation , number to decrement }
         ConcurrentDictionary<string, int> seqNbToDecrement = new ConcurrentDictionary<string, int>();
@@ -171,7 +171,7 @@ namespace SESDAD
         Dictionary<SubscriberInterface, List<string>> subscribersTopics = new Dictionary<SubscriberInterface, List<string>>();
 
         //FIFO
-        Dictionary<string, Tuple<int, int>> fifoManager = new Dictionary<string, Tuple<int, int>>();
+        Dictionary<string, int> fifoManager = new Dictionary<string, int>();
         Dictionary<string, List<Tuple<int, string>>> fifoQueue = new Dictionary<string, List<Tuple<int, string>>>();
 
 
@@ -229,7 +229,7 @@ namespace SESDAD
                     if (pair.Key == port)
                     {
                         return ProcessType.SUBSCRIBER;
-                    }
+        }
                 }
             }
 
@@ -252,13 +252,13 @@ namespace SESDAD
             if (String.CompareOrdinal(RoutingPolicyType.FILTER, routing) == 0)
             {
                 TopicsTable testTable = new TopicsTable();
-
+               
                 if (filteringTable.TryGetValue(relation, out testTable))
                 {
                     //dictionary<string, int>
                     return filteringTable[relation].containsTopic(topic);
-                }
-
+                 }
+                    
 
                 return false;
             }
@@ -308,48 +308,48 @@ namespace SESDAD
 
             lock (delegates)
             {
-
-                //callback
-                foreach (string subTopic in delegates.Keys)
-                {
+                
+            //callback
+            foreach (string subTopic in delegates.Keys)
+            {
                     // checks if the TOPIC BEING PUBLISHED is INCLUDED in the TOPIC SUBSCRIBED
-                    if (topicsMatch(topic, subTopic))
+                if (topicsMatch(topic, subTopic))
+                {
+
+                    foreach (SubscriberRequestID subReqID in delegates[subTopic])
                     {
 
-                        foreach (SubscriberRequestID subReqID in delegates[subTopic])
-                        {
-
-                            subReqID.SubDelegate(this, new MessageArgs(topic, message));
-                        }
-
+                        subReqID.SubDelegate(this, new MessageArgs(topic, message));
                     }
+
                 }
+            }
             }
             string action = "BroEvent - " + myName + " Flooded message on topic " + topic;
             informPuppetMaster(action);
             //Console.WriteLine(action);
         }
+        
 
-
-        public bool checkIfIsNext(Tuple<int, int> msg, string pubName, string topic)
+        public bool checkIfIsNext(int msg, string pubName, string topic)
         {
             lock (fifoManager)
             {
-                Tuple<int, int> msgMngmt;
-                if (fifoManager.TryGetValue(pubName + topic, out msgMngmt))
+                int msgMngmt;
+                if (fifoManager.TryGetValue(pubName, out msgMngmt))
                 {
                     // Key was in dictionary; "value" contains corresponding value
 
-                    if (fifoManager[pubName + topic].Item1 + 1 == msg.Item1)
+                    if (fifoManager[pubName] + 1 == msg)
                     {
-                        fifoManager[pubName + topic] = msg;
+                        fifoManager[pubName] = msg;
                         return true;
                     }
                 }
             }
 
 
-            if (msg.Item1 == 1)
+            if (msg == 1 )
             {
 
                 /*
@@ -364,36 +364,29 @@ namespace SESDAD
                     //
                     // Não faço ideia porque é que se está a verificar isto
                     //
-                    if (fifoManager.ContainsKey(pubName + topic))
+                    if (fifoManager.ContainsKey(pubName))
                     {
-                        fifoManager.Remove(pubName + topic);
-                        if (fifoQueue.ContainsKey(pubName + topic))
+                        fifoManager.Remove(pubName);
+                        if(fifoQueue.ContainsKey(pubName))
                         {
-                            fifoQueue.Remove(pubName + topic);
+                            fifoQueue.Remove(pubName);
                         }
                     }
-                    fifoManager.Add(pubName + topic, msg);
+                    fifoManager.Add(pubName, msg);
                 }
-                return true;
+                    return true;
             }
             return false;
         }
-
-        public void parseMessage(ref string pubName, ref Tuple<int, int> msg, string message)
+        
+        public void parseMessage(ref string pubName, ref int msg, string message)
         {
             if (pubName == null) throw new ArgumentNullException("pubName");
-            string[] msgParsed = new string[3];
 
             string[] msgTemp1 = message.Split(' ');
-            msgParsed[0] = msgTemp1[0];
-            string[] msgTemp2 = msgTemp1[1].Split('/');
-            msgParsed[1] = msgTemp2[0];
-            msgParsed[2] = msgTemp2[1];
 
-            pubName = msgParsed[0];
-
-            // myName + " " + seqNb.SeqN + "/" + numberOfEvents
-            msg = new Tuple<int, int>(int.Parse(msgParsed[1]), int.Parse(msgParsed[2]));
+            pubName = msgTemp1[0];
+            msg = int.Parse(msgTemp1[1]);
         }
 
         public void addToQueue(string pubPlusTopic, int msgNumber, string message)
@@ -417,37 +410,38 @@ namespace SESDAD
                 }
             }
         }
-        public bool getFromQueue(string pubPlusTopic, ref string message, ref Tuple<int, int> msg)
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool getFromQueue(string pubName, ref string message, ref int msg)
 
         {
             //Console.WriteLine("MESSAGE NUMBER : {0}", msg.Item1);
             List<Tuple<int, string>> msgList = new List<Tuple<int, string>>();
-            Tuple<int, string> msgNPlusMsg = new Tuple<int, string>(msg.Item1, message);
+            Tuple<int, string> msgNPlusMsg = new Tuple<int, string>(msg, message);
             lock (fifoQueue)
             {
-                if (fifoQueue.TryGetValue(pubPlusTopic, out msgList))
+                if (fifoQueue.TryGetValue(pubName, out msgList))
                 {
                     // Key was in dictionary; "value" contains corresponding value
-                    foreach (Tuple<int, string> currentMsg in fifoQueue[pubPlusTopic])
+                    foreach (Tuple<int, string> currentMsg in fifoQueue[pubName])
                     {
-                        if (currentMsg.Item1 == msg.Item1 + 1)
+                        if (currentMsg.Item1 == msg + 1)
                         {
                             message = currentMsg.Item2;
-                            Tuple<int, int> msgMngmt;
+                            int msgMngmt;
                             lock (fifoManager)
                             {
-                                if (fifoManager.TryGetValue(pubPlusTopic, out msgMngmt))
+                                if (fifoManager.TryGetValue(pubName, out msgMngmt))
                                 {
-                                    msgMngmt = new Tuple<int, int>(currentMsg.Item1, msg.Item2);
-                                    fifoManager[pubPlusTopic] = msgMngmt;
+                                  msgMngmt = currentMsg.Item1;
+                                   fifoManager[pubName] = msgMngmt;
                                 }
                             }
                             //msgList.Remove(currentMsg);
-                            fifoQueue[pubPlusTopic].Remove(currentMsg);
-                            if (fifoQueue[pubPlusTopic].Count == 0)
+                            fifoQueue[pubName].Remove(currentMsg);
+                            if (fifoQueue[pubName].Count == 0)
                             {
                                 //Console.WriteLine("Entrei aqui para remover");
-                                fifoQueue.Remove(pubPlusTopic);
+                                fifoQueue.Remove(pubName);
                             }
                             msg = msgMngmt;
                             return false;
@@ -465,14 +459,14 @@ namespace SESDAD
                     compare the topic published with the topic subscribed without the * character
                 
             */
-
+            
             if (topicSub.EndsWith("*"))
             {
                 topicSub = topicSub.Remove(topicSub.Length - 1);
             }
             return topicPub.Contains(topicSub);
-
-
+            
+            
         }
 
         public void subscribeRequest(string topic, int port)
@@ -583,7 +577,7 @@ namespace SESDAD
                 {
                     if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONL, out broTest) && (string.Compare(relation, BrokerNeighbours.SONL) != 0))
                     {
-
+                        
                         brokerTreeInterface[BrokerNeighbours.SONL].filterUnsubscription(topic, myIp, myPort);
                     }
                     if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONR, out broTest) && (string.Compare(relation, BrokerNeighbours.SONR) != 0))
@@ -608,7 +602,7 @@ namespace SESDAD
         // flood
         public void receiveOrderToFlood(string topic, string message, string ip, int port)
         {
-
+            
             var t = new Thread(() => RealreceiveOrderToFlood(topic, message, ip, port));
             t.Start();
             //return t;
@@ -768,6 +762,7 @@ namespace SESDAD
         }
 
         //used for the PuppetMaster to request a broker to flood a message
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void RealreceiveOrderToFlood(string topic, string message, string ip, int port)
         {
 
@@ -782,7 +777,7 @@ namespace SESDAD
                 //     ORDERING FIFO
                 //
                 string pubName = "";
-                Tuple<int, int> msg = new Tuple<int, int>(0, 0);
+                int msg = 0;
 
                 parseMessage(ref pubName, ref msg, message);
 
@@ -795,7 +790,7 @@ namespace SESDAD
                     do
                     {
                         flood(source, topic, message);
-                        if (getFromQueue(pubName + topic, ref message, ref msg))
+                        if (getFromQueue(pubName, ref message, ref msg))
                         {
                             //Console.WriteLine("GETFROMQUEUE - {0}", msg.Item1);
                             break;
@@ -806,7 +801,7 @@ namespace SESDAD
                 {
                     // Just add to queue
                     //Console.WriteLine("ADICIONAR À QUEUE - {0}", msg.Item1);
-                    addToQueue(pubName + topic, msg.Item1, message);
+                    addToQueue(pubName, msg, message);
                 }
             }
             else if (String.CompareOrdinal(OrderingType.TOTAL, ordering) == 0)
@@ -852,29 +847,29 @@ namespace SESDAD
 
             TopicsTable testTable = new TopicsTable();
 
-            if (filteringTable.TryGetValue(relation, out testTable))
-            {
-
-                if (filteringTable[relation].containsTopic(topic))
+                if (filteringTable.TryGetValue(relation, out testTable))
                 {
-                    filteringTable[relation].addSubNumber(topic);
+
+                    if (filteringTable[relation].containsTopic(topic))
+                    {
+                        filteringTable[relation].addSubNumber(topic);
+                    }
+                    else
+                    {
+                        filteringTable[relation].AddTopic(topic);
+                        filterSubscriptionFlood(topic, ip, port);
+
+                    }
                 }
                 else
                 {
-                    filteringTable[relation].AddTopic(topic);
+                    testTable = new TopicsTable();
+                    testTable.AddTopic(topic);
+                    bool test = filteringTable.TryAdd(relation, testTable);
                     filterSubscriptionFlood(topic, ip, port);
 
                 }
             }
-            else
-            {
-                testTable = new TopicsTable();
-                testTable.AddTopic(topic);
-                bool test = filteringTable.TryAdd(relation, testTable);
-                filterSubscriptionFlood(topic, ip, port);
-
-            }
-        }
 
         // Unsubscription
 
@@ -886,10 +881,10 @@ namespace SESDAD
 
         private void RealfilterUnsubscription(string topic, string ip, int port)
         {
-
+            
             string relation = sourceType(ip, port);
             TopicsTable testTable = new TopicsTable();
-
+            
             if (filteringTable.TryGetValue(relation, out testTable))
             {
                 if (filteringTable[relation].containsTopic(topic))
@@ -901,7 +896,7 @@ namespace SESDAD
                     }
                 }
             }
-
+            
         }
 
 
@@ -947,7 +942,7 @@ namespace SESDAD
                     Console.WriteLine("|     - " + pair.Key);
                 }
             }
-
+            
             Console.WriteLine("| ");
             Console.WriteLine(".----------------------------------------.");
             Console.WriteLine("");
