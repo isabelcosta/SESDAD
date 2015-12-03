@@ -221,7 +221,28 @@ namespace SESDAD
                     }
                 }
             }
-            return "publisher";
+
+            lock (subscribers)
+            {
+                foreach (KeyValuePair<int, SubscriberInterface> pair in subscribers)
+                {
+                    if (pair.Key == port)
+                    {
+                        return ProcessType.SUBSCRIBER;
+                    }
+                }
+            }
+
+            foreach (KeyValuePair<int, PublisherInterface> pair in publishers)
+            {
+                if (pair.Key == port)
+                {
+                    return ProcessType.PUBLISHER;
+                }
+            }
+
+
+            return ProcessType.PUBLISHER;
         }
 
 

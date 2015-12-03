@@ -411,12 +411,12 @@ namespace SESDAD
 
                     if (String.Compare(parsed[3], ProcessType.BROKER) == 0)
                     {
-
+                        /*
                         if (String.Compare("site0", parsed[5]) == 0) //obtenho o porto e IP do broker root
                         {
                             myBroker.addRootBroker(int.Parse(processPort), processIp);
                         }
-
+                        */
                         if (String.Compare("site" + this.puppetID, parsed[5]) == 0) //se for o meu broker
                         {
                             process = startProcess(parsed[1], ProcessType.BROKER, processPort);
