@@ -207,7 +207,6 @@ namespace SESDAD
 
         //************************************************************************************
         //***********************          Handle buttons        *****************************
-        //************************************************************************************
 
         //Button Run Single Command method - runs a single command and cleans the text box
         private void bt_Command_Click(object sender, EventArgs e)
