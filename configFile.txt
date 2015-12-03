@@ -1,5 +1,5 @@
 RoutingPolicy flooding
-Ordering TOTAL
+Ordering FIFO
 LoggingLevel full
 Site site0 Parent none
 Site site1 Parent site0
@@ -15,4 +15,3 @@ Process broker3 is broker On site3 URL tcp://localhost:3333/broker
 Process subscriber1 is subscriber On site3 URL tcp://localhost:1111/sub
 Process broker4 is broker On site4 URL tcp://localhost:3334/broker
 Process subscriber2 is subscriber On site4 URL tcp://localhost:1112/sub
-
