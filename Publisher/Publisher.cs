@@ -76,7 +76,6 @@ namespace SESDAD
         private seqNumber seqNb = new seqNumber();
         
         
-        
         ConcurrentDictionary<string, int> topicsPublishing = new ConcurrentDictionary<string, int>();
         
         /*
