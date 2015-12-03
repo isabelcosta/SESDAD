@@ -46,6 +46,10 @@ namespace SESDAD
         String configPuppetPath = Environment.CurrentDirectory + @"\..\..\..\configPuppet.txt";
 
         //for both PuppetMaster and PuppetSlaves
+
+        //dictionary with commands ordered per freezed process
+        private List<string> myFreezedProcesses = new List<string>(); //<processName, SubscriberInterface>
+
         private IDictionary<string, Process> LocalProcesses = new Dictionary<string, Process>(); //Array with processes <processName, process>
         private IDictionary<string, Tuple<int, PublisherInterface>> myPubs = new Dictionary<string, Tuple<int, PublisherInterface>>(); //<processName, PublisherInterface>
         private IDictionary<string, Tuple<int, SubscriberInterface>> mySubs = new Dictionary<string, Tuple<int, SubscriberInterface>>(); //<processName, SubscriberInterface>
@@ -310,6 +314,7 @@ namespace SESDAD
             {
                 processConfigFileLines(line);
             }
+            addMessageToLog("----- Finished configuring the system -----");
         }
 
         private void addNeighboursToMyBroker()
@@ -584,14 +589,18 @@ namespace SESDAD
         public void freeze(string processName)
         {
             //send a sleep thread request to process or tells responsible puppetmaster slave to do it
-            //suspend(process)
             if (isMaster())
             {
                 if (LocalProcesses.ContainsKey(processName))
                 {
                     if (!LocalProcesses[processName].HasExited)
                     {
-                        LocalProcesses[processName].Suspend();
+                        if (!myFreezedProcesses.Contains(processName))
+                        {
+                            LocalProcesses[processName].Suspend();
+                            setFreezeState(processName, true);
+                            myFreezedProcesses.Add(processName);
+                        }
                     }
                 }
                 else
@@ -605,7 +614,12 @@ namespace SESDAD
                 {
                     if (!LocalProcesses[processName].HasExited)
                     {
-                        LocalProcesses[processName].Suspend();
+                        if (!myFreezedProcesses.Contains(processName))
+                        {
+                            LocalProcesses[processName].Suspend();
+                            setFreezeState(processName, true);
+                            myFreezedProcesses.Add(processName);
+                        }
                     }
                 }
             }
@@ -619,7 +633,12 @@ namespace SESDAD
                 {
                     if (!LocalProcesses[processName].HasExited)
                     {
-                        LocalProcesses[processName].Resume();
+                        if (myFreezedProcesses.Contains(processName))
+                        {
+                            LocalProcesses[processName].Resume();
+                            setFreezeState(processName, false);
+                            myFreezedProcesses.Remove(processName);
+                        }
                     }
                 }
                 else
@@ -633,10 +652,33 @@ namespace SESDAD
                 {
                     if (!LocalProcesses[processName].HasExited)
                     {
-                        LocalProcesses[processName].Resume();
+                        if (myFreezedProcesses.Contains(processName))
+                        {
+                            LocalProcesses[processName].Resume();
+                            setFreezeState(processName, false);
+                            myFreezedProcesses.Remove(processName);
+                        }
                     }
                 }
             }
+        }
+
+        public void setFreezeState(string processName, bool isFrozen)
+        {
+            //            if (LocalProcesses.ContainsKey(processName)) {
+            if (mySubs.ContainsKey(processName))
+            {
+                mySubs[processName].Item2.setFreezeState(processName, isFrozen);
+            }
+            else if (myPubs.ContainsKey(processName))
+            {
+                myPubs[processName].Item2.setFreezeState(processName, isFrozen);
+            }
+            else
+            {
+                myBroker.setFreezeState(processName, isFrozen);
+            }
+            //            }
         }
 
         public void receiveLogs(string action) {
