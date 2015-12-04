@@ -45,6 +45,25 @@ namespace SESDADInterfaces
         public const string SONR = "sonR";
         public const string PARENT = "parent";
     }
+    public class BrokerOrders
+    {
+        public const string FLOOD = "flooding";
+        public const string FILTERING = "filtering";
+        public const string STATUS = "status";
+    }
+
+    public class SubscriberOrders
+    {
+        public const string SUBSCRIBE = "subscribe";
+        public const string UNSUBSCRIBE = "unsubscribe";
+        public const string STATUS = "status";
+    }
+
+    public class PublisherOrders
+    {
+        public const string PUBLISH = "publish";
+        public const string STATUS = "status";
+    }
 
     public class seqNumber
     {
@@ -183,56 +202,5 @@ namespace SESDADInterfaces
 
         void setFreezeState(bool isFrozen);
     }
-
-    //**************************************************************************
-    //From http://stackoverflow.com/questions/71257/suspend-process-in-c-sharp
-    //**************************************************************************
-
-    public static class ProcessExtension
-    {
-        public enum ThreadAccess : int
-        {
-            TERMINATE = (0x0001),
-            SUSPEND_RESUME = (0x0002),
-            GET_CONTEXT = (0x0008),
-            SET_CONTEXT = (0x0010),
-            SET_INFORMATION = (0x0020),
-            QUERY_INFORMATION = (0x0040),
-            SET_THREAD_TOKEN = (0x0080),
-            IMPERSONATE = (0x0100),
-            DIRECT_IMPERSONATION = (0x0200)
-        }
-
-        [DllImport("kernel32.dll")]
-        static extern IntPtr OpenThread(ThreadAccess dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
-        [DllImport("kernel32.dll")]
-        static extern uint SuspendThread(IntPtr hThread);
-        [DllImport("kernel32.dll")]
-        static extern int ResumeThread(IntPtr hThread);
-
-        public static void Suspend(this Process process)
-        {
-            foreach (ProcessThread thread in process.Threads)
-            {
-                var pOpenThread = OpenThread(ThreadAccess.SUSPEND_RESUME, false, (uint)thread.Id);
-                if (pOpenThread == IntPtr.Zero)
-                {
-                    break;
-                }
-                SuspendThread(pOpenThread);
-            }
-        }
-        public static void Resume(this Process process)
-        {
-            foreach (ProcessThread thread in process.Threads)
-            {
-                var pOpenThread = OpenThread(ThreadAccess.SUSPEND_RESUME, false, (uint)thread.Id);
-                if (pOpenThread == IntPtr.Zero)
-                {
-                    break;
-                }
-                ResumeThread(pOpenThread);
-            }
-        }
-    }
+    
 }
