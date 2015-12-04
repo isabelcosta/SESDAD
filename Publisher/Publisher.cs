@@ -112,17 +112,21 @@ namespace SESDAD
             for (int i = 1; i <= numberOfEvents; i++)
             {
                 //check
-                lock (seqNb)
-                {
-                    content = myName + " " + seqNb.SeqN;
-                    seqNb.SeqN += 1;
-
-                    int num;
-                    if (topicsPublishing.TryGetValue(topic, out num))
+                //if (string.CompareOrdinal(ordering, OrderingType.TOTAL) == 0)
+               // {
+                    lock (seqNb)
                     {
-                        topicsPublishing[topic] += 1;
+                        content = myName + " " + seqNb.getSeqN();
+                        seqNb.increaseSeqN();
+
+                        int num;
+                        if (topicsPublishing.TryGetValue(topic, out num))
+                        {
+                            topicsPublishing[topic] += 1;
+                        }
                     }
-                }
+                //}
+                
                                                 
                                             // Exe: Publisher1 1/10
                                             // localBroker fica a null de vez em quando

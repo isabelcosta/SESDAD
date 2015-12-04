@@ -141,7 +141,7 @@ namespace SESDAD
         string myIp;
         string myName;
 
-        private seqNumber seqNb = new seqNumber();
+        private seqNumber seqNub = new seqNumber();
 
 
         PuppetInterface localPuppetMaster;
@@ -166,7 +166,7 @@ namespace SESDAD
         ConcurrentDictionary<int, PublisherInterface> publishers = new ConcurrentDictionary<int, PublisherInterface>();
         //List<BrokerInterface> brokers = new List<BrokerInterface>();
 
-        Dictionary<string, BrokerInterface> brokerTreeInterface = new Dictionary<string, BrokerInterface>();
+        ConcurrentDictionary<string, BrokerInterface> brokerTreeInterface = new ConcurrentDictionary<string, BrokerInterface>();
         Dictionary<string, Tuple<string, int>> brokerTreeIpAndPort = new Dictionary<string, Tuple<string, int>>();
 
 
@@ -283,7 +283,7 @@ namespace SESDAD
 
             //                      1st                                                   2nd
 
-            lock (brokerTreeInterface)
+            //lock (brokerTreeInterface)
             {
                 if ((String.CompareOrdinal(sourceType, BrokerNeighbours.SONR) != 0) &&
                                     brokerTreeInterface.TryGetValue(BrokerNeighbours.SONR, out broTest) &&
@@ -545,7 +545,7 @@ namespace SESDAD
             string relation = sourceType(ip, port);
             BrokerInterface broTest;
 
-            lock (brokerTreeInterface)
+            //lock (brokerTreeInterface)
             {
                 if (String.CompareOrdinal(RoutingPolicyType.FILTER, routing) == 0)
                 {
@@ -573,7 +573,7 @@ namespace SESDAD
         {
             string relation = sourceType("localhost", port);
             BrokerInterface broTest;
-            lock (brokerTreeInterface)
+           // lock (brokerTreeInterface)
             {
                 if (String.CompareOrdinal(RoutingPolicyType.FILTER, routing) == 0)
                 {
@@ -623,25 +623,28 @@ namespace SESDAD
 
             if (brokerTreeInterface.ContainsKey(BrokerNeighbours.PARENT))   // nao e' a root
             {
-                if (seqNbToDecrement.TryGetValue(relation, out outUse))
+                lock (seqNub)
                 {
-                    numToDec -= seqNbToDecrement[relation];
+                    if (seqNbToDecrement.TryGetValue(relation, out outUse))
+                    {
+                        numToDec -= seqNbToDecrement[relation];
+                    }
                 }
-                
+
                 newMessage = msgTemp1[0] + " " + numToDec;
             }
             else // e' a root
             {
-                lock (seqNb)
+                lock (seqNub)
                 {
-                    numToDec = seqNb.SeqN;
+                    numToDec = seqNub.getSeqN();
                     if (seqNbToDecrement.TryGetValue(relation, out outUse))
                     {
                         numToDec -= seqNbToDecrement[relation];
                     }
 
                     newMessage = msgTemp1[0] + " " + numToDec;
-                    seqNb.SeqN += 1;
+                    seqNub.increaseSeqN();
                 }
             }
 
@@ -658,21 +661,25 @@ namespace SESDAD
             string newMessage = message;
 
             int numToDec;
-            lock (brokerTreeInterface)
+            //lock (brokerTreeInterface)
             {
+                Console.WriteLine("Contains Parent " + brokerTreeInterface.ContainsKey(BrokerNeighbours.PARENT));
+                
                 if (!brokerTreeInterface.ContainsKey(BrokerNeighbours.PARENT))   // 'e a root
                 {
-                    lock (seqNb)
+
+                    lock (seqNub)
                     {
-                        newMessage = msgTemp1[0] + " " + seqNb.SeqN;
-                        seqNb.SeqN += 1;
+                        Console.WriteLine("seqNub " + seqNub.getSeqN());
+                        newMessage = msgTemp1[0] + " " + seqNub.getSeqN();
+                        seqNub.increaseSeqN();
                     }
                 }
                 else if (subscription) // entrega da mensagem ao subscriber
                 {
 
                     numToDec = int.Parse(msgTemp1[1]);
-                    int tempCount = 0;
+                    int tempCount;
                     if (notSentMessages.TryGetValue(subPort, out tempCount))
                     {
                         numToDec -= notSentMessages[subPort];
@@ -686,7 +693,7 @@ namespace SESDAD
         }
 
         public void totalOrderFlood(string topic, string message)
-        {
+        /*{
 
             var t = new Thread(() => RealtotalOrderFlood(topic, message));
             t.Start();
@@ -694,13 +701,12 @@ namespace SESDAD
         }
 
         public void RealtotalOrderFlood(string topic, string message)
-        {
+        */{
             // will be updated -> with the real sequence number, wich is set by the root and updated by the other brokers
+            BrokerInterface broTest;
             string newMessage = message;
             bool sentSonL = false;
             bool sentSonR = false;
-
-
             /*
                 Incrementar o numero total de mensagens recebidas
             */
@@ -729,9 +735,8 @@ namespace SESDAD
                 //FIFO
             }
 
-            lock (brokerTreeInterface)
+            //lock (brokerTreeInterface)
             {
-                BrokerInterface broTest;
                 if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONR, out broTest) &&
                                         canFilterFlood(topic, BrokerNeighbours.SONR))
                 {
@@ -739,8 +744,8 @@ namespace SESDAD
                     {
                         newMessage = totalOrderMessageFilter(message, BrokerNeighbours.SONR);
                     }
-                    Console.WriteLine("New message ----- "
-                        +newMessage);
+                    //Console.WriteLine("New message ----- "
+                    //    +newMessage);
 
                     brokerTreeInterface[BrokerNeighbours.SONR].totalOrderFlood(topic, newMessage);
                     sentSonR = true;
@@ -767,32 +772,38 @@ namespace SESDAD
             {
                 if (!sentSonR)
                 {
-                    Console.WriteLine( "nao enviou para o R");
+                    //Console.WriteLine( "nao enviou para o R");
                     
                     int temp;
-                    if (seqNbToDecrement.TryGetValue(BrokerNeighbours.SONR, out temp))
+                    lock (seqNub)
                     {
-                        seqNbToDecrement[BrokerNeighbours.SONR] += 1;
-                    }
-                    else
-                    {
-                        seqNbToDecrement.TryAdd(BrokerNeighbours.SONR, 1);
+                        if (seqNbToDecrement.TryGetValue(BrokerNeighbours.SONR, out temp))
+                        {
+                            seqNbToDecrement[BrokerNeighbours.SONR] += 1;
+                        }
+                        else
+                        {
+                            seqNbToDecrement.TryAdd(BrokerNeighbours.SONR, 1);
+                        }
                     }
                     
                 }
 
                 if (!sentSonL)
                 {
-                    Console.WriteLine("nao enviou para o L");
+                    //Console.WriteLine("nao enviou para o L");
                     
                     int temp;
-                    if (seqNbToDecrement.TryGetValue(BrokerNeighbours.SONL, out temp))
+                    lock (seqNub)
                     {
-                        seqNbToDecrement[BrokerNeighbours.SONL] += 1;
-                    }
-                    else
-                    {
-                        seqNbToDecrement.TryAdd(BrokerNeighbours.SONL, 1);
+                        if (seqNbToDecrement.TryGetValue(BrokerNeighbours.SONL, out temp))
+                        {
+                            seqNbToDecrement[BrokerNeighbours.SONL] += 1;
+                        }
+                        else
+                        {
+                            seqNbToDecrement.TryAdd(BrokerNeighbours.SONL, 1);
+                        }
                     }
                     
                 }
@@ -1083,18 +1094,15 @@ namespace SESDAD
 
         public void addRootBroker(int port, string ip)
         {
-            Console.WriteLine("mega LEL");
             var t = new Thread(() => RealaddRootBroker(port, ip));
             t.Start();
         }
 
         public void RealaddRootBroker(int port, string ip)
         {
-            Console.WriteLine("LEEEL");
 
             if (myPort != port)
             {
-                Console.WriteLine("LEL");
                 BrokerInterface rootB = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), "tcp://" + ip + ":" + port + "/broker");
                 this.rootBroker = rootB;
                 Console.WriteLine("Root Broker adicionado " + port);
@@ -1113,22 +1121,22 @@ namespace SESDAD
             BrokerInterface broker = (BrokerInterface)Activator.GetObject(typeof(BrokerInterface), "tcp://" + ip + ":" + port + "/broker");
             lock (brokerTreeIpAndPort)
             {
-                lock (brokerTreeInterface)
+                //lock (brokerTreeInterface)
                 {
                     switch (relation)
                     {
                         case BrokerNeighbours.SONL:
-                            brokerTreeInterface.Add(BrokerNeighbours.SONL, broker);
+                            brokerTreeInterface.TryAdd(BrokerNeighbours.SONL, broker);
                             Tuple<string, int> ipAndPortL = new Tuple<string, int>(ip, port);
                             brokerTreeIpAndPort.Add(BrokerNeighbours.SONL, ipAndPortL);
                             break;
                         case BrokerNeighbours.SONR:
-                            brokerTreeInterface.Add(BrokerNeighbours.SONR, broker);
+                            brokerTreeInterface.TryAdd(BrokerNeighbours.SONR, broker);
                             Tuple<string, int> ipAndPortR = new Tuple<string, int>(ip, port);
                             brokerTreeIpAndPort.Add(BrokerNeighbours.SONR, ipAndPortR);
                             break;
                         case BrokerNeighbours.PARENT:
-                            brokerTreeInterface.Add(BrokerNeighbours.PARENT, broker);
+                            brokerTreeInterface.TryAdd(BrokerNeighbours.PARENT, broker);
                             Tuple<string, int> ipAndPortP = new Tuple<string, int>(ip, port);
                             brokerTreeIpAndPort.Add(BrokerNeighbours.PARENT, ipAndPortP);
                             break;

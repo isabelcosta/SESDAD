@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Runtime.InteropServices;
@@ -47,21 +48,21 @@ namespace SESDADInterfaces
 
     public class seqNumber
     {
-        private int seqN;
+        private ConcurrentDictionary<string, int> seqN = new ConcurrentDictionary<string, int>();
+
         public seqNumber()
         {
-            seqN = 1;
+            seqN.TryAdd("order", 1);
         }
 
-        public int SeqN
+        public void increaseSeqN()
         {
-            [MethodImpl(MethodImplOptions.Synchronized)]
-            get
-            { return seqN; }
+            seqN["order"] += 1;
+        }
 
-            [MethodImpl(MethodImplOptions.Synchronized)]
-            set
-            { seqN = value; }
+        public int getSeqN()
+        {
+            return seqN["order"];
         }
     }
 
