@@ -44,6 +44,23 @@ namespace SESDADInterfaces
         public const string PARENT = "parent";
     }
 
+    public class BrokerOrders
+    {
+        public const string FLOOD = "flooding";
+        public const string FILTERING = "filtering";
+    }
+
+    public class SubscriberOrders
+    {
+        public const string SUBSCRIBE = "subscribe";
+        public const string UNSUBSCRIBE = "unsubscribe";
+    }
+
+    public class PublisherOrders
+    {
+        public const string PUBLISH = "publish";
+    }
+
     public interface PuppetInterface
     {
         void receiveOrderToCrash(string processName);
@@ -93,7 +110,7 @@ namespace SESDADInterfaces
 
         void status();
 
-        void setFreezeState(string processName, bool isFrozen);
+        void setFreezeState(bool isFrozen);
     }
 
     public interface SubscriberInterface
@@ -120,7 +137,7 @@ namespace SESDADInterfaces
 
         void status();
 
-        void setFreezeState(string processName, bool isFrozen);
+        void setFreezeState(bool isFrozen);
     }
 
     public interface BrokerInterface
@@ -155,7 +172,7 @@ namespace SESDADInterfaces
 
         void status();
 
-        void setFreezeState(string processName, bool isFrozen);
+        void setFreezeState(bool isFrozen);
     }
 
     //**************************************************************************

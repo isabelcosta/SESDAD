@@ -72,6 +72,7 @@ namespace SESDAD
         int myPort;
 
         bool freezeFlag = false;
+        private List<Tuple<string, List<string>>> myFrozenOrders = new List<Tuple<string, List<string>>>();
 
         private seqNumber seqNb = new seqNumber();
         
@@ -100,6 +101,13 @@ namespace SESDAD
         public void receiveOrderToPublish(string topic, int numberOfEvents, int interval_x_ms)
         {
             topicsPublishing.TryAdd(topic, 0);
+            if (this.amIFrozen()) {
+                List<string> args = new List<string>();
+                args.Add(topic);
+                args.Add(numberOfEvents.ToString());
+                args.Add(interval_x_ms.ToString());
+                myFrozenOrders.Add(new Tuple<string, List<string>>(PublisherOrders.PUBLISH, args));
+            }
             var t = new Thread(() => RealreceiveOrderToPublish(topic, numberOfEvents, interval_x_ms));
             t.Start();
         }
@@ -234,6 +242,37 @@ namespace SESDAD
         {
             this.myPort = port;
             this.myName = name;
+        }
+
+        private bool amIFrozen()
+        {
+            return this.freezeFlag;
+        }
+
+        public void setFreezeState(bool isFrozen)
+        {
+            this.freezeFlag = isFrozen;
+
+            if (!this.freezeFlag)
+            {
+                this.executeAllFrozenCommands();
+            }
+        }
+
+        private void executeAllFrozenCommands()
+        {
+            string[] args = { };
+            foreach (Tuple<string, List<string>> order in myFrozenOrders)
+            {
+                // do something with entry.Value or entry.Key
+                order.Item2.CopyTo(args);
+                switch (order.Item1)
+                {
+                    case PublisherOrders.PUBLISH:
+                        this.receiveOrderToPublish(args[0], int.Parse(args[1]), int.Parse(args[2]));
+                        break;
+                }
+            }
         }
     }
 

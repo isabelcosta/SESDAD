@@ -665,20 +665,18 @@ namespace SESDAD
 
         public void setFreezeState(string processName, bool isFrozen)
         {
-            //            if (LocalProcesses.ContainsKey(processName)) {
             if (mySubs.ContainsKey(processName))
             {
-                mySubs[processName].Item2.setFreezeState(processName, isFrozen);
+                mySubs[processName].Item2.setFreezeState(isFrozen);
             }
             else if (myPubs.ContainsKey(processName))
             {
-                myPubs[processName].Item2.setFreezeState(processName, isFrozen);
+                myPubs[processName].Item2.setFreezeState(isFrozen);
             }
             else
             {
-                myBroker.setFreezeState(processName, isFrozen);
+                myBroker.setFreezeState(isFrozen);
             }
-            //            }
         }
 
         public void receiveLogs(string action) {

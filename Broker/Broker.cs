@@ -143,6 +143,7 @@ namespace SESDAD
         string myName;
 
         bool freezeFlag = false;
+        private List<Tuple<string, List<string>>> myFrozenOrders = new List<Tuple<string, List<string>>>();
 
         PuppetInterface localPuppetMaster;
 
@@ -170,7 +171,6 @@ namespace SESDAD
 
 
         /*
-        
             Shared Objects
             
                 - localPuppetMaster
@@ -183,10 +183,6 @@ namespace SESDAD
                 - subscribersTopics
                 - fifoManager
                 - fifoQueue
-                
-
-
-
             */
 
         public string sourceType (string ip, int port)
@@ -434,7 +430,6 @@ namespace SESDAD
             return true;
         }
 
-
         public bool topicsMatch (string topicPub, string topicSub)
         {
             /*
@@ -588,7 +583,14 @@ namespace SESDAD
         // flood
         public void receiveOrderToFlood(string topic, string message, string ip, int port)
         {
-            
+            if (this.amIFrozen())
+            {
+                List<string> args = new List<string>();
+                args.Add(topic);
+                args.Add(message);
+                args.Add(ip);
+                args.Add(port.ToString());
+            }
             var t = new Thread(() => RealreceiveOrderToFlood(topic, message, ip, port));
             t.Start();
             //return t;
@@ -898,6 +900,39 @@ namespace SESDAD
             this.myName = name;
         }
 
+        private bool amIFrozen()
+        {
+            return this.freezeFlag;
+        }
 
+        public void setFreezeState(bool isFrozen)
+        {
+            this.freezeFlag = isFrozen;
+
+            if (!this.freezeFlag)
+            {
+                this.executeAllFrozenCommands();
+            }
+        }
+
+        private void executeAllFrozenCommands()
+        {
+            string[] args = { };
+            foreach (Tuple<string, List<string>> order in myFrozenOrders)
+            {
+                // do something with entry.Value or entry.Key
+                order.Item2.CopyTo(args);
+                switch (order.Item1)
+                {
+                    case BrokerOrders.FLOOD:
+                        this.receiveOrderToFlood(args[0], args[1], args[2], int.Parse(args[3]));
+                        break;
+                    case BrokerOrders.FILTERING:
+                        //this.receiveOrderToFilter(args[0], args[1], args[2], int.Parse(args[3]));
+                        break;
+                        //*********** TODO
+                }
+            }
+        }
     }
 }

@@ -49,6 +49,9 @@ namespace SESDAD
         int myPort;
         string myName;
 
+        bool freezeFlag = false;
+        private List<Tuple<string, List<string>>> myFrozenOrders = new List<Tuple<string, List<string>>>();
+
         List<string> subscriptions = new List<string>();
         List<Tuple<string,string>> messages = new List<Tuple<string, string>>();
         ConcurrentDictionary<string, int> messagesReceived = new ConcurrentDictionary<string, int>(); 
@@ -59,6 +62,9 @@ namespace SESDAD
 
         public void receiveOrderToSubscribe(string topic)
         {
+            List<string> args = new List<string>();
+            args.Add(topic);
+            myFrozenOrders.Add(new Tuple<string, List<string>>(SubscriberOrders.SUBSCRIBE, args));
 
             var t = new Thread(() => RealreceiveOrderToSubscribe(topic));
             t.Start();
@@ -83,6 +89,13 @@ namespace SESDAD
 
         public void receiveOrderToUnSubscribe(string topic)
         {
+            if (this.amIFrozen())
+            {
+                List<string> args = new List<string>();
+                args.Add(topic);
+                myFrozenOrders.Add(new Tuple<string, List<string>>(SubscriberOrders.UNSUBSCRIBE, args));
+            }
+
             var t = new Thread(() => RealreceiveOrderToUnSubscribe(topic));
             t.Start();
         }
@@ -218,6 +231,40 @@ namespace SESDAD
         {
             this.myPort = port;
             this.myName = name;
+        }
+
+        private bool amIFrozen() {
+            return this.freezeFlag;
+        }
+
+        public void setFreezeState(bool isFrozen)
+        {
+            this.freezeFlag = isFrozen;
+
+            if (!this.freezeFlag)
+            {
+                this.executeAllFrozenCommands();
+            }
+        }
+
+        private void executeAllFrozenCommands()
+        {
+            string[] args = { };
+            foreach (Tuple<string, List<string>> order in myFrozenOrders)
+            {
+                // do something with entry.Value or entry.Key
+                order.Item2.CopyTo(args);
+                switch (order.Item1)
+                {
+                    case SubscriberOrders.SUBSCRIBE:
+                        this.receiveOrderToSubscribe(args[0]);
+                        break;
+                    case SubscriberOrders.UNSUBSCRIBE:
+                        this.receiveOrderToUnSubscribe(args[0]);
+                        break;
+                        //*********** TODO
+                }
+            }
         }
     }
 }
