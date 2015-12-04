@@ -154,6 +154,8 @@ namespace SESDAD
         //Total Order
         // { relation , number to decrement }
         ConcurrentDictionary<string, int> seqNbToDecrement = new ConcurrentDictionary<string, int>();
+        ConcurrentDictionary<string, int> totalMessages = new ConcurrentDictionary<string, int>();
+        ConcurrentDictionary<int, int> notSentMessages = new ConcurrentDictionary<int, int>();
 
 
         Dictionary<string, List<SubscriberRequestID>> delegates = new Dictionary<string, List<SubscriberRequestID>>();
@@ -608,38 +610,34 @@ namespace SESDAD
             //return t;
         }
 
-        private string totalOrderMessage(string message, string relation)
+        private string totalOrderMessageFilter(string message, string relation)
         {
-        
-            
+
+
             // { pubName , SeqNb.SeqN }
             string[] msgTemp1 = message.Split(' ');
 
             string newMessage;
-            int numToDec;
+            int outUse;
+            int numToDec = int.Parse(msgTemp1[1]);
+
             if (brokerTreeInterface.ContainsKey(BrokerNeighbours.PARENT))   // nao e' a root
             {
-                if (seqNbToDecrement.TryGetValue(relation, out numToDec))
+                if (seqNbToDecrement.TryGetValue(relation, out outUse))
                 {
-                    numToDec = int.Parse(msgTemp1[1]) - seqNbToDecrement[relation];
+                    numToDec -= seqNbToDecrement[relation];
                 }
-                else
-                {
-                    numToDec = int.Parse(msgTemp1[1]);
-                }
+                
                 newMessage = msgTemp1[0] + " " + numToDec;
             }
             else // e' a root
             {
                 lock (seqNb)
                 {
-                    if (seqNbToDecrement.TryGetValue(relation, out numToDec))
+                    numToDec = seqNb.SeqN;
+                    if (seqNbToDecrement.TryGetValue(relation, out outUse))
                     {
-                        numToDec = seqNb.SeqN - seqNbToDecrement[relation];
-                    }
-                    else
-                    {
-                        numToDec = seqNb.SeqN;
+                        numToDec -= seqNbToDecrement[relation];
                     }
 
                     newMessage = msgTemp1[0] + " " + numToDec;
@@ -649,23 +647,101 @@ namespace SESDAD
 
             return newMessage;
         }
+        
+        private string totalOrderMessageFlooding(string message, int subPort, bool subscription)
+        {
+        
+            
+            // { pubName , SeqNb.SeqN }
+            string[] msgTemp1 = message.Split(' ');
+
+            string newMessage = message;
+
+            int numToDec;
+            lock (brokerTreeInterface)
+            {
+                if (!brokerTreeInterface.ContainsKey(BrokerNeighbours.PARENT))   // 'e a root
+                {
+                    lock (seqNb)
+                    {
+                        newMessage = msgTemp1[0] + " " + seqNb.SeqN;
+                        seqNb.SeqN += 1;
+                    }
+                }
+                else if (subscription) // entrega da mensagem ao subscriber
+                {
+
+                    numToDec = int.Parse(msgTemp1[1]);
+                    int tempCount = 0;
+                    if (notSentMessages.TryGetValue(subPort, out tempCount))
+                    {
+                        numToDec -= notSentMessages[subPort];
+                    }
+                
+                    newMessage = msgTemp1[0] + " " + numToDec;
+                }
+            }
+
+            return newMessage;
+        }
 
         public void totalOrderFlood(string topic, string message)
         {
-            BrokerInterface broTest;
+
+            var t = new Thread(() => RealtotalOrderFlood(topic, message));
+            t.Start();
+            //return t;
+        }
+
+        public void RealtotalOrderFlood(string topic, string message)
+        {
             // will be updated -> with the real sequence number, wich is set by the root and updated by the other brokers
             string newMessage = message;
-            
-
             bool sentSonL = false;
             bool sentSonR = false;
 
+
+            /*
+                Incrementar o numero total de mensagens recebidas
+            */
+            if (String.CompareOrdinal(routing, RoutingPolicyType.FLOODING) == 0)
+            {
+                int tempCount = 0;
+                if (totalMessages.TryGetValue("TOTAL", out tempCount))
+                {
+                    totalMessages["TOTAL"] += 1;
+                }
+                else
+                {
+                    totalMessages.TryAdd("TOTAL", 1);
+                }
+            }
+
+
+
+            /*
+                       Enviar as mensagens para os filhos
+            */
+
+            if (String.CompareOrdinal(routing, RoutingPolicyType.FLOODING) == 0)
+            {
+                newMessage = totalOrderMessageFlooding(message, 0, false);
+                //FIFO
+            }
+
             lock (brokerTreeInterface)
             {
+                BrokerInterface broTest;
                 if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONR, out broTest) &&
                                         canFilterFlood(topic, BrokerNeighbours.SONR))
                 {
-                    newMessage = totalOrderMessage(message, BrokerNeighbours.SONR);
+                    if (String.CompareOrdinal(routing, RoutingPolicyType.FILTER) == 0)
+                    {
+                        newMessage = totalOrderMessageFilter(message, BrokerNeighbours.SONR);
+                    }
+                    Console.WriteLine("New message ----- "
+                        +newMessage);
+
                     brokerTreeInterface[BrokerNeighbours.SONR].totalOrderFlood(topic, newMessage);
                     sentSonR = true;
                 }
@@ -673,23 +749,27 @@ namespace SESDAD
                 if (brokerTreeInterface.TryGetValue(BrokerNeighbours.SONL, out broTest) &&
                                         canFilterFlood(topic, BrokerNeighbours.SONL))
                 {
-                    if (!sentSonR)
+                    if (String.CompareOrdinal(routing, RoutingPolicyType.FILTER) == 0)
                     {
-                        newMessage = totalOrderMessage(message, BrokerNeighbours.SONL);
+                        if (!sentSonR)
+                        {
+                            newMessage = totalOrderMessageFilter(message, BrokerNeighbours.SONL);
+                        }
                     }
+                    
                     brokerTreeInterface[BrokerNeighbours.SONL].totalOrderFlood(topic, newMessage);
                     sentSonL = true;
                 }
 
-            Console.WriteLine("New Message1 " + newMessage);
             }
 
-            if (!sentSonR)
+            if (String.CompareOrdinal(routing, RoutingPolicyType.FILTER) == 0)
             {
-                Console.WriteLine( "nao enviou para o R");
-                int temp;
-                lock (seqNb)
+                if (!sentSonR)
                 {
+                    Console.WriteLine( "nao enviou para o R");
+                    
+                    int temp;
                     if (seqNbToDecrement.TryGetValue(BrokerNeighbours.SONR, out temp))
                     {
                         seqNbToDecrement[BrokerNeighbours.SONR] += 1;
@@ -698,15 +778,14 @@ namespace SESDAD
                     {
                         seqNbToDecrement.TryAdd(BrokerNeighbours.SONR, 1);
                     }
+                    
                 }
-            }
 
-            if (!sentSonL)
-            {
-                Console.WriteLine("nao enviou para o L");
-                int temp;
-                lock (seqNb)
+                if (!sentSonL)
                 {
+                    Console.WriteLine("nao enviou para o L");
+                    
+                    int temp;
                     if (seqNbToDecrement.TryGetValue(BrokerNeighbours.SONL, out temp))
                     {
                         seqNbToDecrement[BrokerNeighbours.SONL] += 1;
@@ -715,6 +794,7 @@ namespace SESDAD
                     {
                         seqNbToDecrement.TryAdd(BrokerNeighbours.SONL, 1);
                     }
+                    
                 }
             }
 
@@ -723,6 +803,8 @@ namespace SESDAD
                 TODO : AQUI FALTA FAZER A ENTREGA ORDEIRA DAS MENSAGENS AOS SUBS
             
             */
+            List<int> delivered = new List<int>();
+
             lock (delegates)
             {
 
@@ -735,17 +817,37 @@ namespace SESDAD
 
                         foreach (SubscriberRequestID subReqID in delegates[subTopic])
                         {
-                            //newMessage = totalOrderMessage(message, ProcessType.SUBSCRIBER);
-                            /*
-                                TODO : usar um contador global para entregar a newMessage com o numero certo
-                            */
+                            delivered.Add(subReqID.SubID);
+                            
+                            newMessage = totalOrderMessageFlooding(message, subReqID.SubID, true);
+                            
+                            
                             subReqID.SubDelegate(this, new MessageArgs(topic, newMessage));
                         }
-
+                    }
+                }
+                
+            }
+            int tempN;
+            lock (subscribers)
+            {
+                foreach (KeyValuePair<int, SubscriberInterface> pair in subscribers)
+                {
+                    if (!delivered.Contains(pair.Key))
+                    {
+                        if (notSentMessages.TryGetValue(pair.Key, out tempN))
+                        {
+                            notSentMessages[pair.Key] += 1;
+                        }
+                        else
+                        {
+                            notSentMessages.TryAdd(pair.Key, 1);
+                        }
                     }
                 }
             }
 
+            delivered.Clear();
             string action = "BroEvent - " + myName + " Flooded message on topic with TotalOrder " + topic;
             informPuppetMaster(action);
             //Console.WriteLine(action);
@@ -786,6 +888,7 @@ namespace SESDAD
                             //Console.WriteLine("GETFROMQUEUE - {0}", msg.Item1);
                             break;
                         }
+                        // Thread
                     } while (true);
                 }
                 else
