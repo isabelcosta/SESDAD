@@ -49,6 +49,9 @@ namespace SESDAD
         int myPort;
         string myName;
 
+        bool freezeFlag = false;
+        private List<Tuple<string, List<string>>> myFrozenOrders = new List<Tuple<string, List<string>>>();
+
         List<string> subscriptions = new List<string>();
         List<Tuple<string, string>> messages = new List<Tuple<string, string>>();
         ConcurrentDictionary<string, int> messagesReceived = new ConcurrentDictionary<string, int>();
@@ -59,9 +62,15 @@ namespace SESDAD
 
         public void receiveOrderToSubscribe(string topic)
         {
-
-            var t = new Thread(() => RealreceiveOrderToSubscribe(topic));
-            t.Start();
+            if (this.amIFrozen())
+            {
+                List<string> args = new List<string>();
+                args.Add(topic);
+                myFrozenOrders.Add(new Tuple<string, List<string>>(SubscriberOrders.SUBSCRIBE, args));
+            } else {
+                var t = new Thread(() => RealreceiveOrderToSubscribe(topic));
+                t.Start();
+            }
         }
 
         //invocado pelo PuppetMaster para subscrever a um topico e informar o local broker
@@ -83,8 +92,15 @@ namespace SESDAD
 
         public void receiveOrderToUnSubscribe(string topic)
         {
-            var t = new Thread(() => RealreceiveOrderToUnSubscribe(topic));
-            t.Start();
+            if (this.amIFrozen())
+            {
+                List<string> args = new List<string>();
+                args.Add(topic);
+                myFrozenOrders.Add(new Tuple<string, List<string>>(SubscriberOrders.UNSUBSCRIBE, args));
+            } else {
+                var t = new Thread(() => RealreceiveOrderToUnSubscribe(topic));
+                t.Start();
+            }
         }
 
         public void RealreceiveOrderToUnSubscribe(string topic)
@@ -152,8 +168,14 @@ namespace SESDAD
 
         public void status()
         {
-            var t = new Thread(() => Realstatus());
-            t.Start();
+            if (this.amIFrozen())
+            {
+                List<string> args = new List<string>();
+                myFrozenOrders.Add(new Tuple<string, List<string>>(SubscriberOrders.STATUS, args));
+            } else {
+                var t = new Thread(() => Realstatus());
+                t.Start();
+            }
         }
         public void Realstatus()
         {
@@ -219,6 +241,42 @@ namespace SESDAD
         {
             this.myPort = port;
             this.myName = name;
+        }
+
+        private bool amIFrozen() {
+            return this.freezeFlag;
+        }
+
+        public void setFreezeState(bool isFrozen)
+        {
+            this.freezeFlag = isFrozen;
+
+            if (!this.freezeFlag)
+            {
+                this.executeAllFrozenCommands();
+            }
+        }
+
+        private void executeAllFrozenCommands()
+        {
+            List<string> args = null;
+            foreach (Tuple<string, List<string>> order in myFrozenOrders)
+            {
+                args = order.Item2;
+                switch (order.Item1)
+                {
+                    case SubscriberOrders.SUBSCRIBE:
+                        this.receiveOrderToSubscribe(args[0]);
+                        break;
+                    case SubscriberOrders.UNSUBSCRIBE:
+                        this.receiveOrderToUnSubscribe(args[0]);
+                        break;
+                    case SubscriberOrders.STATUS:
+                        this.status();
+                        break;
+                }
+            }
+            this.myFrozenOrders.Clear();
         }
     }
 }

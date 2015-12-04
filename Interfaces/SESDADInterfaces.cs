@@ -114,7 +114,10 @@ namespace SESDADInterfaces
         void giveInfo(string name, int port);
 
         void status();
+
+        void setFreezeState(bool isFrozen);
     }
+
     public interface SubscriberInterface
     {
         void receiveOrderToSubscribe(string topic);
@@ -138,7 +141,10 @@ namespace SESDADInterfaces
         void giveInfo(string name, int port);
 
         void status();
+
+        void setFreezeState(bool isFrozen);
     }
+
     public interface BrokerInterface
     {
         void receiveOrderToFlood(string topic, string message, string ip, int port);
@@ -174,6 +180,8 @@ namespace SESDADInterfaces
         void giveInfo(string ip, int port, string name);
 
         void status();
+
+        void setFreezeState(bool isFrozen);
     }
 
     //**************************************************************************

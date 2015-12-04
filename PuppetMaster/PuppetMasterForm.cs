@@ -19,7 +19,7 @@ using System.Runtime.Serialization.Formatters;
 
 namespace SESDAD
 {
-
+    
     public partial class PuppetMasterForm : Form
     {
         public override object InitializeLifetimeService()
@@ -46,6 +46,10 @@ namespace SESDAD
         String configPuppetPath = Environment.CurrentDirectory + @"\..\..\..\configPuppet.txt";
 
         //for both PuppetMaster and PuppetSlaves
+
+        //dictionary with commands ordered per freezed process
+        private List<string> myFreezedProcesses = new List<string>(); //<processName, SubscriberInterface>
+
         private IDictionary<string, Process> LocalProcesses = new Dictionary<string, Process>(); //Array with processes <processName, process>
         private IDictionary<string, Tuple<int, PublisherInterface>> myPubs = new Dictionary<string, Tuple<int, PublisherInterface>>(); //<processName, PublisherInterface>
         private IDictionary<string, Tuple<int, SubscriberInterface>> mySubs = new Dictionary<string, Tuple<int, SubscriberInterface>>(); //<processName, SubscriberInterface>
@@ -77,7 +81,7 @@ namespace SESDAD
                 MessageBox.Show("Puppet Master doesn't understand his ID... \nI'll exit for you. Try again!");
                 Environment.Exit(0);
             }
-
+            
             //Builds the Puppet Master GUI
             InitializeComponent();
             this.tb_Command.ReadOnly = !isMaster();
@@ -112,16 +116,16 @@ namespace SESDAD
                     Environment.Exit(0);
                 }
             }
-
+            
             String[] allPuppetURL = System.IO.File.ReadAllLines(this.configPuppetPath);
             this.puppetURL = allPuppetURL[puppetID];
 
             int puppetPort = 30000 + puppetID;
-
+            
             //Single Mode: PuppetMaster reads and processes all processes
             //Multiple Mode: Each Puppet Master/Slave processes its processes 
             this.readConfigFile();
-
+            
             PuppetServices.form = this;
 
             if (!isMaster())
@@ -170,7 +174,7 @@ namespace SESDAD
                     this.slavesRemoteObjects.Add(puppetIndex, slave);
                     slave.slavesAreUp();
                 }
-
+                
             }
 
             //configuring network
@@ -215,10 +219,10 @@ namespace SESDAD
         private void bt_Command_Click(object sender, EventArgs e)
         {
             String singleCommand = tb_Command.Text;
-
+            
             if (singleCommand == "")
             {
-                return;
+                    return;
             }
 
             //erases command after clicking the button
@@ -246,13 +250,13 @@ namespace SESDAD
             {
                 return;
             }
-
+            
             //erases command after clicking the button
             tb_Script.Clear();
 
             String[] blankSpace = { " " };
             String[] parsedLine = null;
-
+            
             foreach (String line in scriptLines)
             {
                 parsedLine = line.Split(blankSpace, StringSplitOptions.None);
@@ -321,11 +325,12 @@ namespace SESDAD
         {
 
             String[] lines = System.IO.File.ReadAllLines(this.configFilePath);
-
+            
             foreach (string line in lines)
             {
                 processConfigFileLines(line);
             }
+            addMessageToLog("----- Finished configuring the system -----");
         }
 
         private void addNeighboursToMyBroker()
@@ -385,7 +390,7 @@ namespace SESDAD
                         myBrokerinfo[BrokerNeighbours.PARENT] = parsed[3];
 
                     }
-
+           
                     else if (String.Compare("site" + this.puppetID, parsed[3]) == 0)
                     { //primeiro defino o filho SonL depois o SonR
                         if (myBrokerinfo.ContainsKey(BrokerNeighbours.SONL))
@@ -400,7 +405,7 @@ namespace SESDAD
                     break;
 
                 case "Process": //Process processname Is publisher|subscriber|broker On sitename URL process-url REFATORIZAR REFATORIZAR REFATORIZAR
-
+                    
                     string URL = parsed[7];
                     Process process = null;
                     string processPort = portAndIpFromURL(URL)[0];
@@ -414,7 +419,7 @@ namespace SESDAD
 
                     if (String.Compare(parsed[3], ProcessType.BROKER) == 0)
                     {
-                        
+
                         if (String.Compare("site0", parsed[5]) == 0) //obtenho o porto e IP do broker root
                         {
                             String[] tempVect = { processPort, processIp };
@@ -495,7 +500,7 @@ namespace SESDAD
 
             string processTypeDirectory = processType.First().ToString().ToUpper() + processType.Substring(1);
             string processPath = Environment.CurrentDirectory.Replace("PuppetMaster", processTypeDirectory); //Broker | Subscriber | Publisher
-
+            
             processPath += @"\" + processType + ".exe";
 
             ProcessStartInfo startInfo = new ProcessStartInfo();
@@ -599,7 +604,7 @@ namespace SESDAD
                         LocalProcesses[processName].Kill();
                     }
                 }
-            }
+            }  
         }
 
         public void status()
@@ -627,15 +632,19 @@ namespace SESDAD
         public void freeze(string processName)
         {
             //send a sleep thread request to process or tells responsible puppetmaster slave to do it
-            //suspend(process)
             if (isMaster())
             {
                 if (LocalProcesses.ContainsKey(processName))
                 {
                     if (!LocalProcesses[processName].HasExited)
                     {
-                        LocalProcesses[processName].Suspend();
+                        if (!myFreezedProcesses.Contains(processName))
+                        {
+                            setFreezeState(processName, true);
+                            myFreezedProcesses.Add(processName);
+                            //LocalProcesses[processName].Suspend();
                     }
+                }
                 }
                 else
                 {
@@ -648,10 +657,15 @@ namespace SESDAD
                 {
                     if (!LocalProcesses[processName].HasExited)
                     {
-                        LocalProcesses[processName].Suspend();
+                        if (!myFreezedProcesses.Contains(processName))
+                        {
+                            setFreezeState(processName, true);
+                            myFreezedProcesses.Add(processName);
+                            //LocalProcesses[processName].Suspend();
                     }
                 }
             }
+        }
         }
 
         public void unfreeze(string processName)
@@ -662,7 +676,12 @@ namespace SESDAD
                 {
                     if (!LocalProcesses[processName].HasExited)
                     {
-                        LocalProcesses[processName].Resume();
+                        if (myFreezedProcesses.Contains(processName))
+                        {
+                            setFreezeState(processName, false);
+                            myFreezedProcesses.Remove(processName);
+                            //LocalProcesses[processName].Resume();
+                        }
                     }
                 }
                 else
@@ -676,9 +695,30 @@ namespace SESDAD
                 {
                     if (!LocalProcesses[processName].HasExited)
                     {
-                        LocalProcesses[processName].Resume();
+                        if (myFreezedProcesses.Contains(processName))
+                        {
+                            setFreezeState(processName, false);
+                            myFreezedProcesses.Remove(processName);
+                            //LocalProcesses[processName].Resume();
+                        }
                     }
                 }
+            }
+        }
+
+        public void setFreezeState(string processName, bool isFrozen)
+        {
+            if (mySubs.ContainsKey(processName))
+            {
+                mySubs[processName].Item2.setFreezeState(isFrozen);
+                    }
+            else if (myPubs.ContainsKey(processName))
+            {
+                myPubs[processName].Item2.setFreezeState(isFrozen);
+                }
+            else
+            {
+                myBroker.setFreezeState(isFrozen);
             }
         }
 
@@ -696,7 +736,7 @@ namespace SESDAD
 
         public void addMessageToLog(string message)
         {
-
+            
             tb_Log.AppendText(message);
             tb_Log.AppendText(Environment.NewLine);
         }
@@ -775,7 +815,7 @@ namespace SESDAD
             // thread-safe access to form
             form.Invoke(new DelUnfreezeProcess(form.unfreeze), processName);
         }
-
+        
         public void receiveOrderToPublish(string processName, string topic, int numberOfEvents, int interval_x_ms)
         {
             // thread-safe access to form

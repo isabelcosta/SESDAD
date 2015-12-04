@@ -58,8 +58,9 @@ namespace SESDAD
         string myName;
         int myPort;
 
-        
-        
+        bool freezeFlag = false;
+        private List<Tuple<string, List<string>>> myFrozenOrders = new List<Tuple<string, List<string>>>();
+
         private seqNumber seqNb = new seqNumber();
         
         
@@ -86,8 +87,16 @@ namespace SESDAD
         public void receiveOrderToPublish(string topic, int numberOfEvents, int interval_x_ms)
         {
             topicsPublishing.TryAdd(topic, 0);
-            var t = new Thread(() => RealreceiveOrderToPublish(topic, numberOfEvents, interval_x_ms));
-            t.Start();
+            if (this.amIFrozen()) {
+                List<string> args = new List<string>();
+                args.Add(topic);
+                args.Add(numberOfEvents.ToString());
+                args.Add(interval_x_ms.ToString());
+                myFrozenOrders.Add(new Tuple<string, List<string>>(PublisherOrders.PUBLISH, args));
+            } else {
+                var t = new Thread(() => RealreceiveOrderToPublish(topic, numberOfEvents, interval_x_ms));
+                t.Start();
+            }
         }
 
         public void RealreceiveOrderToPublish(string topic, int numberOfEvents, int interval_x_ms)
@@ -160,8 +169,15 @@ namespace SESDAD
 
         public void status()
         {
-            var t = new Thread(() => Realstatus());
-            t.Start();
+            if (this.amIFrozen()) {
+                //Console.WriteLine("---------------- ya tou FROZEN e agora?");
+                List <string> args = new List<string>();
+                myFrozenOrders.Add(new Tuple<string, List<string>>(PublisherOrders.STATUS, args));
+            } else {
+                //Console.WriteLine("---------------- ya agora tou LIVRE e agora?");
+                var t = new Thread(() => Realstatus());
+                t.Start();
+            }
         }
 
         public void Realstatus()
@@ -224,6 +240,40 @@ namespace SESDAD
         {
             this.myPort = port;
             this.myName = name;
+        }
+
+        private bool amIFrozen()
+        {
+            return this.freezeFlag;
+        }
+
+        public void setFreezeState(bool isFrozen)
+        {
+            this.freezeFlag = isFrozen;
+
+            if (!this.freezeFlag)
+            {
+                this.executeAllFrozenCommands();
+            }
+        }
+
+        private void executeAllFrozenCommands()
+        {
+            List<string> args = null;
+            foreach (Tuple<string, List<string>> order in myFrozenOrders)
+            {
+                args = order.Item2;
+                switch (order.Item1)
+                {
+                    case PublisherOrders.PUBLISH:
+                        this.receiveOrderToPublish(args[0], int.Parse(args[1]), int.Parse(args[2]));
+                        break;
+                    case PublisherOrders.STATUS:
+                        this.status();
+                        break;
+                }
+            }
+            this.myFrozenOrders.Clear();
         }
     }
 

@@ -141,6 +141,9 @@ namespace SESDAD
         string myIp;
         string myName;
 
+        bool freezeFlag = false;
+        private List<Tuple<string, List<string>>> myFrozenOrders = new List<Tuple<string, List<string>>>();
+
         private seqNumber seqNub = new seqNumber();
 
 
@@ -178,7 +181,6 @@ namespace SESDAD
 
 
         /*
-        
             Shared Objects
             
                 - localPuppetMaster
@@ -604,9 +606,18 @@ namespace SESDAD
         // flood
         public void receiveOrderToFlood(string topic, string message, string ip, int port)
         {
-            
+            if (this.amIFrozen())
+            {
+                List<string> args = new List<string>();
+                args.Add(topic);
+                args.Add(message);
+                args.Add(ip);
+                args.Add(port.ToString());
+            } else
+            {
             var t = new Thread(() => RealreceiveOrderToFlood(topic, message, ip, port));
             t.Start();
+            }
             //return t;
         }
 
@@ -1010,8 +1021,13 @@ namespace SESDAD
 
         public void status()
         {
+            if (this.amIFrozen()) {
+                List<string> args = new List<string>();
+                myFrozenOrders.Add(new Tuple<string, List<string>>(BrokerOrders.STATUS, args));
+            } else {
             var t = new Thread(() => Realstatus());
             t.Start();
+        }
         }
 
         public void Realstatus()
@@ -1210,6 +1226,41 @@ namespace SESDAD
             this.myName = name;
         }
 
+        private bool amIFrozen()
+        {
+            return this.freezeFlag;
+        }
 
+        public void setFreezeState(bool isFrozen)
+        {
+            this.freezeFlag = isFrozen;
+
+            if (!this.freezeFlag)
+            {
+                this.executeAllFrozenCommands();
+            }
+        }
+
+        private void executeAllFrozenCommands()
+        {
+            List<string> args = null;
+            foreach (Tuple<string, List<string>> order in myFrozenOrders)
+            {
+                args = order.Item2;
+                switch (order.Item1)
+                {
+                    case BrokerOrders.FLOOD:
+                        this.receiveOrderToFlood(args[0], args[1], args[2], int.Parse(args[3]));
+                        break;
+                    case BrokerOrders.FILTERING:
+                        //this.receiveOrderToFilter(args[0], args[1], args[2], int.Parse(args[3]));
+                        break;
+                    case BrokerOrders.STATUS:
+                        this.status();
+                        break;
+                }
+            }
+            this.myFrozenOrders.Clear();
+        }
     }
 }
