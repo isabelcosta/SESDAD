@@ -632,7 +632,7 @@ namespace SESDAD
             int outUse;
             int numToDec = int.Parse(msgTemp1[1]);
 
-            if (brokerTreeInterface.ContainsKey(BrokerNeighbours.PARENT))   // nao e' a root
+            if (string.CompareOrdinal("broker0", myName) != 0 && string.CompareOrdinal("broker00", myName) != 0)   // nao e' a root
             {
                 lock (seqNub)
                 {
@@ -674,9 +674,8 @@ namespace SESDAD
             int numToDec;
             //lock (brokerTreeInterface)
             {
-                Console.WriteLine("Contains Parent " + brokerTreeInterface.ContainsKey(BrokerNeighbours.PARENT));
                 
-                if (!brokerTreeInterface.ContainsKey(BrokerNeighbours.PARENT))   // 'e a root
+                if (string.CompareOrdinal("broker0", myName) == 0 || string.CompareOrdinal("broker00", myName) == 0)   // 'e a root
                 {
 
                     lock (seqNub)
