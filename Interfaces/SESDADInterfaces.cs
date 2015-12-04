@@ -48,17 +48,20 @@ namespace SESDADInterfaces
     {
         public const string FLOOD = "flooding";
         public const string FILTERING = "filtering";
+        public const string STATUS = "status";
     }
 
     public class SubscriberOrders
     {
         public const string SUBSCRIBE = "subscribe";
         public const string UNSUBSCRIBE = "unsubscribe";
+        public const string STATUS = "status";
     }
 
     public class PublisherOrders
     {
         public const string PUBLISH = "publish";
+        public const string STATUS = "status";
     }
 
     public interface PuppetInterface

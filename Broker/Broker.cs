@@ -590,9 +590,11 @@ namespace SESDAD
                 args.Add(message);
                 args.Add(ip);
                 args.Add(port.ToString());
+            } else
+            {
+                var t = new Thread(() => RealreceiveOrderToFlood(topic, message, ip, port));
+                t.Start();
             }
-            var t = new Thread(() => RealreceiveOrderToFlood(topic, message, ip, port));
-            t.Start();
             //return t;
         }
         //used for the PuppetMaster to request a broker to flood a message
@@ -717,8 +719,13 @@ namespace SESDAD
 
         public void status()
         {
-            var t = new Thread(() => Realstatus());
-            t.Start();
+            if (this.amIFrozen()) {
+                List<string> args = new List<string>();
+                myFrozenOrders.Add(new Tuple<string, List<string>>(BrokerOrders.STATUS, args));
+            } else {
+                var t = new Thread(() => Realstatus());
+                t.Start();
+            }
         }
 
         public void Realstatus()
@@ -917,11 +924,10 @@ namespace SESDAD
 
         private void executeAllFrozenCommands()
         {
-            string[] args = { };
+            List<string> args = null;
             foreach (Tuple<string, List<string>> order in myFrozenOrders)
             {
-                // do something with entry.Value or entry.Key
-                order.Item2.CopyTo(args);
+                args = order.Item2;
                 switch (order.Item1)
                 {
                     case BrokerOrders.FLOOD:
@@ -930,9 +936,12 @@ namespace SESDAD
                     case BrokerOrders.FILTERING:
                         //this.receiveOrderToFilter(args[0], args[1], args[2], int.Parse(args[3]));
                         break;
-                        //*********** TODO
+                    case BrokerOrders.STATUS:
+                        this.status();
+                        break;
                 }
             }
+            this.myFrozenOrders.Clear();
         }
     }
 }

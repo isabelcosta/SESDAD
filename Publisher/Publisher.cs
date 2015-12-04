@@ -107,9 +107,10 @@ namespace SESDAD
                 args.Add(numberOfEvents.ToString());
                 args.Add(interval_x_ms.ToString());
                 myFrozenOrders.Add(new Tuple<string, List<string>>(PublisherOrders.PUBLISH, args));
+            } else {
+                var t = new Thread(() => RealreceiveOrderToPublish(topic, numberOfEvents, interval_x_ms));
+                t.Start();
             }
-            var t = new Thread(() => RealreceiveOrderToPublish(topic, numberOfEvents, interval_x_ms));
-            t.Start();
         }
 
         public void RealreceiveOrderToPublish(string topic, int numberOfEvents, int interval_x_ms)
@@ -178,8 +179,15 @@ namespace SESDAD
 
         public void status()
         {
-            var t = new Thread(() => Realstatus());
-            t.Start();
+            if (this.amIFrozen()) {
+                //Console.WriteLine("---------------- ya tou FROZEN e agora?");
+                List <string> args = new List<string>();
+                myFrozenOrders.Add(new Tuple<string, List<string>>(PublisherOrders.STATUS, args));
+            } else {
+                //Console.WriteLine("---------------- ya agora tou LIVRE e agora?");
+                var t = new Thread(() => Realstatus());
+                t.Start();
+            }
         }
 
         public void Realstatus()
@@ -261,18 +269,21 @@ namespace SESDAD
 
         private void executeAllFrozenCommands()
         {
-            string[] args = { };
+            List<string> args = null;
             foreach (Tuple<string, List<string>> order in myFrozenOrders)
             {
-                // do something with entry.Value or entry.Key
-                order.Item2.CopyTo(args);
+                args = order.Item2;
                 switch (order.Item1)
                 {
                     case PublisherOrders.PUBLISH:
                         this.receiveOrderToPublish(args[0], int.Parse(args[1]), int.Parse(args[2]));
                         break;
+                    case PublisherOrders.STATUS:
+                        this.status();
+                        break;
                 }
             }
+            this.myFrozenOrders.Clear();
         }
     }
 

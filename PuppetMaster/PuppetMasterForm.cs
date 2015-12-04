@@ -597,9 +597,9 @@ namespace SESDAD
                     {
                         if (!myFreezedProcesses.Contains(processName))
                         {
-                            LocalProcesses[processName].Suspend();
                             setFreezeState(processName, true);
                             myFreezedProcesses.Add(processName);
+                            //LocalProcesses[processName].Suspend();
                         }
                     }
                 }
@@ -616,9 +616,9 @@ namespace SESDAD
                     {
                         if (!myFreezedProcesses.Contains(processName))
                         {
-                            LocalProcesses[processName].Suspend();
                             setFreezeState(processName, true);
                             myFreezedProcesses.Add(processName);
+                            //LocalProcesses[processName].Suspend();
                         }
                     }
                 }
@@ -635,9 +635,9 @@ namespace SESDAD
                     {
                         if (myFreezedProcesses.Contains(processName))
                         {
-                            LocalProcesses[processName].Resume();
                             setFreezeState(processName, false);
                             myFreezedProcesses.Remove(processName);
+                            //LocalProcesses[processName].Resume();
                         }
                     }
                 }
@@ -654,9 +654,9 @@ namespace SESDAD
                     {
                         if (myFreezedProcesses.Contains(processName))
                         {
-                            LocalProcesses[processName].Resume();
                             setFreezeState(processName, false);
                             myFreezedProcesses.Remove(processName);
+                            //LocalProcesses[processName].Resume();
                         }
                     }
                 }

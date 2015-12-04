@@ -5,3 +5,9 @@ Status
 Subscriber subscriber1 Unsubscribe /testtopic
 Wait 3000
 Status
+
+Freeze publisher0
+Status
+Publisher publisher0 Publish 3 Ontopic /testtopic Interval 5000
+Wait 10000
+Unfreeze publisher0

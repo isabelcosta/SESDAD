@@ -62,12 +62,15 @@ namespace SESDAD
 
         public void receiveOrderToSubscribe(string topic)
         {
-            List<string> args = new List<string>();
-            args.Add(topic);
-            myFrozenOrders.Add(new Tuple<string, List<string>>(SubscriberOrders.SUBSCRIBE, args));
-
-            var t = new Thread(() => RealreceiveOrderToSubscribe(topic));
-            t.Start();
+            if (this.amIFrozen())
+            {
+                List<string> args = new List<string>();
+                args.Add(topic);
+                myFrozenOrders.Add(new Tuple<string, List<string>>(SubscriberOrders.SUBSCRIBE, args));
+            } else {
+                var t = new Thread(() => RealreceiveOrderToSubscribe(topic));
+                t.Start();
+            }
         }
 
         //invocado pelo PuppetMaster para subscrever a um topico e informar o local broker
@@ -94,10 +97,10 @@ namespace SESDAD
                 List<string> args = new List<string>();
                 args.Add(topic);
                 myFrozenOrders.Add(new Tuple<string, List<string>>(SubscriberOrders.UNSUBSCRIBE, args));
+            } else {
+                var t = new Thread(() => RealreceiveOrderToUnSubscribe(topic));
+                t.Start();
             }
-
-            var t = new Thread(() => RealreceiveOrderToUnSubscribe(topic));
-            t.Start();
         }
 
         public void RealreceiveOrderToUnSubscribe(string topic)
@@ -164,8 +167,14 @@ namespace SESDAD
 
         public void status()
         {
-            var t = new Thread(() => Realstatus());
-            t.Start();
+            if (this.amIFrozen())
+            {
+                List<string> args = new List<string>();
+                myFrozenOrders.Add(new Tuple<string, List<string>>(SubscriberOrders.STATUS, args));
+            } else {
+                var t = new Thread(() => Realstatus());
+                t.Start();
+            }
         }
         public void Realstatus()
         {
@@ -249,11 +258,10 @@ namespace SESDAD
 
         private void executeAllFrozenCommands()
         {
-            string[] args = { };
+            List<string> args = null;
             foreach (Tuple<string, List<string>> order in myFrozenOrders)
             {
-                // do something with entry.Value or entry.Key
-                order.Item2.CopyTo(args);
+                args = order.Item2;
                 switch (order.Item1)
                 {
                     case SubscriberOrders.SUBSCRIBE:
@@ -262,9 +270,12 @@ namespace SESDAD
                     case SubscriberOrders.UNSUBSCRIBE:
                         this.receiveOrderToUnSubscribe(args[0]);
                         break;
-                        //*********** TODO
+                    case SubscriberOrders.STATUS:
+                        this.status();
+                        break;
                 }
             }
+            this.myFrozenOrders.Clear();
         }
     }
 }
